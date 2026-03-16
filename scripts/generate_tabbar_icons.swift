@@ -13,7 +13,7 @@ let iconMap: [(name: String, symbol: String)] = [
   ("search", "magnifyingglass"),
   ("saved", "heart"),
   ("post", "plus.square"),
-  ("inbox", "bubble.left"),
+  ("listings", "square.grid.2x2"),
   ("profile", "person.circle")
 ]
 

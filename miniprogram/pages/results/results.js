@@ -60,7 +60,7 @@ Page({
 
   refreshListings() {
     const { categoryId, subcategory } = this.data
-    const filteredByCategory = market.getListingsByCategory(categoryId)
+    const filteredByCategory = market.getFeedListingsByCategory(categoryId)
     const filtered = subcategory
       ? filteredByCategory.filter((listing) => listing.subcategory === subcategory)
       : filteredByCategory

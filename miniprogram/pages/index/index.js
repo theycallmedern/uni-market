@@ -39,7 +39,7 @@ Page({
   },
 
   refreshListings() {
-    const allListings = market.getAllListings()
+    const allListings = market.getFeedListings()
     const locationOptions = ['All locations', ...uniqueOptions(allListings, 'location')]
     const universityOptions = ['All universities', ...uniqueOptions(allListings, 'university')]
 

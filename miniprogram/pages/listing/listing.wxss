@@ -2,6 +2,32 @@
   padding: 20rpx 20rpx 180rpx;
 }
 
+.listing-status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  margin-bottom: 16rpx;
+  padding: 20rpx;
+  border-radius: 26rpx;
+  background: #fff1f1;
+}
+
+.listing-status-badge {
+  align-self: flex-start;
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  background: #ba2d2d;
+  color: #ffffff;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.listing-status-copy {
+  font-size: 24rpx;
+  line-height: 1.4;
+  color: #8a3030;
+}
+
 .gallery-shell {
   position: relative;
 }
@@ -142,6 +168,39 @@
   color: #6f6f6f;
 }
 
+.report-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  margin-top: 18rpx;
+  padding: 24rpx;
+  border-radius: 28rpx;
+  background: #ffffff;
+}
+
+.report-button {
+  align-self: flex-start;
+  padding: 12rpx 22rpx;
+  border-radius: 999rpx;
+  border: 2rpx solid rgba(179, 38, 30, 0.18);
+  background: #fff1f1;
+  color: #b3261e;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.report-button--done {
+  border-color: rgba(17, 17, 17, 0.08);
+  background: #f2f2f2;
+  color: #6f6f6f;
+}
+
+.report-note {
+  font-size: 22rpx;
+  color: #888888;
+  line-height: 1.4;
+}
+
 .action-bar {
   position: fixed;
   left: 20rpx;
@@ -215,6 +274,52 @@
 .save-feedback__text {
   font-size: 26rpx;
   font-weight: 600;
+}
+
+.listing-empty-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+.listing-empty-card {
+  width: 100%;
+  padding: 36rpx 30rpx;
+  border-radius: 32rpx;
+  background: #ffffff;
+  box-shadow: 0 16rpx 30rpx rgba(17, 17, 17, 0.05);
+}
+
+.listing-empty-title {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.listing-empty-copy {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  line-height: 1.45;
+  color: #6f6f6f;
+}
+
+.listing-empty-button {
+  margin-top: 20rpx;
+  height: 88rpx;
+  border-radius: 26rpx;
+  background: #111111;
+  color: #ffffff;
+  font-size: 28rpx;
+  line-height: 88rpx;
+  font-weight: 700;
+}
+
+.listing-empty-button::after {
+  border: 0;
 }
 
 @keyframes feedback-pop {

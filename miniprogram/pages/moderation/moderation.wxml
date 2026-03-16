@@ -1,0 +1,42 @@
+<view class="page-shell moderation-page">
+  <view class="moderation-hero">
+    <view class="moderation-hero__copy">
+      <text class="moderation-hero__title">Moderation</text>
+      <text class="moderation-hero__meta">
+        {{summary.pending}} pending · {{summary.reviewing}} reviewing · {{summary.resolved}} resolved
+      </text>
+      <text class="moderation-hero__note">Review incoming reports and update their status.</text>
+    </view>
+  </view>
+
+  <view wx:if="{{!isAdmin}}" class="moderation-locked">
+    <text class="moderation-locked__title">Admin access required</text>
+    <text class="moderation-locked__copy">Ask an admin for an access code to unlock moderation tools.</text>
+  </view>
+
+  <view wx:elif="{{reports.length}}" class="moderation-list">
+    <block wx:for="{{reports}}" wx:key="id">
+      <view class="report-card">
+        <view class="report-card__head">
+          <text class="report-card__title">{{item.listingTitle || 'Untitled listing'}}</text>
+          <text class="report-status report-status--{{item.status}}">{{item.statusLabel}}</text>
+        </view>
+
+        <text class="report-card__meta">Listing ID: {{item.listingId}}</text>
+        <text class="report-card__meta">Reason: {{item.reason}}</text>
+        <text wx:if="{{item.note}}" class="report-card__note">Note: {{item.note}}</text>
+        <text class="report-card__time">{{item.createdLabel}}</text>
+
+        <view class="report-card__actions">
+          <button class="report-action" data-id="{{item.id}}" bindtap="openStatusSheet">Update status</button>
+          <button class="report-action report-action--ghost" data-id="{{item.listingId}}" bindtap="openListing">Open listing</button>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <view wx:elif="{{isAdmin}}" class="moderation-empty">
+    <text class="moderation-empty__title">No reports yet</text>
+    <text class="moderation-empty__copy">Reports will appear here as soon as someone flags a listing.</text>
+  </view>
+</view>

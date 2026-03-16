@@ -1,15 +1,24 @@
 const market = require('../../data/market')
 const savedStore = require('../../utils/saved')
+const adminStore = require('../../utils/admin')
+const profileStore = require('../../utils/profile')
+const universitiesStore = require('../../utils/universities')
+
+const INITIAL_PROFILE = profileStore.getProfile()
+const UNIVERSITY_OPTIONS = universitiesStore.HANGZHOU_UNIVERSITIES
 
 Page({
   data: {
-    profile: {
-      name: 'Misha',
-      campus: 'Zhejiang University',
-      city: 'Hangzhou'
-    },
-    myListings: [],
-    savedCount: 0
+    profile: { ...INITIAL_PROFILE },
+    profileDraft: { ...INITIAL_PROFILE },
+    avatarInitial: profileStore.getProfileInitial(INITIAL_PROFILE),
+    isUniversityPublic: !universitiesStore.isUniversityPrivateValue(INITIAL_PROFILE.campus),
+    universityOptions: UNIVERSITY_OPTIONS,
+    universityIndex: universitiesStore.getUniversityIndex(INITIAL_PROFILE.campus, UNIVERSITY_OPTIONS),
+    isEditingProfile: false,
+    myListingsCount: 0,
+    savedCount: 0,
+    isAdmin: false
   },
 
   onShow() {
@@ -17,47 +26,230 @@ Page({
   },
 
   refreshProfile() {
-    const myListings = market.getMyListings()
     const savedCount = savedStore.getSavedListingIds().length
+    const profile = profileStore.getProfile()
+    const nextState = {
+      profile,
+      avatarInitial: profileStore.getProfileInitial(profile),
+      isUniversityPublic: !universitiesStore.isUniversityPrivateValue(profile.campus),
+      universityIndex: universitiesStore.getUniversityIndex(profile.campus, UNIVERSITY_OPTIONS),
+      myListingsCount: market.getMyListings().length,
+      savedCount,
+      isAdmin: adminStore.isAdmin()
+    }
+
+    if (!this.data.isEditingProfile) {
+      nextState.profileDraft = { ...profile }
+    }
+
+    this.setData(nextState)
+  },
+
+  startEditProfile() {
+    const universityIndex = universitiesStore.getUniversityIndex(this.data.profile.campus, UNIVERSITY_OPTIONS)
+    const campus = UNIVERSITY_OPTIONS[universityIndex] || UNIVERSITY_OPTIONS[0] || ''
 
     this.setData({
-      myListings,
-      savedCount
+      isEditingProfile: true,
+      profileDraft: {
+        ...this.data.profile,
+        campus
+      },
+      universityIndex
     })
   },
 
-  openListing(e) {
-    const { id } = e.currentTarget.dataset
-    wx.navigateTo({
-      url: `/pages/listing/listing?id=${id}`
+  cancelEditProfile() {
+    this.setData({
+      isEditingProfile: false,
+      profileDraft: { ...this.data.profile }
+    })
+  },
+
+  onProfileFieldInput(e) {
+    const { field } = e.currentTarget.dataset
+    this.setData({
+      [`profileDraft.${field}`]: e.detail.value
+    })
+  },
+
+  onUniversityChange(e) {
+    const universityIndex = Number(e.detail.value)
+    const campus = UNIVERSITY_OPTIONS[universityIndex] || UNIVERSITY_OPTIONS[0] || ''
+
+    this.setData({
+      universityIndex,
+      'profileDraft.campus': campus
+    })
+  },
+
+  persistAvatar(tempFilePath, onDone) {
+    if (!tempFilePath) {
+      onDone('')
+      return
+    }
+
+    if (!wx.saveFile) {
+      onDone(tempFilePath)
+      return
+    }
+
+    wx.saveFile({
+      tempFilePath,
+      success: (res) => {
+        onDone(res.savedFilePath || tempFilePath)
+      },
+      fail: () => {
+        onDone(tempFilePath)
+      }
+    })
+  },
+
+  changeProfilePhoto() {
+    const applyPickedPhoto = (tempFilePath) => {
+      this.persistAvatar(tempFilePath, (avatarUrl) => {
+        this.setData({
+          'profileDraft.avatarUrl': avatarUrl
+        })
+      })
+    }
+
+    if (wx.chooseMedia) {
+      wx.chooseMedia({
+        count: 1,
+        mediaType: ['image'],
+        sizeType: ['compressed'],
+        sourceType: ['album', 'camera'],
+        success: (res) => {
+          const file = (res.tempFiles || [])[0]
+          applyPickedPhoto(file && file.tempFilePath ? file.tempFilePath : '')
+        }
+      })
+      return
+    }
+
+    wx.chooseImage({
+      count: 1,
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        applyPickedPhoto((res.tempFilePaths || [])[0] || '')
+      }
+    })
+  },
+
+  removeProfilePhoto() {
+    this.setData({
+      'profileDraft.avatarUrl': ''
+    })
+  },
+
+  saveProfile() {
+    const selectedCampus = UNIVERSITY_OPTIONS[this.data.universityIndex] || UNIVERSITY_OPTIONS[0] || ''
+    const normalizedProfile = profileStore.normalizeProfile({
+      ...(this.data.profileDraft || {}),
+      campus: selectedCampus
+    })
+
+    if (normalizedProfile.name.length < 2) {
+      wx.showToast({
+        title: 'Name: at least 2 chars',
+        icon: 'none'
+      })
+      return
+    }
+
+    if (!normalizedProfile.campus) {
+      wx.showToast({
+        title: 'Add your university',
+        icon: 'none'
+      })
+      return
+    }
+
+    const profile = profileStore.saveProfile(normalizedProfile)
+
+    this.setData({
+      profile,
+      profileDraft: { ...profile },
+      avatarInitial: profileStore.getProfileInitial(profile),
+      isUniversityPublic: !universitiesStore.isUniversityPrivateValue(profile.campus),
+      universityIndex: universitiesStore.getUniversityIndex(profile.campus, UNIVERSITY_OPTIONS),
+      isEditingProfile: false
+    })
+
+    wx.showToast({
+      title: 'Profile saved',
+      icon: 'success'
     })
   },
 
   goToPost() {
+    market.queueCreateMode({ type: 'create' })
     wx.switchTab({
       url: '/pages/create/create'
     })
   },
 
-  deleteListing(e) {
-    const { id } = e.currentTarget.dataset
+  goToSaved() {
+    wx.switchTab({
+      url: '/pages/favorites/favorites'
+    })
+  },
 
+  goToListings() {
+    wx.switchTab({
+      url: '/pages/messages/messages'
+    })
+  },
+
+  goToModeration() {
+    if (!adminStore.isAdmin()) {
+      wx.showToast({
+        title: 'Admin access required',
+        icon: 'none'
+      })
+      return
+    }
+
+    wx.navigateTo({
+      url: '/pages/moderation/moderation'
+    })
+  },
+
+  openAdminGate() {
     wx.showModal({
-      title: 'Delete listing?',
-      content: 'This will remove the listing from your profile and the marketplace feed.',
-      confirmText: 'Delete',
-      confirmColor: '#111111',
+      title: 'Admin access',
+      editable: true,
+      placeholderText: 'Enter admin code',
+      confirmText: 'Unlock',
       success: (res) => {
         if (!res.confirm) return
 
-        market.deleteListing(id)
-        this.refreshProfile()
+        const success = adminStore.enableAdmin(res.content || '')
+        if (success) {
+          wx.showToast({
+            title: 'Admin unlocked',
+            icon: 'success'
+          })
+          this.refreshProfile()
+          return
+        }
 
         wx.showToast({
-          title: 'Deleted',
-          icon: 'success'
+          title: 'Wrong code',
+          icon: 'none'
         })
       }
+    })
+  },
+
+  disableAdmin() {
+    adminStore.disableAdmin()
+    this.refreshProfile()
+    wx.showToast({
+      title: 'Admin disabled',
+      icon: 'none'
     })
   }
 })

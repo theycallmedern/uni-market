@@ -1,3 +1,5 @@
+const reportsStore = require('../utils/reports')
+
 const categories = [
   { id: 'all', name: 'All', emoji: '✨', theme: 'cream' },
   { id: 'housing', name: 'Housing', emoji: '🏠', theme: 'rose' },
@@ -131,6 +133,7 @@ const featuredCards = {
 }
 
 const CUSTOM_LISTINGS_STORAGE_KEY = 'marketCustomListings'
+const CREATE_MODE_STORAGE_KEY = 'marketCreateMode'
 
 const categoryFallbackImages = {
   housing: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80',
@@ -403,15 +406,16 @@ const baseListings = [
   }
 ]
 
-function safeGetStorage(key) {
+function safeGetStorage(key, fallback = []) {
   if (typeof wx === 'undefined' || !wx.getStorageSync) {
-    return []
+    return fallback
   }
 
   try {
-    return wx.getStorageSync(key) || []
+    const value = wx.getStorageSync(key)
+    return value === '' || typeof value === 'undefined' ? fallback : value
   } catch (error) {
-    return []
+    return fallback
   }
 }
 
@@ -456,28 +460,54 @@ function normalizeCustomListing(rawListing) {
   }
 }
 
+function safeRemoveStorage(key) {
+  if (typeof wx === 'undefined' || !wx.removeStorageSync) {
+    return
+  }
+
+  try {
+    wx.removeStorageSync(key)
+  } catch (error) {}
+}
+
 function getCustomListings() {
-  const storedListings = safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY)
+  const storedListings = safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
 
   return storedListings
     .map((listing) => normalizeCustomListing(listing))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 }
 
-function getAllListings() {
-  return [...getCustomListings(), ...baseListings]
+function getAllListings(options = {}) {
+  const { includeResolved = true } = options
+  const listings = reportsStore.decorateListingsWithModeration([...getCustomListings(), ...baseListings])
+
+  if (includeResolved) {
+    return listings
+  }
+
+  return listings.filter((listing) => !listing.isHiddenByModeration)
 }
 
 function getListingById(id) {
-  return getAllListings().find((listing) => String(listing.id) === String(id)) || null
+  return getAllListings({ includeResolved: true }).find((listing) => String(listing.id) === String(id)) || null
 }
 
-function getListingsByCategory(categoryId) {
-  return getAllListings().filter((listing) => listing.categoryId === categoryId)
+function getFeedListings() {
+  return getAllListings({ includeResolved: false })
+}
+
+function getListingsByCategory(categoryId, options = {}) {
+  const { includeResolved = true } = options
+  return getAllListings({ includeResolved }).filter((listing) => listing.categoryId === categoryId)
+}
+
+function getFeedListingsByCategory(categoryId) {
+  return getListingsByCategory(categoryId, { includeResolved: false })
 }
 
 function createListing(payload) {
-  const customListings = safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY)
+  const customListings = safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
   const listing = normalizeCustomListing({
     ...payload,
     id: Date.now(),
@@ -494,16 +524,52 @@ function getPublishCategories() {
 }
 
 function getMyListings() {
-  return getCustomListings()
+  return reportsStore.decorateListingsWithModeration(getCustomListings())
 }
 
 function deleteListing(id) {
   const targetId = String(id)
-  const nextListings = safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY).filter(
+  const nextListings = safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, []).filter(
     (listing) => String(listing.id) !== targetId
   )
 
   safeSetStorage(CUSTOM_LISTINGS_STORAGE_KEY, nextListings)
+}
+
+function updateListing(id, payload) {
+  const targetId = String(id)
+  const customListings = safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
+  const currentListing = customListings.find((listing) => String(listing.id) === targetId)
+
+  if (!currentListing) {
+    return null
+  }
+
+  const updatedListing = normalizeCustomListing({
+    ...currentListing,
+    ...payload,
+    id: currentListing.id,
+    createdAt: currentListing.createdAt,
+    updatedAt: new Date().toISOString()
+  })
+
+  const nextListings = customListings.map((listing) =>
+    String(listing.id) === targetId ? updatedListing : listing
+  )
+
+  safeSetStorage(CUSTOM_LISTINGS_STORAGE_KEY, nextListings)
+
+  return updatedListing
+}
+
+function queueCreateMode(mode) {
+  safeSetStorage(CREATE_MODE_STORAGE_KEY, mode)
+}
+
+function consumeCreateMode() {
+  const mode = safeGetStorage(CREATE_MODE_STORAGE_KEY, null)
+  safeRemoveStorage(CREATE_MODE_STORAGE_KEY)
+  return mode
 }
 
 module.exports = {
@@ -513,11 +579,16 @@ module.exports = {
   featuredCards,
   listings: baseListings,
   getAllListings,
+  getFeedListings,
   getListingById,
   getListingsByCategory,
+  getFeedListingsByCategory,
   createListing,
   getMyListings,
   deleteListing,
+  updateListing,
+  queueCreateMode,
+  consumeCreateMode,
   getPublishCategories,
   getFallbackImage
 }

@@ -18,7 +18,7 @@
         <view class="saved-card__body">
           <text class="saved-card__price">{{item.price}}</text>
           <text class="saved-card__title">{{item.title}}</text>
-          <text class="saved-card__meta">{{item.location}} · {{item.university}}</text>
+          <text class="saved-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
         </view>
       </view>
     </block>

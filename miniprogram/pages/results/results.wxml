@@ -90,7 +90,7 @@
             <text class="result-card__tag">{{item.subcategory}}</text>
           </view>
           <text class="result-card__title">{{item.title}}</text>
-          <text class="result-card__meta">{{item.location}} · {{item.university}}</text>
+          <text class="result-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
         </view>
       </view>
     </block>

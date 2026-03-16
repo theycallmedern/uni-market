@@ -1,6 +1,10 @@
 <view class="page-shell home-page">
   <view class="hero">
     <view class="hero-copy">
+      <view class="hero-brand">
+        <image class="hero-brand__logo" src="../../assets/brand/unimarket-logo.png" mode="aspectFit" />
+        <text class="hero-brand__name">UniMarket</text>
+      </view>
       <text class="hero-title">Find what student life needs.</text>
       <text class="hero-subtitle">Browse housing, transport, services, and campus essentials in one place.</text>
     </view>
@@ -67,7 +71,7 @@
             <text class="listing-price">{{item.price}}</text>
             <text class="listing-title">{{item.title}}</text>
             <text class="listing-meta">{{item.location}}</text>
-            <text class="listing-campus">{{item.university}}</text>
+            <text wx:if="{{item.university}}" class="listing-campus">{{item.university}}</text>
           </view>
         </view>
       </block>

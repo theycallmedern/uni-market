@@ -7,18 +7,19 @@
   >
     <view class="create-content">
       <view class="compose-hero">
-        <view>
-          <text class="compose-title">Post a new listing</text>
-          <text class="compose-copy">Share something useful with students around Hangzhou and publish it straight into the MVP.</text>
-        </view>
-        <view class="compose-chip">Live preview flow</view>
+      <view>
+        <text class="compose-title">{{heroTitle}}</text>
+        <text class="compose-copy">{{heroCopy}}</text>
+      </view>
+      <view class="compose-chip">{{heroChip}}</view>
       </view>
 
       <view class="form-card">
         <view class="card-head">
           <text class="card-title">Photos</text>
-          <text class="card-hint">Up to 5 images</text>
+          <text class="card-hint">Up to 5 · first is cover</text>
         </view>
+        <text class="card-subhint">Tap a photo to preview. Use arrows to reorder.</text>
 
         <scroll-view class="photo-scroll" scroll-x enhanced show-scrollbar="{{false}}">
           <view class="photo-row">
@@ -29,9 +30,32 @@
 
             <block wx:for="{{form.images}}" wx:key="*this">
               <view class="photo-card">
-                <image class="photo-card__image" src="{{item}}" mode="aspectFill" />
+                <image
+                  class="photo-card__image"
+                  src="{{item}}"
+                  mode="aspectFill"
+                  data-index="{{index}}"
+                  bindtap="previewPhoto"
+                />
+                <view class="photo-card__badge {{index === 0 ? 'photo-card__badge--cover' : ''}}">
+                  <text>{{index === 0 ? 'Cover' : index + 1}}</text>
+                </view>
                 <view class="photo-card__remove" data-index="{{index}}" catchtap="removePhoto">
                   <text class="photo-card__remove-icon">×</text>
+                </view>
+                <view class="photo-card__toolbar">
+                  <button wx:if="{{index !== 0}}" class="photo-tool" data-index="{{index}}" data-direction="left" bindtap="movePhoto">
+                    ←
+                  </button>
+                  <button
+                    wx:if="{{index !== form.images.length - 1}}"
+                    class="photo-tool"
+                    data-index="{{index}}"
+                    data-direction="right"
+                    bindtap="movePhoto"
+                  >
+                    →
+                  </button>
                 </view>
               </view>
             </block>
@@ -70,13 +94,9 @@
 
           <view class="field field-half">
             <text class="field-label">Location</text>
-            <input
-              class="field-input"
-              placeholder="Hangzhou"
-              value="{{form.location}}"
-              data-field="location"
-              bindinput="onFieldInput"
-            />
+            <view class="picker-field picker-field--locked">
+              <text class="picker-field__locked-value">Hangzhou</text>
+            </view>
           </view>
         </view>
 
@@ -101,6 +121,17 @@
             </picker>
           </view>
         </view>
+
+        <view wx:if="{{isCustomSubcategory}}" class="field">
+          <text class="field-label">Custom subcategory</text>
+          <input
+            class="field-input"
+            placeholder="Type your own subcategory"
+            value="{{customSubcategory}}"
+            maxlength="40"
+            bindinput="onCustomSubcategoryInput"
+          />
+        </view>
       </view>
 
       <view class="form-card">
@@ -111,13 +142,12 @@
 
         <view class="field">
           <text class="field-label">University</text>
-          <input
-            class="field-input"
-            placeholder="Zhejiang University"
-            value="{{form.university}}"
-            data-field="university"
-            bindinput="onFieldInput"
-          />
+          <picker mode="selector" range="{{universityOptions}}" value="{{universityIndex}}" bindchange="onUniversityChange">
+            <view class="picker-field">
+              <text>{{universityOptions[universityIndex]}}</text>
+              <text class="picker-arrow">⌄</text>
+            </view>
+          </picker>
         </view>
 
         <view class="field">
@@ -149,7 +179,7 @@
       </view>
 
       <view class="publish-inline">
-        <button class="publish-button" loading="{{submitting}}" bindtap="submitListing">Publish listing</button>
+        <button class="publish-button" loading="{{submitting}}" bindtap="submitListing">{{submitLabel}}</button>
       </view>
     </view>
   </scroll-view>

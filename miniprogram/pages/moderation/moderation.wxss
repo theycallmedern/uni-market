@@ -1,0 +1,155 @@
+.moderation-page {
+  padding: 22rpx 24rpx 44rpx;
+}
+
+.moderation-hero {
+  padding: 28rpx;
+  border-radius: 34rpx;
+  background: linear-gradient(135deg, #fef1e8, #f9dfd6);
+}
+
+.moderation-hero__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.moderation-hero__title {
+  font-size: 38rpx;
+  font-weight: 700;
+}
+
+.moderation-hero__meta {
+  font-size: 24rpx;
+  color: #8a5a4c;
+}
+
+.moderation-hero__note {
+  font-size: 24rpx;
+  line-height: 1.45;
+  color: #6f6f6f;
+}
+
+.moderation-locked,
+.moderation-empty {
+  margin-top: 20rpx;
+  padding: 28rpx;
+  border-radius: 30rpx;
+  background: #ffffff;
+  box-shadow: 0 16rpx 30rpx rgba(17, 17, 17, 0.05);
+}
+
+.moderation-locked__title,
+.moderation-empty__title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.moderation-locked__copy,
+.moderation-empty__copy {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  line-height: 1.45;
+  color: #7b7b7b;
+}
+
+.moderation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.report-card {
+  padding: 22rpx;
+  border-radius: 30rpx;
+  background: #ffffff;
+  box-shadow: 0 16rpx 30rpx rgba(17, 17, 17, 0.05);
+}
+
+.report-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16rpx;
+  align-items: flex-start;
+}
+
+.report-card__title {
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.report-status {
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  background: #f0f0f0;
+  color: #555555;
+}
+
+.report-status--pending {
+  background: #fff0d9;
+  color: #9a5b16;
+}
+
+.report-status--reviewing {
+  background: #e9f2ff;
+  color: #2a5fa4;
+}
+
+.report-status--resolved {
+  background: #fff1f1;
+  color: #ba2d2d;
+}
+
+.report-status--dismissed {
+  background: #eef5ec;
+  color: #2f7d32;
+}
+
+.report-card__meta,
+.report-card__note,
+.report-card__time {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #7b7b7b;
+}
+
+.report-card__note {
+  color: #5f5f5f;
+}
+
+.report-card__time {
+  color: #8c8c8c;
+}
+
+.report-card__actions {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.report-action {
+  flex: 1;
+  height: 72rpx;
+  border-radius: 24rpx;
+  background: #111111;
+  color: #ffffff;
+  font-size: 24rpx;
+  font-weight: 700;
+  line-height: 72rpx;
+  padding: 0;
+}
+
+.report-action--ghost {
+  background: #f5f3ee;
+  color: #111111;
+}
+
+.report-action::after {
+  border: 0;
+}

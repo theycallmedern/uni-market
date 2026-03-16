@@ -14,7 +14,7 @@
 }
 
 .create-content {
-  padding-bottom: 120rpx;
+  padding-bottom: 28rpx;
 }
 
 .compose-hero {
@@ -77,6 +77,14 @@
   color: #8b8b8b;
 }
 
+.card-subhint {
+  display: block;
+  margin-top: -6rpx;
+  margin-bottom: 16rpx;
+  font-size: 22rpx;
+  color: #9a9a9a;
+}
+
 .photo-scroll {
   white-space: nowrap;
 }
@@ -124,6 +132,23 @@
   background: #ececec;
 }
 
+.photo-card__badge {
+  position: absolute;
+  top: 12rpx;
+  left: 12rpx;
+  padding: 6rpx 12rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #111111;
+}
+
+.photo-card__badge--cover {
+  background: rgba(17, 17, 17, 0.84);
+  color: #ffffff;
+}
+
 .photo-card__remove {
   position: absolute;
   top: 12rpx;
@@ -138,9 +163,39 @@
 }
 
 .photo-card__remove-icon {
+  display: block;
+  width: 44rpx;
+  height: 44rpx;
+  text-align: center;
+  line-height: 44rpx;
   font-size: 28rpx;
   color: #ffffff;
-  line-height: 1;
+}
+
+.photo-card__toolbar {
+  position: absolute;
+  left: 10rpx;
+  right: 10rpx;
+  bottom: 10rpx;
+  display: flex;
+  gap: 8rpx;
+}
+
+.photo-tool {
+  flex: 1;
+  height: 42rpx;
+  border-radius: 16rpx;
+  background: rgba(255, 255, 255, 0.92);
+  text-align: center;
+  line-height: 42rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #111111;
+  padding: 0;
+}
+
+.photo-tool::after {
+  border: 0;
 }
 
 .field {
@@ -192,6 +247,16 @@
   justify-content: space-between;
 }
 
+.picker-field--locked {
+  background: #ece9e3;
+  color: #9a9a9a;
+}
+
+.picker-field__locked-value {
+  color: #9a9a9a;
+  font-weight: 600;
+}
+
 .picker-arrow {
   font-size: 28rpx;
   color: #6f6f6f;
@@ -205,18 +270,24 @@
 }
 
 .publish-inline {
-  padding: 8rpx 0 36rpx;
+  padding: 8rpx 0 10rpx;
 }
 
 .publish-button {
   width: 100%;
   height: 96rpx;
   border: 0;
+  padding: 0;
   border-radius: 28rpx;
   background: #111111;
   color: #ffffff;
   font-size: 30rpx;
   font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   box-shadow: 0 18rpx 36rpx rgba(17, 17, 17, 0.16);
 }
 

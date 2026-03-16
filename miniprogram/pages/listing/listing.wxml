@@ -1,4 +1,9 @@
 <view wx:if="{{listing}}" class="page-shell listing-page">
+  <view wx:if="{{hiddenNotice}}" class="listing-status-card">
+    <text class="listing-status-badge">Hidden</text>
+    <text class="listing-status-copy">{{hiddenNotice}}</text>
+  </view>
+
   <view class="gallery-shell">
     <swiper
       class="gallery-swiper"
@@ -32,7 +37,7 @@
       <text class="detail-value">{{listing.location}}</text>
     </view>
 
-    <view class="detail-card">
+    <view wx:if="{{listing.university}}" class="detail-card">
       <text class="detail-label">University</text>
       <text class="detail-value">{{listing.university}}</text>
     </view>
@@ -46,6 +51,16 @@
       <text class="seller-note">{{listing.seller.note}}</text>
       <text class="seller-wechat">WeChat: {{listing.seller.wechat}}</text>
     </view>
+  </view>
+
+  <view class="report-card">
+    <view
+      class="report-button {{hasReported ? 'report-button--done' : ''}}"
+      bindtap="reportListing"
+    >
+      <text>{{hasReported ? 'Reported' : 'Report listing'}}</text>
+    </view>
+    <text class="report-note">Report scams, wrong categories, or prohibited items.</text>
   </view>
 
   <view class="action-bar">
@@ -62,5 +77,21 @@
   <view wx:if="{{feedbackVisible}}" class="save-feedback">
     <view class="save-feedback__icon">{{feedbackIcon}}</view>
     <text class="save-feedback__text">{{feedbackText}}</text>
+  </view>
+</view>
+
+<view wx:elif="{{blockedByModeration}}" class="page-shell listing-empty-page">
+  <view class="listing-empty-card">
+    <text class="listing-empty-title">Listing unavailable</text>
+    <text class="listing-empty-copy">This listing was hidden after moderation review.</text>
+    <button class="listing-empty-button" bindtap="goToHome">Back to listings</button>
+  </view>
+</view>
+
+<view wx:elif="{{notFound}}" class="page-shell listing-empty-page">
+  <view class="listing-empty-card">
+    <text class="listing-empty-title">Listing not found</text>
+    <text class="listing-empty-copy">This listing is no longer available or the link is outdated.</text>
+    <button class="listing-empty-button" bindtap="goToHome">Back to listings</button>
   </view>
 </view>

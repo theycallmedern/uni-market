@@ -16,6 +16,28 @@
   gap: 8rpx;
 }
 
+.hero-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  margin-left: -18rpx;
+  margin-bottom: 6rpx;
+}
+
+.hero-brand__logo {
+  width: 82rpx;
+  height: 82rpx;
+  display: block;
+}
+
+.hero-brand__name {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #1c1c1c;
+  letter-spacing: 0.3rpx;
+  margin-left: -18rpx;
+}
+
 .hero-title {
   font-size: 44rpx;
   line-height: 1.05;

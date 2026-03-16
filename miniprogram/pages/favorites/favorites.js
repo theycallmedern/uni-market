@@ -12,7 +12,7 @@ Page({
 
   onShow() {
     const savedIds = savedStore.getSavedListingIds()
-    const listings = market.getAllListings().filter((listing) => savedIds.includes(String(listing.id)))
+    const listings = market.getFeedListings().filter((listing) => savedIds.includes(String(listing.id)))
     const decorated = savedStore.decorateListingsWithSaved(listings)
 
     this.setData({

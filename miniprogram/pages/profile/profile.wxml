@@ -1,66 +1,163 @@
-<view class="page-shell profile-page">
-  <view class="profile-hero">
-    <view class="profile-avatar">M</view>
-    <view class="profile-copy">
-      <text class="profile-name">{{profile.name}}</text>
-      <text class="profile-meta">{{profile.campus}} · {{profile.city}}</text>
-      <text class="profile-note">Manage your listings and keep track of what you posted for the student community.</text>
+<view class="page-shell account-page">
+  <view class="account-hero">
+    <view class="account-avatar">
+      <image wx:if="{{profile.avatarUrl}}" class="account-avatar__image" src="{{profile.avatarUrl}}" mode="aspectFill" />
+      <text wx:else>{{avatarInitial}}</text>
+    </view>
+    <view class="account-copy">
+      <text class="account-name">{{profile.name}}</text>
+      <view class="account-meta-chips">
+        <text wx:if="{{isUniversityPublic}}" class="account-meta-chip account-meta-chip--university">{{profile.campus}}</text>
+        <text class="account-meta-chip account-meta-chip--city">{{profile.city}}</text>
+        <text wx:if="{{profile.wechat}}" class="account-meta-chip account-meta-chip--wechat">WeChat: {{profile.wechat}}</text>
+      </view>
+      <text class="account-note">{{profile.bio}}</text>
     </view>
   </view>
 
-  <view class="stats-row">
-    <view class="stat-card">
-      <text class="stat-value">{{myListings.length}}</text>
-      <text class="stat-label">My listings</text>
+  <view class="account-stats">
+    <view class="account-stat">
+      <text class="account-stat__value">{{myListingsCount}}</text>
+      <text class="account-stat__label">Listings</text>
     </view>
-    <view class="stat-card">
-      <text class="stat-value">{{savedCount}}</text>
-      <text class="stat-label">Saved</text>
+    <view class="account-stat">
+      <text class="account-stat__value">{{savedCount}}</text>
+      <text class="account-stat__label">Saved</text>
     </view>
-    <view class="stat-card">
-      <text class="stat-value">{{myListings.length ? 'Live' : 'Ready'}}</text>
-      <text class="stat-label">Status</text>
+    <view class="account-stat">
+      <text class="account-stat__value">{{profile.city}}</text>
+      <text class="account-stat__label">City</text>
     </view>
   </view>
 
-  <view class="section-head">
-    <view>
-      <text class="section-title">My Listings</text>
-      <text class="section-subtitle">Everything you have published in the MVP so far</text>
+  <view class="account-section">
+    <view class="account-section__head">
+      <text class="account-section__title">Profile</text>
+      <text class="account-section__subtitle">Keep your public details clear for buyers</text>
     </view>
-    <button class="post-link" bindtap="goToPost">New</button>
-  </view>
 
-  <block wx:if="{{myListings.length}}">
-    <view class="profile-list">
-      <block wx:for="{{myListings}}" wx:key="id">
-        <view class="profile-card">
-          <image class="profile-card__image" src="{{item.image}}" mode="aspectFill" />
-          <view class="profile-card__body">
-            <view class="profile-card__top">
-              <view>
-                <text class="profile-card__price">{{item.price}}</text>
-                <text class="profile-card__title">{{item.title}}</text>
-              </view>
-              <view class="profile-card__badge">Live</view>
-            </view>
-
-            <text class="profile-card__meta">{{item.location}} · {{item.university}}</text>
-            <text class="profile-card__sub">{{item.subcategory}}</text>
-
-            <view class="profile-card__actions">
-              <button class="ghost-button" data-id="{{item.id}}" bindtap="openListing">Open</button>
-              <button class="danger-button" data-id="{{item.id}}" bindtap="deleteListing">Delete</button>
-            </view>
-          </view>
+    <view wx:if="{{isEditingProfile}}" class="profile-form">
+      <view class="profile-avatar-editor">
+        <view class="profile-avatar-preview">
+          <image wx:if="{{profileDraft.avatarUrl}}" class="profile-avatar-preview__image" src="{{profileDraft.avatarUrl}}" mode="aspectFill" />
+          <text wx:else>{{avatarInitial}}</text>
         </view>
-      </block>
-    </view>
-  </block>
+        <view class="profile-avatar-editor__actions">
+          <button class="profile-avatar-btn profile-avatar-btn--primary" bindtap="changeProfilePhoto">Change photo</button>
+          <button wx:if="{{profileDraft.avatarUrl}}" class="profile-avatar-btn profile-avatar-btn--ghost" bindtap="removeProfilePhoto">Remove</button>
+        </view>
+      </view>
 
-  <view wx:else class="empty-card">
-    <text class="empty-card__title">No listings yet</text>
-    <text class="empty-card__copy">Create your first post and it will show up here right away.</text>
-    <button class="empty-card__button" bindtap="goToPost">Post a listing</button>
+      <view class="profile-field">
+        <text class="profile-field__label">Name</text>
+        <input
+          class="profile-field__input"
+          value="{{profileDraft.name}}"
+          maxlength="40"
+          data-field="name"
+          bindinput="onProfileFieldInput"
+        />
+      </view>
+
+      <view class="profile-field">
+        <text class="profile-field__label">University</text>
+        <picker mode="selector" range="{{universityOptions}}" value="{{universityIndex}}" bindchange="onUniversityChange">
+          <view class="profile-field__picker">
+            <text>{{universityOptions[universityIndex]}}</text>
+            <text class="profile-picker__arrow">⌄</text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="profile-field">
+        <text class="profile-field__label">WeChat ID</text>
+        <input
+          class="profile-field__input"
+          value="{{profileDraft.wechat}}"
+          maxlength="40"
+          data-field="wechat"
+          bindinput="onProfileFieldInput"
+        />
+      </view>
+
+      <view class="profile-field">
+        <text class="profile-field__label">Bio</text>
+        <textarea
+          class="profile-field__textarea"
+          value="{{profileDraft.bio}}"
+          maxlength="180"
+          data-field="bio"
+          bindinput="onProfileFieldInput"
+        />
+      </view>
+
+      <view class="profile-actions">
+        <button class="profile-btn profile-btn--ghost" bindtap="cancelEditProfile">Cancel</button>
+        <button class="profile-btn profile-btn--primary" bindtap="saveProfile">Save</button>
+      </view>
+    </view>
+
+    <view wx:else class="profile-view">
+      <view class="profile-row">
+        <text class="profile-row__label">Name</text>
+        <text class="profile-row__value">{{profile.name}}</text>
+      </view>
+      <view wx:if="{{isUniversityPublic}}" class="profile-row">
+        <text class="profile-row__label">University</text>
+        <text class="profile-row__value">{{profile.campus}}</text>
+      </view>
+      <view class="profile-row">
+        <text class="profile-row__label">City</text>
+        <text class="profile-row__value">{{profile.city}}</text>
+      </view>
+      <view class="profile-row">
+        <text class="profile-row__label">WeChat</text>
+        <text class="profile-row__value">{{profile.wechat || 'Not set'}}</text>
+      </view>
+      <view class="profile-row profile-row--bio">
+        <text class="profile-row__label">Bio</text>
+        <text class="profile-row__value">{{profile.bio}}</text>
+      </view>
+
+      <button class="profile-edit" bindtap="startEditProfile">Edit profile</button>
+    </view>
+  </view>
+
+  <view class="account-section">
+    <view class="account-section__head">
+      <text class="account-section__title">About UniMarket</text>
+      <text class="account-section__subtitle">What this MVP is optimized for right now</text>
+    </view>
+
+    <view class="account-info-card">
+      <view class="account-info-card__brand">
+        <view class="account-info-card__logo-wrap">
+          <image class="account-info-card__logo" src="../../assets/brand/unimarket-logo.png" mode="aspectFit" />
+        </view>
+        <view class="account-info-card__brand-copy">
+          <text class="account-info-card__brand-name">UniMarket</text>
+          <text class="account-info-card__brand-note">Hangzhou student marketplace</text>
+        </view>
+      </view>
+      <text class="account-info-card__title">Student-first marketplace</text>
+      <text class="account-info-card__copy">UniMarket is focused on student housing, resale items, transport, and lightweight services inside a familiar WeChat flow.</text>
+    </view>
+
+    <view class="account-tags">
+      <text class="account-tag">WeChat Mini Program</text>
+      <text class="account-tag">Hangzhou MVP</text>
+      <text class="account-tag">Local-first demo data</text>
+    </view>
+  </view>
+
+  <view class="account-admin">
+    <text class="account-admin__label">Admin</text>
+    <block wx:if="{{isAdmin}}">
+      <button class="account-admin__button account-admin__button--alert" bindtap="goToModeration">Open moderation</button>
+      <button class="account-admin__button account-admin__button--ghost" bindtap="disableAdmin">Exit admin</button>
+    </block>
+    <block wx:else>
+      <button class="account-admin__button account-admin__button--primary" bindtap="openAdminGate">Admin access</button>
+    </block>
   </view>
 </view>
