@@ -26,6 +26,15 @@ Run the lightweight repository validation:
 npm run check
 ```
 
+## Manual Verification (MVP)
+
+For user-facing changes, verify the relevant flow in WeChat Developer Tools:
+
+- Home browsing and filters
+- Create/edit listing (including photos)
+- Profile save flow (including avatar and university privacy behavior)
+- Report submission and moderation status update (when touching moderation logic)
+
 ## Documentation
 
 Before merging user-facing changes:
@@ -33,6 +42,7 @@ Before merging user-facing changes:
 - update `README.md` if the product flow changed
 - update `SECURITY.md` if sensitive-data handling changed
 - update `CHANGELOG.md` for meaningful product-visible changes
+- update screenshots or branding references if UI identity changed
 
 ## Guidelines
 
@@ -41,6 +51,7 @@ Before merging user-facing changes:
 - avoid committing private test data
 - keep the MVP usable in WeChat DevTools at every stage
 - preserve the current product direction: student marketplace first, platform complexity later
+- keep one-city MVP assumptions explicit when changing location logic
 
 ## Pull Requests
 
@@ -50,3 +61,4 @@ Please include:
 - what pages were changed
 - what commands or checks you ran
 - whether the change affects local data or future backend assumptions
+- a short note on which manual flow(s) you re-tested in WeChat DevTools

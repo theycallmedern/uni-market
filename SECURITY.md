@@ -33,12 +33,27 @@ The current repository:
 - does not include payments
 - stores MVP-created listings locally for testing
 - stores saved listings locally for testing
+- stores profile fields and moderation reports locally for testing
+- uses a local admin unlock flow for moderation tools
 
 The most realistic risks right now are:
 
 - accidentally committing secrets later
 - exposing personal student data in screenshots or test fixtures
 - publishing local-only WeChat configuration that should remain private
+- treating local-only admin logic as production-grade authorization
+
+## Known MVP Security Limitations
+
+The moderation/admin access model in this MVP is intentionally local and prototype-only.
+
+- admin unlock is device-local
+- role checks are client-side
+- moderation control is not backed by server authentication
+
+Do not treat this as production-ready access control.
+
+Before production deployment, move permissions and moderation state to a backend-authenticated system.
 
 ## Safe Reporting
 
@@ -60,6 +75,7 @@ When working in this repo:
 - keep `project.private.config.json` local-only
 - use synthetic or scrubbed screenshots in documentation
 - prefer test data that does not identify real students
+- do not publish real admin credentials in docs, issues, screenshots, or commits
 
 ## Disclosure Expectations
 
