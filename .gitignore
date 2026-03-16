@@ -1,0 +1,15 @@
+.DS_Store
+.localized
+node_modules/
+dist/
+coverage/
+.idea/
+.vscode/
+
+# WeChat DevTools local-only config
+project.private.config.json
+
+# Build and temporary output
+miniprogram_npm/
+tmp/
+*.log

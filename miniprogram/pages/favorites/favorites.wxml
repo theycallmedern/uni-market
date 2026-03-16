@@ -1,0 +1,36 @@
+<view class="page-shell saved-page">
+  <text class="saved-title">Saved</text>
+  <text class="saved-copy">Your favorite listings stay here for quick access.</text>
+
+  <view wx:if="{{listings.length}}" class="saved-list">
+    <block wx:for="{{listings}}" wx:key="id">
+      <view class="saved-card" data-id="{{item.id}}" bindtap="openListing">
+        <view class="saved-card__media">
+          <image class="saved-card__image" src="{{item.image}}" mode="aspectFill" />
+          <view
+            class="saved-card__save saved-card__save--saved {{pulseListingId === item.id ? 'saved-card__save--pulse' : ''}}"
+            data-id="{{item.id}}"
+            catchtap="toggleSave"
+          >
+            <text class="saved-card__save-icon">♥</text>
+          </view>
+        </view>
+        <view class="saved-card__body">
+          <text class="saved-card__price">{{item.price}}</text>
+          <text class="saved-card__title">{{item.title}}</text>
+          <text class="saved-card__meta">{{item.location}} · {{item.university}}</text>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <view wx:else class="saved-empty">
+    <text class="saved-empty__title">Nothing saved yet</text>
+    <text class="saved-empty__copy">Tap the heart on a listing to keep it here.</text>
+  </view>
+
+  <view wx:if="{{feedbackVisible}}" class="save-feedback">
+    <view class="save-feedback__icon">{{feedbackIcon}}</view>
+    <text class="save-feedback__text">{{feedbackText}}</text>
+  </view>
+</view>

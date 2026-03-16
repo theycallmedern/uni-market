@@ -1,0 +1,10 @@
+page {
+  background: #f7f7f7;
+  color: #111111;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+}
+
+.page-shell {
+  min-height: 100vh;
+  box-sizing: border-box;
+}

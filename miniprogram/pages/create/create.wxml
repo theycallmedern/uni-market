@@ -1,0 +1,156 @@
+<view class="page-shell create-page">
+  <scroll-view
+    class="create-scroll"
+    scroll-y
+    enhanced
+    show-scrollbar="{{false}}"
+  >
+    <view class="create-content">
+      <view class="compose-hero">
+        <view>
+          <text class="compose-title">Post a new listing</text>
+          <text class="compose-copy">Share something useful with students around Hangzhou and publish it straight into the MVP.</text>
+        </view>
+        <view class="compose-chip">Live preview flow</view>
+      </view>
+
+      <view class="form-card">
+        <view class="card-head">
+          <text class="card-title">Photos</text>
+          <text class="card-hint">Up to 5 images</text>
+        </view>
+
+        <scroll-view class="photo-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+          <view class="photo-row">
+            <view class="photo-add" bindtap="choosePhotos">
+              <text class="photo-add__icon">+</text>
+              <text class="photo-add__text">Add photo</text>
+            </view>
+
+            <block wx:for="{{form.images}}" wx:key="*this">
+              <view class="photo-card">
+                <image class="photo-card__image" src="{{item}}" mode="aspectFill" />
+                <view class="photo-card__remove" data-index="{{index}}" catchtap="removePhoto">
+                  <text class="photo-card__remove-icon">×</text>
+                </view>
+              </view>
+            </block>
+          </view>
+        </scroll-view>
+      </view>
+
+      <view class="form-card">
+        <view class="card-head">
+          <text class="card-title">Basics</text>
+          <text class="card-hint">What are you offering?</text>
+        </view>
+
+        <view class="field">
+          <text class="field-label">Title</text>
+          <input
+            class="field-input"
+            placeholder="Room near campus, iPhone 14, bike..."
+            value="{{form.title}}"
+            data-field="title"
+            bindinput="onFieldInput"
+          />
+        </view>
+
+        <view class="field-row">
+          <view class="field field-half">
+            <text class="field-label">Price</text>
+            <input
+              class="field-input"
+              placeholder="2800 RMB"
+              value="{{form.price}}"
+              data-field="price"
+              bindinput="onFieldInput"
+            />
+          </view>
+
+          <view class="field field-half">
+            <text class="field-label">Location</text>
+            <input
+              class="field-input"
+              placeholder="Hangzhou"
+              value="{{form.location}}"
+              data-field="location"
+              bindinput="onFieldInput"
+            />
+          </view>
+        </view>
+
+        <view class="field-row">
+          <view class="field field-half">
+            <text class="field-label">Category</text>
+            <picker mode="selector" range="{{categories}}" range-key="name" value="{{categoryIndex}}" bindchange="onCategoryChange">
+              <view class="picker-field">
+                <text>{{categories[categoryIndex].name}}</text>
+                <text class="picker-arrow">⌄</text>
+              </view>
+            </picker>
+          </view>
+
+          <view class="field field-half">
+            <text class="field-label">Subcategory</text>
+            <picker mode="selector" range="{{subcategoryOptions}}" value="{{subcategoryIndex}}" bindchange="onSubcategoryChange">
+              <view class="picker-field">
+                <text>{{subcategoryOptions[subcategoryIndex]}}</text>
+                <text class="picker-arrow">⌄</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+      </view>
+
+      <view class="form-card">
+        <view class="card-head">
+          <text class="card-title">Contact</text>
+          <text class="card-hint">How should buyers find you?</text>
+        </view>
+
+        <view class="field">
+          <text class="field-label">University</text>
+          <input
+            class="field-input"
+            placeholder="Zhejiang University"
+            value="{{form.university}}"
+            data-field="university"
+            bindinput="onFieldInput"
+          />
+        </view>
+
+        <view class="field">
+          <text class="field-label">WeChat ID</text>
+          <input
+            class="field-input"
+            placeholder="your-wechat-id"
+            value="{{form.wechat}}"
+            data-field="wechat"
+            bindinput="onFieldInput"
+          />
+        </view>
+      </view>
+
+      <view class="form-card">
+        <view class="card-head">
+          <text class="card-title">Description</text>
+          <text class="card-hint">Add condition, timing, pickup notes, or extras</text>
+        </view>
+
+        <textarea
+          class="description-input"
+          placeholder="Describe the item, service, or room in a way another student can trust quickly."
+          value="{{form.description}}"
+          data-field="description"
+          bindinput="onFieldInput"
+          maxlength="600"
+        />
+      </view>
+
+      <view class="publish-inline">
+        <button class="publish-button" loading="{{submitting}}" bindtap="submitListing">Publish listing</button>
+      </view>
+    </view>
+  </scroll-view>
+</view>

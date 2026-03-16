@@ -1,0 +1,108 @@
+<view class="page-shell results-page">
+  <view class="results-topbar">
+    <view class="results-back" bindtap="goBack">
+      <text class="results-back__icon">←</text>
+    </view>
+
+    <view class="results-search-shell">
+      <text class="results-search__icon">⌕</text>
+      <input
+        class="results-search__input"
+        placeholder="Search within {{categoryTitle}}"
+        value="{{search}}"
+        bindinput="onSearchInput"
+      />
+    </view>
+  </view>
+
+  <view class="results-heading">
+    <text class="results-title">{{categoryTitle}}</text>
+    <view class="results-meta-row">
+      <text wx:if="{{subcategory}}" class="results-subtitle">{{subcategory}}</text>
+      <text class="results-meta">{{visibleListings.length}} listings</text>
+    </view>
+  </view>
+
+  <view class="results-controls">
+    <view class="results-chip-row">
+      <picker mode="selector" range="{{sortOptions}}" value="{{sortIndex}}" bindchange="onSortChange">
+        <view class="results-chip results-chip--dark">
+          <text>{{sortOptions[sortIndex]}}</text>
+          <text class="results-chip__arrow">⌄</text>
+        </view>
+      </picker>
+
+      <picker mode="selector" range="{{locationOptions}}" value="{{locationIndex}}" bindchange="onLocationChange">
+        <view class="results-chip">
+          <text>{{locationOptions[locationIndex]}}</text>
+          <text class="results-chip__arrow">⌄</text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="results-chip-row">
+      <picker mode="selector" range="{{universityOptions}}" value="{{universityIndex}}" bindchange="onUniversityChange">
+        <view class="results-chip results-chip--wide">
+          <text>{{universityOptions[universityIndex]}}</text>
+          <text class="results-chip__arrow">⌄</text>
+        </view>
+      </picker>
+
+      <view class="results-clear" bindtap="clearFilters">Reset</view>
+    </view>
+
+    <view class="results-price-row">
+      <input
+        class="results-price-input"
+        placeholder="Price from"
+        type="number"
+        value="{{priceMin}}"
+        data-field="priceMin"
+        bindinput="onPriceInput"
+      />
+      <input
+        class="results-price-input"
+        placeholder="Price to"
+        type="number"
+        value="{{priceMax}}"
+        data-field="priceMax"
+        bindinput="onPriceInput"
+      />
+    </view>
+  </view>
+
+  <view wx:if="{{visibleListings.length}}" class="results-list">
+    <block wx:for="{{visibleListings}}" wx:key="id">
+      <view class="result-card" data-id="{{item.id}}" bindtap="openListing">
+        <view class="result-card__media">
+          <image class="result-card__image" src="{{item.image}}" mode="aspectFill" />
+          <view
+            class="result-card__save {{item.isSaved ? 'result-card__save--saved' : ''}} {{pulseListingId === item.id ? 'result-card__save--pulse' : ''}}"
+            data-id="{{item.id}}"
+            catchtap="toggleSave"
+          >
+            <text class="result-card__save-icon">{{item.isSaved ? '♥' : '♡'}}</text>
+          </view>
+        </view>
+        <view class="result-card__body">
+          <view class="result-card__headline">
+            <text class="result-card__price">{{item.price}}</text>
+            <text class="result-card__tag">{{item.subcategory}}</text>
+          </view>
+          <text class="result-card__title">{{item.title}}</text>
+          <text class="result-card__meta">{{item.location}} · {{item.university}}</text>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <view wx:else class="results-empty">
+    <text class="results-empty__title">No matching listings</text>
+    <text class="results-empty__copy">Try a wider price range, another campus, or clear the filters.</text>
+  </view>
+
+  <view wx:if="{{feedbackVisible}}" class="save-feedback">
+    <view class="save-feedback__icon">{{feedbackIcon}}</view>
+    <text class="save-feedback__text">{{feedbackText}}</text>
+  </view>
+</view>

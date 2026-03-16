@@ -1,0 +1,230 @@
+.listing-page {
+  padding: 20rpx 20rpx 180rpx;
+}
+
+.gallery-shell {
+  position: relative;
+}
+
+.gallery-swiper {
+  height: 520rpx;
+  overflow: hidden;
+  border-radius: 34rpx;
+  background: #ececec;
+}
+
+.gallery-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.gallery-counter {
+  position: absolute;
+  right: 18rpx;
+  bottom: 18rpx;
+  padding: 12rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(17, 17, 17, 0.72);
+  color: #ffffff;
+  font-size: 22rpx;
+}
+
+.listing-main-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin-top: 24rpx;
+  padding: 30rpx;
+  border-radius: 32rpx;
+  background: #ffffff;
+  box-shadow: 0 14rpx 28rpx rgba(17, 17, 17, 0.04);
+}
+
+.listing-price {
+  font-size: 40rpx;
+  font-weight: 700;
+}
+
+.listing-title {
+  font-size: 34rpx;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.listing-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.listing-chip {
+  padding: 10rpx 16rpx;
+  border-radius: 999rpx;
+  background: #f4f1ea;
+  font-size: 22rpx;
+  color: #5d5d5d;
+}
+
+.listing-description {
+  font-size: 26rpx;
+  line-height: 1.5;
+  color: #4f4f4f;
+}
+
+.detail-grid {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 18rpx;
+}
+
+.detail-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10rpx;
+  padding: 24rpx;
+  border-radius: 28rpx;
+  background: #ffffff;
+}
+
+.detail-label {
+  font-size: 22rpx;
+  color: #888888;
+}
+
+.detail-value {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.seller-card {
+  display: flex;
+  gap: 18rpx;
+  margin-top: 18rpx;
+  padding: 26rpx;
+  border-radius: 32rpx;
+  background: #ffffff;
+}
+
+.seller-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(135deg, #d8e9ff, #f6ddd8);
+  font-size: 36rpx;
+  font-weight: 700;
+}
+
+.seller-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.seller-name {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.seller-badge {
+  font-size: 22rpx;
+  color: #2f7d32;
+}
+
+.seller-note,
+.seller-wechat {
+  font-size: 24rpx;
+  color: #6f6f6f;
+}
+
+.action-bar {
+  position: fixed;
+  left: 20rpx;
+  right: 20rpx;
+  bottom: 24rpx;
+  display: flex;
+  gap: 14rpx;
+  padding: 16rpx;
+  border-radius: 34rpx;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 20rpx 40rpx rgba(17, 17, 17, 0.08);
+  backdrop-filter: blur(18rpx);
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  height: 92rpx;
+  border-radius: 28rpx;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.action-button--ghost {
+  width: 210rpx;
+  border: 2rpx solid rgba(17, 17, 17, 0.08);
+  background: #f7f5ef;
+}
+
+.action-button--ghost-saved {
+  background: #111111;
+  color: #ffffff;
+}
+
+.action-button__icon {
+  font-size: 28rpx;
+}
+
+.action-button--primary {
+  flex: 1;
+  background: #111111;
+  color: #ffffff;
+}
+
+.save-feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18rpx;
+  width: 260rpx;
+  height: 260rpx;
+  border-radius: 28rpx;
+  background: rgba(40, 40, 40, 0.86);
+  color: #ffffff;
+  transform: translate(-50%, -50%);
+  animation: feedback-pop 220ms ease;
+  z-index: 20;
+}
+
+.save-feedback__icon {
+  font-size: 74rpx;
+  line-height: 1;
+}
+
+.save-feedback__text {
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+@keyframes feedback-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.92);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}

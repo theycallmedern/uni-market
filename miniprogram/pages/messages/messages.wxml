@@ -1,0 +1,4 @@
+<view class="page-shell simple-page">
+  <text class="simple-title">Inbox</text>
+  <text class="simple-copy">For the MVP, this page can hold contacts and a button to continue in WeChat.</text>
+</view>

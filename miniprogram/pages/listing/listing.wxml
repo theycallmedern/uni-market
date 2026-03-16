@@ -1,0 +1,66 @@
+<view wx:if="{{listing}}" class="page-shell listing-page">
+  <view class="gallery-shell">
+    <swiper
+      class="gallery-swiper"
+      indicator-dots="{{false}}"
+      circular
+      bindchange="onSwiperChange"
+    >
+      <block wx:for="{{listing.images}}" wx:key="*this">
+        <swiper-item>
+          <image class="gallery-image" src="{{item}}" mode="aspectFill" />
+        </swiper-item>
+      </block>
+    </swiper>
+
+    <view class="gallery-counter">{{currentImage}} / {{listing.images.length}}</view>
+  </view>
+
+  <view class="listing-main-card">
+    <text class="listing-price">{{listing.price}}</text>
+    <text class="listing-title">{{listing.title}}</text>
+    <view class="listing-meta-row">
+      <text class="listing-chip">{{listing.subcategory}}</text>
+      <text class="listing-chip">{{listing.location}}</text>
+    </view>
+    <text class="listing-description">{{listing.description}}</text>
+  </view>
+
+  <view class="detail-grid">
+    <view class="detail-card">
+      <text class="detail-label">Location</text>
+      <text class="detail-value">{{listing.location}}</text>
+    </view>
+
+    <view class="detail-card">
+      <text class="detail-label">University</text>
+      <text class="detail-value">{{listing.university}}</text>
+    </view>
+  </view>
+
+  <view class="seller-card">
+    <view class="seller-avatar">{{sellerInitial}}</view>
+    <view class="seller-copy">
+      <text class="seller-name">{{listing.seller.name}}</text>
+      <text class="seller-badge">{{listing.seller.badge}}</text>
+      <text class="seller-note">{{listing.seller.note}}</text>
+      <text class="seller-wechat">WeChat: {{listing.seller.wechat}}</text>
+    </view>
+  </view>
+
+  <view class="action-bar">
+    <view class="action-button action-button--ghost {{isSaved ? 'action-button--ghost-saved' : ''}}" bindtap="toggleSave">
+      <text class="action-button__icon">{{isSaved ? '♥' : '♡'}}</text>
+      <text>{{isSaved ? 'Saved' : 'Save'}}</text>
+    </view>
+
+    <view class="action-button action-button--primary" bindtap="contactSeller">
+      <text>Contact in WeChat</text>
+    </view>
+  </view>
+
+  <view wx:if="{{feedbackVisible}}" class="save-feedback">
+    <view class="save-feedback__icon">{{feedbackIcon}}</view>
+    <text class="save-feedback__text">{{feedbackText}}</text>
+  </view>
+</view>

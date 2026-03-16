@@ -1,0 +1,18 @@
+{
+  "name": "uni-market",
+  "version": "0.1.0",
+  "private": true,
+  "description": "WeChat Mini Program marketplace MVP for international students in Hangzhou.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theycallmedern/uni-market.git"
+  },
+  "homepage": "https://github.com/theycallmedern/uni-market",
+  "bugs": {
+    "url": "https://github.com/theycallmedern/uni-market/issues"
+  },
+  "scripts": {
+    "check": "bash scripts/check.sh"
+  }
+}

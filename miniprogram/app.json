@@ -1,0 +1,59 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/category/category",
+    "pages/results/results",
+    "pages/favorites/favorites",
+    "pages/create/create",
+    "pages/messages/messages",
+    "pages/profile/profile",
+    "pages/listing/listing"
+  ],
+  "window": {
+    "navigationBarTitleText": "UniMarket",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f7f7f7",
+    "backgroundTextStyle": "light"
+  },
+  "tabBar": {
+    "color": "#a8a8a8",
+    "selectedColor": "#111111",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "Search",
+        "iconPath": "assets/tabbar/search-normal.png",
+        "selectedIconPath": "assets/tabbar/search-active.png"
+      },
+      {
+        "pagePath": "pages/favorites/favorites",
+        "text": "Saved",
+        "iconPath": "assets/tabbar/saved-normal.png",
+        "selectedIconPath": "assets/tabbar/saved-active.png"
+      },
+      {
+        "pagePath": "pages/create/create",
+        "text": "Post",
+        "iconPath": "assets/tabbar/post-normal.png",
+        "selectedIconPath": "assets/tabbar/post-active.png"
+      },
+      {
+        "pagePath": "pages/messages/messages",
+        "text": "Inbox",
+        "iconPath": "assets/tabbar/inbox-normal.png",
+        "selectedIconPath": "assets/tabbar/inbox-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "Profile",
+        "iconPath": "assets/tabbar/profile-normal.png",
+        "selectedIconPath": "assets/tabbar/profile-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

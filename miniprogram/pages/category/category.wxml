@@ -1,0 +1,106 @@
+<view wx:if="{{isAllCategories}}" class="page-shell category-page category-page--all">
+  <view class="all-header">
+    <view class="all-header__button" bindtap="goBack">
+      <text class="category-icon">×</text>
+    </view>
+    <text class="all-header__title">Categories</text>
+  </view>
+
+  <view class="all-category-list">
+    <block wx:for="{{categories}}" wx:key="id">
+      <view class="all-category-item" data-id="{{item.id}}" bindtap="openCategory">
+        <view class="all-category-item__copy">
+          <text class="all-category-item__name">{{item.name}}</text>
+          <text class="all-category-item__hint">Open detailed filters</text>
+        </view>
+        <text class="all-category-item__arrow">›</text>
+      </view>
+    </block>
+  </view>
+</view>
+
+<view wx:elif="{{category}}" class="page-shell category-page">
+  <view class="category-hero category-hero--{{category.heroTone}}">
+    <view class="category-topbar">
+      <view class="category-icon-btn" bindtap="goBack">
+        <text class="category-icon">←</text>
+      </view>
+
+      <view class="category-icon-btn">
+        <text class="category-icon">⌕</text>
+      </view>
+    </view>
+
+    <text class="category-title">{{category.title}}</text>
+    <view class="category-region">
+      <text class="category-region-icon">⌖</text>
+      <text>{{category.region}}</text>
+    </view>
+
+    <view class="filter-row filter-row--two">
+      <view class="filter-pill">
+        <text>{{category.primaryFilters[0]}}</text>
+        <text class="filter-arrow">⌄</text>
+      </view>
+      <view class="filter-pill">
+        <text>{{category.primaryFilters[1]}}</text>
+        <text class="filter-arrow">⌄</text>
+      </view>
+    </view>
+
+    <view class="filter-row filter-row--chips">
+      <block wx:for="{{category.quickFilters}}" wx:key="*this">
+        <view class="quick-pill {{index === 0 ? 'quick-pill--active' : ''}}">
+          <text>{{item}}</text>
+        </view>
+      </block>
+    </view>
+
+    <view class="filter-row filter-row--three">
+      <view class="filter-pill filter-pill--secondary">
+        <text>{{category.secondaryFilters[0]}}</text>
+        <text class="filter-arrow">⌄</text>
+      </view>
+      <view class="filter-pill filter-pill--secondary">
+        <text>{{category.secondaryFilters[1]}}</text>
+        <text class="filter-arrow">⌄</text>
+      </view>
+      <view class="filter-icon-box">
+        <text class="filter-icon-box__glyph">⚙</text>
+      </view>
+    </view>
+
+    <view class="show-results-btn" bindtap="openResults">
+      <text>{{category.cta}}</text>
+    </view>
+  </view>
+
+  <view class="subcategory-panel">
+    <view class="panel-head">
+      <text class="panel-title">Explore {{category.title}}</text>
+      <text class="panel-link">See all →</text>
+    </view>
+
+    <view class="subcategory-grid">
+      <block wx:for="{{category.subcategories}}" wx:key="*this">
+        <view class="subcategory-tile" data-name="{{item}}" bindtap="openSubcategory">
+          <text class="subcategory-text">{{item}}</text>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <view class="featured-panel">
+    <text class="featured-title">Recommended</text>
+
+    <block wx:for="{{featured}}" wx:key="title">
+      <view class="featured-card">
+        <view class="featured-card__content">
+          <text class="featured-card__title">{{item.title}}</text>
+          <text class="featured-card__caption">{{item.caption}}</text>
+        </view>
+        <view class="featured-card__badge">New</view>
+      </view>
+    </block>
+  </view>
+</view>

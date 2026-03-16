@@ -1,0 +1,225 @@
+.create-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 22rpx 24rpx 0;
+}
+
+.create-scroll {
+  flex: 1;
+  min-height: 0;
+}
+
+.create-content {
+  padding-bottom: 120rpx;
+}
+
+.compose-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18rpx;
+  margin-bottom: 24rpx;
+}
+
+.compose-title {
+  display: block;
+  font-size: 42rpx;
+  line-height: 1.08;
+  font-weight: 700;
+}
+
+.compose-copy {
+  display: block;
+  margin-top: 10rpx;
+  max-width: 500rpx;
+  font-size: 24rpx;
+  line-height: 1.45;
+  color: #707070;
+}
+
+.compose-chip {
+  flex-shrink: 0;
+  padding: 14rpx 18rpx;
+  border-radius: 999rpx;
+  background: #eef5ec;
+  color: #2f7d32;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.form-card {
+  margin-bottom: 18rpx;
+  padding: 24rpx;
+  border-radius: 30rpx;
+  background: #ffffff;
+  box-shadow: 0 16rpx 30rpx rgba(17, 17, 17, 0.05);
+}
+
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 18rpx;
+}
+
+.card-title {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.card-hint {
+  font-size: 22rpx;
+  color: #8b8b8b;
+}
+
+.photo-scroll {
+  white-space: nowrap;
+}
+
+.photo-row {
+  display: inline-flex;
+  gap: 14rpx;
+  padding-right: 12rpx;
+}
+
+.photo-add,
+.photo-card {
+  position: relative;
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 28rpx;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.photo-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  background: linear-gradient(135deg, #f7f4ed, #efe9dd);
+  color: #111111;
+}
+
+.photo-add__icon {
+  font-size: 52rpx;
+  line-height: 1;
+}
+
+.photo-add__text {
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.photo-card__image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #ececec;
+}
+
+.photo-card__remove {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 16rpx;
+  background: rgba(17, 17, 17, 0.86);
+}
+
+.photo-card__remove-icon {
+  font-size: 28rpx;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.field {
+  margin-bottom: 16rpx;
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+.field-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14rpx;
+}
+
+.field-half {
+  flex: 1;
+  min-width: 0;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 10rpx;
+  font-size: 24rpx;
+  color: #666666;
+}
+
+.field-input,
+.picker-field,
+.description-input {
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: 24rpx;
+  background: #f5f3ee;
+  color: #111111;
+}
+
+.field-input,
+.picker-field {
+  height: 92rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+}
+
+.picker-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.picker-arrow {
+  font-size: 28rpx;
+  color: #6f6f6f;
+}
+
+.description-input {
+  min-height: 220rpx;
+  padding: 24rpx;
+  font-size: 28rpx;
+  line-height: 1.45;
+}
+
+.publish-inline {
+  padding: 8rpx 0 36rpx;
+}
+
+.publish-button {
+  width: 100%;
+  height: 96rpx;
+  border: 0;
+  border-radius: 28rpx;
+  background: #111111;
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 700;
+  box-shadow: 0 18rpx 36rpx rgba(17, 17, 17, 0.16);
+}
+
+.publish-button::after {
+  border: 0;
+}

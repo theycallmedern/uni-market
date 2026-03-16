@@ -1,0 +1,66 @@
+<view class="page-shell profile-page">
+  <view class="profile-hero">
+    <view class="profile-avatar">M</view>
+    <view class="profile-copy">
+      <text class="profile-name">{{profile.name}}</text>
+      <text class="profile-meta">{{profile.campus}} · {{profile.city}}</text>
+      <text class="profile-note">Manage your listings and keep track of what you posted for the student community.</text>
+    </view>
+  </view>
+
+  <view class="stats-row">
+    <view class="stat-card">
+      <text class="stat-value">{{myListings.length}}</text>
+      <text class="stat-label">My listings</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value">{{savedCount}}</text>
+      <text class="stat-label">Saved</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value">{{myListings.length ? 'Live' : 'Ready'}}</text>
+      <text class="stat-label">Status</text>
+    </view>
+  </view>
+
+  <view class="section-head">
+    <view>
+      <text class="section-title">My Listings</text>
+      <text class="section-subtitle">Everything you have published in the MVP so far</text>
+    </view>
+    <button class="post-link" bindtap="goToPost">New</button>
+  </view>
+
+  <block wx:if="{{myListings.length}}">
+    <view class="profile-list">
+      <block wx:for="{{myListings}}" wx:key="id">
+        <view class="profile-card">
+          <image class="profile-card__image" src="{{item.image}}" mode="aspectFill" />
+          <view class="profile-card__body">
+            <view class="profile-card__top">
+              <view>
+                <text class="profile-card__price">{{item.price}}</text>
+                <text class="profile-card__title">{{item.title}}</text>
+              </view>
+              <view class="profile-card__badge">Live</view>
+            </view>
+
+            <text class="profile-card__meta">{{item.location}} · {{item.university}}</text>
+            <text class="profile-card__sub">{{item.subcategory}}</text>
+
+            <view class="profile-card__actions">
+              <button class="ghost-button" data-id="{{item.id}}" bindtap="openListing">Open</button>
+              <button class="danger-button" data-id="{{item.id}}" bindtap="deleteListing">Delete</button>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </block>
+
+  <view wx:else class="empty-card">
+    <text class="empty-card__title">No listings yet</text>
+    <text class="empty-card__copy">Create your first post and it will show up here right away.</text>
+    <button class="empty-card__button" bindtap="goToPost">Post a listing</button>
+  </view>
+</view>
