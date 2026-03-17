@@ -36,9 +36,26 @@ function decorateListingsWithSaved(listings) {
   }))
 }
 
+function removeSavedListings(idsToRemove) {
+  const targets = Array.isArray(idsToRemove)
+    ? idsToRemove.map((id) => String(id))
+    : [String(idsToRemove)]
+  const next = getSavedListingIds().filter((id) => !targets.includes(String(id)))
+  setSavedListingIds(next)
+  return next
+}
+
+function clearSavedListings() {
+  setSavedListingIds([])
+  return []
+}
+
 module.exports = {
   getSavedListingIds,
+  setSavedListingIds,
   isListingSaved,
   toggleSavedListing,
-  decorateListingsWithSaved
+  decorateListingsWithSaved,
+  removeSavedListings,
+  clearSavedListings
 }

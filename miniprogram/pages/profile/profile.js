@@ -3,39 +3,66 @@ const savedStore = require('../../utils/saved')
 const adminStore = require('../../utils/admin')
 const profileStore = require('../../utils/profile')
 const universitiesStore = require('../../utils/universities')
+const tabbarStore = require('../../utils/tabbar')
+const reviewsStore = require('../../utils/reviews')
 
 const INITIAL_PROFILE = profileStore.getProfile()
 const UNIVERSITY_OPTIONS = universitiesStore.HANGZHOU_UNIVERSITIES
+
+function getProfileSellerKey(profile, myListings) {
+  const listings = Array.isArray(myListings) ? myListings : []
+
+  if (listings.length) {
+    return market.getSellerKey(listings[0])
+  }
+
+  const seller = profile || {}
+  return String(seller.wechat || `${seller.name || ''} ${seller.campus || ''} ${seller.city || ''}`)
+    .trim()
+    .toLowerCase()
+}
 
 Page({
   data: {
     profile: { ...INITIAL_PROFILE },
     profileDraft: { ...INITIAL_PROFILE },
     avatarInitial: profileStore.getProfileInitial(INITIAL_PROFILE),
+    memberSinceLabel: profileStore.formatMemberSince(INITIAL_PROFILE.joinedAt),
     isUniversityPublic: !universitiesStore.isUniversityPrivateValue(INITIAL_PROFILE.campus),
     universityOptions: UNIVERSITY_OPTIONS,
     universityIndex: universitiesStore.getUniversityIndex(INITIAL_PROFILE.campus, UNIVERSITY_OPTIONS),
     isEditingProfile: false,
     myListingsCount: 0,
     savedCount: 0,
-    isAdmin: false
+    isAdmin: false,
+    reviewSummary: {
+      average: 0,
+      averageLabel: 'New',
+      count: 0,
+      countLabel: '0 reviews'
+    }
   },
 
   onShow() {
+    tabbarStore.syncTabBar(this, 4)
     this.refreshProfile()
   },
 
   refreshProfile() {
     const savedCount = savedStore.getSavedListingIds().length
     const profile = profileStore.getProfile()
+    const myListings = market.getMyListings()
+    const sellerKey = getProfileSellerKey(profile, myListings)
     const nextState = {
       profile,
       avatarInitial: profileStore.getProfileInitial(profile),
+      memberSinceLabel: profileStore.formatMemberSince(profile.joinedAt),
       isUniversityPublic: !universitiesStore.isUniversityPrivateValue(profile.campus),
       universityIndex: universitiesStore.getUniversityIndex(profile.campus, UNIVERSITY_OPTIONS),
-      myListingsCount: market.getMyListings().length,
+      myListingsCount: myListings.length,
       savedCount,
-      isAdmin: adminStore.isAdmin()
+      isAdmin: adminStore.isAdmin(),
+      reviewSummary: reviewsStore.getSellerReviewSummary(sellerKey)
     }
 
     if (!this.data.isEditingProfile) {
@@ -173,6 +200,7 @@ Page({
       profile,
       profileDraft: { ...profile },
       avatarInitial: profileStore.getProfileInitial(profile),
+      memberSinceLabel: profileStore.formatMemberSince(profile.joinedAt),
       isUniversityPublic: !universitiesStore.isUniversityPrivateValue(profile.campus),
       universityIndex: universitiesStore.getUniversityIndex(profile.campus, UNIVERSITY_OPTIONS),
       isEditingProfile: false
@@ -200,6 +228,12 @@ Page({
   goToListings() {
     wx.switchTab({
       url: '/pages/messages/messages'
+    })
+  },
+
+  openOwnPublicProfile() {
+    wx.navigateTo({
+      url: '/pages/user-profile/user-profile?self=1'
     })
   },
 

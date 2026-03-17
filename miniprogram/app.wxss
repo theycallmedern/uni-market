@@ -8,3 +8,20 @@ page {
   min-height: 100vh;
   box-sizing: border-box;
 }
+
+.page-shell--scroll {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.page-scroll {
+  flex: 1;
+  min-height: 0;
+}
+
+.page-scroll__content {
+  min-height: 100%;
+  box-sizing: border-box;
+}

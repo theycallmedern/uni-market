@@ -1,8 +1,10 @@
 <view class="page-shell create-page">
+  <app-header title="{{navTitle}}"></app-header>
   <scroll-view
     class="create-scroll"
     scroll-y
     enhanced
+    bounces="{{false}}"
     show-scrollbar="{{false}}"
   >
     <view class="create-content">

@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'userProfile'
 const CUSTOM_LISTINGS_STORAGE_KEY = 'marketCustomListings'
+const JOINED_AT_STORAGE_KEY = 'userProfileJoinedAt'
 const universitiesStore = require('./universities')
 const FIXED_CITY = 'Hangzhou'
 
@@ -39,6 +40,65 @@ function cleanText(value, maxLength = 80) {
   return String(value || '').replace(/\s+/g, ' ').trim().slice(0, maxLength)
 }
 
+function normalizeDateOnly(value) {
+  const normalized = String(value || '').trim()
+  return /^\d{4}-\d{2}-\d{2}$/.test(normalized) ? normalized : ''
+}
+
+function getTodayDateOnly() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function getOldestCustomListingDate() {
+  const listings = safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
+
+  if (!Array.isArray(listings) || !listings.length) {
+    return ''
+  }
+
+  const oldestDate = listings
+    .map((listing) => String(listing && listing.createdAt ? listing.createdAt : '').slice(0, 10))
+    .filter((date) => normalizeDateOnly(date))
+    .sort()[0]
+
+  return normalizeDateOnly(oldestDate)
+}
+
+function ensureJoinedAt(rawProfile = {}) {
+  const storedJoinedAt = normalizeDateOnly(safeGetStorage(JOINED_AT_STORAGE_KEY, ''))
+  const profileJoinedAt = normalizeDateOnly(rawProfile.joinedAt)
+  const fallbackJoinedAt = getOldestCustomListingDate() || getTodayDateOnly()
+  const joinedAt = storedJoinedAt || profileJoinedAt || fallbackJoinedAt
+
+  if (joinedAt && joinedAt !== storedJoinedAt) {
+    safeSetStorage(JOINED_AT_STORAGE_KEY, joinedAt)
+  }
+
+  return joinedAt
+}
+
+function formatMemberSince(joinedAt) {
+  const normalized = normalizeDateOnly(joinedAt)
+
+  if (!normalized) {
+    return ''
+  }
+
+  const date = new Date(`${normalized}T00:00:00`)
+
+  try {
+    const formatted = new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date)
+
+    return `On UniMarket since ${formatted}`
+  } catch (error) {
+    return `On UniMarket since ${normalized}`
+  }
+}
+
 function inferWechatFromCustomListings() {
   const listings = safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
   if (!Array.isArray(listings)) {
@@ -59,6 +119,7 @@ function inferWechatFromCustomListings() {
 function normalizeProfile(rawProfile = {}) {
   const universityOptions = universitiesStore.HANGZHOU_UNIVERSITIES
   const campusIndex = universitiesStore.getUniversityIndex(rawProfile.campus || DEFAULT_PROFILE.campus, universityOptions)
+  const joinedAt = ensureJoinedAt(rawProfile)
 
   return {
     name: cleanText(rawProfile.name || DEFAULT_PROFILE.name, 40) || DEFAULT_PROFILE.name,
@@ -66,7 +127,8 @@ function normalizeProfile(rawProfile = {}) {
     city: FIXED_CITY,
     avatarUrl: cleanText(rawProfile.avatarUrl || '', 500),
     wechat: cleanText(rawProfile.wechat || '', 40),
-    bio: cleanText(rawProfile.bio || DEFAULT_PROFILE.bio, 180) || DEFAULT_PROFILE.bio
+    bio: cleanText(rawProfile.bio || DEFAULT_PROFILE.bio, 180) || DEFAULT_PROFILE.bio,
+    joinedAt
   }
 }
 
@@ -103,5 +165,6 @@ module.exports = {
   getProfile,
   saveProfile,
   normalizeProfile,
-  getProfileInitial
+  getProfileInitial,
+  formatMemberSince
 }

@@ -1,5 +1,8 @@
 const market = require('../../data/market')
 const savedStore = require('../../utils/saved')
+const universitiesStore = require('../../utils/universities')
+
+const UNIVERSITY_FILTER_OPTIONS = ['All universities', ...universitiesStore.getPublicUniversityOptions()]
 
 function parsePriceValue(price = '') {
   const match = String(price).replace(/,/g, '').match(/(\d+(?:\.\d+)?)/)
@@ -16,14 +19,16 @@ function uniqueOptions(listings, field) {
 
 Page({
   data: {
+    navTitle: 'Results',
     categoryId: '',
     categoryTitle: '',
     subcategory: '',
+    quickSubcategory: '',
     search: '',
     priceMin: '',
     priceMax: '',
     locationOptions: ['All locations'],
-    universityOptions: ['All universities'],
+    universityOptions: UNIVERSITY_FILTER_OPTIONS,
     locationIndex: 0,
     universityIndex: 0,
     sortOptions: ['Newest', 'Price low to high', 'Price high to low'],
@@ -33,22 +38,33 @@ Page({
     feedbackVisible: false,
     feedbackText: '',
     feedbackIcon: '',
-    pulseListingId: ''
+    pulseListingId: '',
+    pendingInitialFilters: null
   },
 
   onLoad(query) {
     const categoryId = query.categoryId || 'housing'
     const subcategory = decodeURIComponent(query.subcategory || '')
+    const quickSubcategory = decodeURIComponent(query.quickSubcategory || '')
     const categoryTitle = market.categoryTitles[categoryId] || 'Results'
+    const pendingInitialFilters = {
+      university: decodeURIComponent(query.university || ''),
+      priceMin: query.priceMin || '',
+      priceMax: query.priceMax || '',
+      sortIndex: Number(query.sort || 0)
+    }
 
     wx.setNavigationBarTitle({
       title: subcategory ? `${categoryTitle} · ${subcategory}` : categoryTitle
     })
 
     this.setData({
+      navTitle: categoryTitle,
       categoryId,
       categoryTitle,
-      subcategory
+      subcategory,
+      quickSubcategory,
+      pendingInitialFilters
     }, () => {
       this.refreshListings()
     })
@@ -59,14 +75,17 @@ Page({
   },
 
   refreshListings() {
-    const { categoryId, subcategory } = this.data
+    const { categoryId, subcategory, quickSubcategory, pendingInitialFilters } = this.data
     const filteredByCategory = market.getFeedListingsByCategory(categoryId)
-    const filtered = subcategory
-      ? filteredByCategory.filter((listing) => listing.subcategory === subcategory)
-      : filteredByCategory
+    const filtered = filteredByCategory.filter((listing) => {
+      const matchesSubcategory = !subcategory || listing.subcategory === subcategory
+      const matchesQuickSubcategory = !quickSubcategory || listing.subcategory === quickSubcategory
+
+      return matchesSubcategory && matchesQuickSubcategory
+    })
 
     const locationOptions = ['All locations', ...uniqueOptions(filtered, 'location')]
-    const universityOptions = ['All universities', ...uniqueOptions(filtered, 'university')]
+    const universityOptions = UNIVERSITY_FILTER_OPTIONS
 
     this.setData({
       allListings: filtered,
@@ -74,11 +93,20 @@ Page({
       universityOptions
     }, () => {
       const nextLocationIndex = Math.min(this.data.locationIndex, locationOptions.length - 1)
-      const nextUniversityIndex = Math.min(this.data.universityIndex, universityOptions.length - 1)
+      let nextUniversityIndex = Math.min(this.data.universityIndex, universityOptions.length - 1)
+
+      if (pendingInitialFilters && pendingInitialFilters.university) {
+        const matchedIndex = universityOptions.indexOf(pendingInitialFilters.university)
+        nextUniversityIndex = matchedIndex >= 0 ? matchedIndex : 0
+      }
 
       this.setData({
         locationIndex: nextLocationIndex,
-        universityIndex: nextUniversityIndex
+        universityIndex: nextUniversityIndex,
+        priceMin: pendingInitialFilters ? pendingInitialFilters.priceMin : this.data.priceMin,
+        priceMax: pendingInitialFilters ? pendingInitialFilters.priceMax : this.data.priceMax,
+        sortIndex: pendingInitialFilters ? pendingInitialFilters.sortIndex : this.data.sortIndex,
+        pendingInitialFilters: null
       }, () => {
         this.applyFilters()
       })

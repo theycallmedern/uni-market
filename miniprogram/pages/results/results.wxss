@@ -2,34 +2,14 @@
   padding: 24rpx;
 }
 
-.results-topbar {
-  display: flex;
-  align-items: center;
-  gap: 14rpx;
-}
-
-.results-back {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 24rpx;
-  background: #ffffff;
-  box-shadow: 0 12rpx 24rpx rgba(17, 17, 17, 0.05);
-}
-
-.results-back__icon {
-  font-size: 40rpx;
-}
-
 .results-search-shell {
   display: flex;
   align-items: center;
-  flex: 1;
   gap: 14rpx;
   height: 72rpx;
+  width: 100%;
   padding: 0 22rpx;
+  box-sizing: border-box;
   border-radius: 24rpx;
   background: #f1eee7;
 }
@@ -113,11 +93,15 @@
   flex: 1;
   padding: 0 22rpx;
   font-size: 26rpx;
+  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  border: 1rpx solid rgba(17, 17, 17, 0.08);
+  color: #2d2d2d;
 }
 
 .results-chip--dark {
-  background: #111111;
-  color: #ffffff;
+  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  color: #2d2d2d;
+  border: 1rpx solid rgba(17, 17, 17, 0.08);
 }
 
 .results-chip--wide {
@@ -135,7 +119,9 @@
   width: 140rpx;
   font-size: 24rpx;
   font-weight: 700;
-  color: #7b7b7b;
+  color: #2d2d2d;
+  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  border: 1rpx solid rgba(17, 17, 17, 0.08);
 }
 
 .results-price-input {
@@ -189,7 +175,7 @@
 }
 
 .result-card__save--saved {
-  background: rgba(17, 17, 17, 0.92);
+  background: rgba(211, 47, 47, 0.96);
 }
 
 .result-card__save--saved .result-card__save-icon {

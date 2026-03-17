@@ -1,106 +1,135 @@
-<view wx:if="{{isAllCategories}}" class="page-shell category-page category-page--all">
-  <view class="all-header">
-    <view class="all-header__button" bindtap="goBack">
-      <text class="category-icon">×</text>
-    </view>
-    <text class="all-header__title">Categories</text>
-  </view>
-
-  <view class="all-category-list">
-    <block wx:for="{{categories}}" wx:key="id">
-      <view class="all-category-item" data-id="{{item.id}}" bindtap="openCategory">
-        <view class="all-category-item__copy">
-          <text class="all-category-item__name">{{item.name}}</text>
-          <text class="all-category-item__hint">Open detailed filters</text>
-        </view>
-        <text class="all-category-item__arrow">›</text>
+<view wx:if="{{isAllCategories}}" class="page-shell page-shell--scroll">
+  <app-header title="{{navTitle}}" showBack="{{true}}"></app-header>
+  <scroll-view
+    class="page-scroll"
+    scroll-y
+    enhanced
+    bounces="{{false}}"
+    show-scrollbar="{{false}}"
+  >
+    <view class="category-page category-page--all page-scroll__content">
+      <view class="all-category-list">
+        <block wx:for="{{categories}}" wx:key="id">
+          <view class="all-category-item" data-id="{{item.id}}" bindtap="openCategory">
+            <view class="all-category-item__copy">
+              <text class="all-category-item__name">{{item.name}}</text>
+              <text class="all-category-item__hint">Open detailed filters</text>
+            </view>
+            <text class="all-category-item__arrow">›</text>
+          </view>
+        </block>
       </view>
-    </block>
-  </view>
+    </view>
+  </scroll-view>
 </view>
 
-<view wx:elif="{{category}}" class="page-shell category-page">
-  <view class="category-hero category-hero--{{category.heroTone}}">
-    <view class="category-topbar">
-      <view class="category-icon-btn" bindtap="goBack">
-        <text class="category-icon">←</text>
-      </view>
+<view wx:elif="{{category}}" class="page-shell page-shell--scroll">
+  <app-header title="{{navTitle}}" showBack="{{true}}"></app-header>
+  <scroll-view
+    class="page-scroll"
+    scroll-y
+    enhanced
+    bounces="{{false}}"
+    show-scrollbar="{{false}}"
+  >
+    <view class="category-page page-scroll__content">
+      <view class="category-hero category-hero--{{category.heroTone}}">
+      <view class="category-hero__head">
+        <view>
+          <text class="category-title">{{category.title}}</text>
+          <view class="category-region">
+            <text class="category-region-icon">⌖</text>
+            <text>{{category.region}}</text>
+          </view>
+        </view>
 
-      <view class="category-icon-btn">
-        <text class="category-icon">⌕</text>
-      </view>
-    </view>
-
-    <text class="category-title">{{category.title}}</text>
-    <view class="category-region">
-      <text class="category-region-icon">⌖</text>
-      <text>{{category.region}}</text>
-    </view>
+          <view class="category-icon-btn" bindtap="openResults">
+            <text class="category-icon">⌕</text>
+          </view>
+        </view>
 
     <view class="filter-row filter-row--two">
-      <view class="filter-pill">
-        <text>{{category.primaryFilters[0]}}</text>
-        <text class="filter-arrow">⌄</text>
-      </view>
-      <view class="filter-pill">
-        <text>{{category.primaryFilters[1]}}</text>
-        <text class="filter-arrow">⌄</text>
-      </view>
+      <block wx:for="{{primaryFilters}}" wx:key="key">
+        <picker
+          class="filter-picker-wrap"
+          mode="selector"
+          range="{{item.optionLabels}}"
+          value="{{item.selectedIndex}}"
+          data-key="{{item.key}}"
+          bindchange="onPrimaryFilterChange"
+        >
+          <view class="filter-pill {{item.selectedIndex ? 'filter-pill--selected' : ''}}">
+            <text>{{item.displayLabel}}</text>
+            <text class="filter-arrow">⌄</text>
+          </view>
+        </picker>
+      </block>
     </view>
 
     <view class="filter-row filter-row--chips">
-      <block wx:for="{{category.quickFilters}}" wx:key="*this">
-        <view class="quick-pill {{index === 0 ? 'quick-pill--active' : ''}}">
-          <text>{{item}}</text>
+      <block wx:for="{{quickFilters}}" wx:key="key">
+        <view class="quick-pill {{item.isActive ? 'quick-pill--active' : ''}}" data-index="{{index}}" bindtap="onQuickFilterTap">
+          <text>{{item.label}}</text>
         </view>
       </block>
     </view>
 
     <view class="filter-row filter-row--three">
-      <view class="filter-pill filter-pill--secondary">
-        <text>{{category.secondaryFilters[0]}}</text>
-        <text class="filter-arrow">⌄</text>
-      </view>
-      <view class="filter-pill filter-pill--secondary">
-        <text>{{category.secondaryFilters[1]}}</text>
-        <text class="filter-arrow">⌄</text>
-      </view>
-      <view class="filter-icon-box">
+      <block wx:for="{{secondaryFilters}}" wx:key="key">
+        <picker
+          class="filter-picker-wrap filter-picker-wrap--secondary"
+          mode="selector"
+          range="{{item.optionLabels}}"
+          value="{{item.selectedIndex}}"
+          data-key="{{item.key}}"
+          bindchange="onSecondaryFilterChange"
+        >
+          <view class="filter-pill filter-pill--secondary {{item.selectedIndex ? 'filter-pill--selected' : ''}}">
+            <text>{{item.displayLabel}}</text>
+            <text class="filter-arrow">⌄</text>
+          </view>
+        </picker>
+      </block>
+      <view class="filter-icon-box" bindtap="resetFilters">
         <text class="filter-icon-box__glyph">⚙</text>
       </view>
     </view>
 
-    <view class="show-results-btn" bindtap="openResults">
-      <text>{{category.cta}}</text>
+    <view class="show-results-btn {{!filteredCount ? 'show-results-btn--muted' : ''}}" bindtap="openResults">
+      <text>{{showResultsLabel}}</text>
     </view>
   </view>
 
   <view class="subcategory-panel">
     <view class="panel-head">
       <text class="panel-title">Explore {{category.title}}</text>
-      <text class="panel-link">See all →</text>
+      <text class="panel-link" bindtap="openResults">See all →</text>
     </view>
 
     <view class="subcategory-grid">
-      <block wx:for="{{category.subcategories}}" wx:key="*this">
-        <view class="subcategory-tile" data-name="{{item}}" bindtap="openSubcategory">
-          <text class="subcategory-text">{{item}}</text>
+      <block wx:for="{{subcategoryCards}}" wx:key="id">
+        <view class="subcategory-tile" data-name="{{item.name}}" bindtap="openSubcategory">
+          <image class="subcategory-tile__image" src="{{item.image}}" mode="aspectFill" />
+          <view class="subcategory-tile__scrim"></view>
+          <text class="subcategory-text">{{item.name}}</text>
         </view>
       </block>
     </view>
   </view>
 
-  <view class="featured-panel">
-    <text class="featured-title">Recommended</text>
+      <view class="featured-panel">
+        <text class="featured-title">Recommended</text>
 
-    <block wx:for="{{featured}}" wx:key="title">
-      <view class="featured-card">
-        <view class="featured-card__content">
-          <text class="featured-card__title">{{item.title}}</text>
-          <text class="featured-card__caption">{{item.caption}}</text>
-        </view>
-        <view class="featured-card__badge">New</view>
+        <block wx:for="{{featured}}" wx:key="title">
+          <view class="featured-card">
+            <view class="featured-card__content">
+              <text class="featured-card__title">{{item.title}}</text>
+              <text class="featured-card__caption">{{item.caption}}</text>
+            </view>
+            <view class="featured-card__badge">New</view>
+          </view>
+        </block>
       </view>
-    </block>
-  </view>
+    </view>
+  </scroll-view>
 </view>

@@ -1,10 +1,16 @@
-<view class="page-shell home-page">
+<view class="page-shell page-shell--scroll">
+  <app-header title="UniMarket"></app-header>
+
+  <scroll-view
+    class="page-scroll home-scroll"
+    scroll-y
+    enhanced
+    bounces="{{false}}"
+    show-scrollbar="{{false}}"
+  >
+    <view class="home-page page-scroll__content">
   <view class="hero">
     <view class="hero-copy">
-      <view class="hero-brand">
-        <image class="hero-brand__logo" src="../../assets/brand/unimarket-logo.png" mode="aspectFit" />
-        <text class="hero-brand__name">UniMarket</text>
-      </view>
       <text class="hero-title">Find what student life needs.</text>
       <text class="hero-subtitle">Browse housing, transport, services, and campus essentials in one place.</text>
     </view>
@@ -91,46 +97,50 @@
   <view wx:if="{{filterPanelOpen}}" class="filter-overlay" bindtap="closeFilterPanel">
     <view class="filter-sheet" catchtap="stopPanelTap">
       <view class="filter-sheet__handle"></view>
-      <view class="filter-sheet__head">
-        <text class="filter-sheet__title">Quick filters</text>
-        <text class="filter-sheet__reset" bindtap="resetHomeFilters">Reset</text>
-      </view>
-
-      <view class="filter-field">
-        <text class="filter-field__label">Location</text>
-        <picker mode="selector" range="{{locationOptions}}" value="{{locationIndex}}" bindchange="onLocationChange">
-          <view class="filter-picker">
-            <text>{{locationOptions[locationIndex]}}</text>
-            <view class="filter-picker__arrow"></view>
-          </view>
-        </picker>
-      </view>
-
-      <view class="filter-field">
-        <text class="filter-field__label">University</text>
-        <picker mode="selector" range="{{universityOptions}}" value="{{universityIndex}}" bindchange="onUniversityChange">
-          <view class="filter-picker">
-            <text>{{universityOptions[universityIndex]}}</text>
-            <view class="filter-picker__arrow"></view>
-          </view>
-        </picker>
-      </view>
-
-      <view class="filter-field">
-        <text class="filter-field__label">Sort</text>
-        <picker mode="selector" range="{{sortOptions}}" value="{{sortIndex}}" bindchange="onSortChange">
-          <view class="filter-picker filter-picker--dark">
-            <text>{{sortOptions[sortIndex]}}</text>
-            <view class="filter-picker__arrow filter-picker__arrow--light"></view>
-          </view>
-        </picker>
-      </view>
-
-      <view class="filter-sheet__footer">
-        <view class="filter-sheet__apply" bindtap="closeFilterPanel">
-          <text>Show {{visibleListings.length}} listings</text>
+      <scroll-view class="filter-sheet__scroll" scroll-y enhanced show-scrollbar="{{false}}">
+        <view class="filter-sheet__head">
+          <text class="filter-sheet__title">Quick filters</text>
+          <text class="filter-sheet__reset" bindtap="resetHomeFilters">Reset</text>
         </view>
-      </view>
+
+        <view class="filter-field">
+          <text class="filter-field__label">Location</text>
+          <picker mode="selector" range="{{locationOptions}}" value="{{locationIndex}}" bindchange="onLocationChange">
+            <view class="filter-picker">
+              <text>{{locationOptions[locationIndex]}}</text>
+              <view class="filter-picker__arrow"></view>
+            </view>
+          </picker>
+        </view>
+
+        <view class="filter-field">
+          <text class="filter-field__label">University</text>
+          <picker mode="selector" range="{{universityOptions}}" value="{{universityIndex}}" bindchange="onUniversityChange">
+            <view class="filter-picker">
+              <text>{{universityOptions[universityIndex]}}</text>
+              <view class="filter-picker__arrow"></view>
+            </view>
+          </picker>
+        </view>
+
+        <view class="filter-field">
+          <text class="filter-field__label">Sort</text>
+          <picker mode="selector" range="{{sortOptions}}" value="{{sortIndex}}" bindchange="onSortChange">
+            <view class="filter-picker filter-picker--dark">
+              <text>{{sortOptions[sortIndex]}}</text>
+              <view class="filter-picker__arrow filter-picker__arrow--light"></view>
+            </view>
+          </picker>
+        </view>
+
+        <view class="filter-sheet__footer">
+          <view class="filter-sheet__apply" bindtap="closeFilterPanel">
+            <text>Show {{visibleListings.length}} listings</text>
+          </view>
+        </view>
+      </scroll-view>
     </view>
   </view>
+    </view>
+  </scroll-view>
 </view>

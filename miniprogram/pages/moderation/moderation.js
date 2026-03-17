@@ -26,8 +26,16 @@ function formatDate(value) {
 
 function normalizeReport(report) {
   const status = report.status || 'pending'
+  const targetType = report.targetType || 'listing'
+
   return {
     ...report,
+    targetType,
+    targetTypeLabel: targetType === 'profile' ? 'Profile' : 'Listing',
+    targetTitle:
+      targetType === 'profile'
+        ? report.profileName || 'Unnamed profile'
+        : report.listingTitle || 'Untitled listing',
     status,
     statusLabel: STATUS_LABELS[status] || 'Pending',
     createdLabel: formatDate(report.createdAt)
@@ -100,6 +108,15 @@ Page({
 
     wx.navigateTo({
       url: `/pages/listing/listing?id=${id}`
+    })
+  },
+
+  openProfile(e) {
+    const { id } = e.currentTarget.dataset
+    if (!id) return
+
+    wx.navigateTo({
+      url: `/pages/user-profile/user-profile?listingId=${id}`
     })
   }
 })

@@ -1,10 +1,23 @@
-<view wx:if="{{listing}}" class="page-shell listing-page">
-  <view wx:if="{{hiddenNotice}}" class="listing-status-card">
-    <text class="listing-status-badge">Hidden</text>
-    <text class="listing-status-copy">{{hiddenNotice}}</text>
-  </view>
+<view wx:if="{{listing}}" class="page-shell page-shell--scroll">
+  <app-header title="{{navTitle}}" showBack="{{true}}"></app-header>
+  <scroll-view
+    class="page-scroll"
+    scroll-y
+    enhanced
+    bounces="{{false}}"
+    show-scrollbar="{{false}}"
+  >
+    <view class="listing-page page-scroll__content">
+      <view wx:if="{{hiddenNotice}}" class="listing-status-card">
+        <text class="listing-status-badge">Hidden</text>
+        <text class="listing-status-copy">{{hiddenNotice}}</text>
+      </view>
 
   <view class="gallery-shell">
+    <view class="listing-menu-trigger" bindtap="openMenu">
+      <text class="listing-menu-trigger__icon">•••</text>
+    </view>
+
     <swiper
       class="gallery-swiper"
       indicator-dots="{{false}}"
@@ -13,7 +26,7 @@
     >
       <block wx:for="{{listing.images}}" wx:key="*this">
         <swiper-item>
-          <image class="gallery-image" src="{{item}}" mode="aspectFill" />
+          <image class="gallery-image" src="{{item}}" mode="aspectFill" data-index="{{index}}" bindtap="previewListingImage" />
         </swiper-item>
       </block>
     </swiper>
@@ -43,24 +56,29 @@
     </view>
   </view>
 
-  <view class="seller-card">
-    <view class="seller-avatar">{{sellerInitial}}</view>
-    <view class="seller-copy">
-      <text class="seller-name">{{listing.seller.name}}</text>
-      <text class="seller-badge">{{listing.seller.badge}}</text>
-      <text class="seller-note">{{listing.seller.note}}</text>
-      <text class="seller-wechat">WeChat: {{listing.seller.wechat}}</text>
-    </view>
-  </view>
+  <view class="seller-card" bindtap="openSellerProfile">
+    <view class="seller-main">
+      <view class="seller-header">
+        <view class="seller-avatar" catchtap="previewSellerAvatar">
+          <image wx:if="{{listing.seller.avatarUrl}}" class="seller-avatar__image" src="{{listing.seller.avatarUrl}}" mode="aspectFill" />
+          <text wx:else>{{sellerInitial}}</text>
+        </view>
+        <view class="seller-identity">
+          <text class="seller-name">{{listing.seller.name}}</text>
+          <text class="seller-badge">{{listing.seller.badge}}</text>
+        </view>
+      </view>
 
-  <view class="report-card">
-    <view
-      class="report-button {{hasReported ? 'report-button--done' : ''}}"
-      bindtap="reportListing"
-    >
-      <text>{{hasReported ? 'Reported' : 'Report listing'}}</text>
+      <view class="seller-details">
+        <view class="seller-rating">
+          <text class="seller-rating__value">{{reviewSummary.count ? reviewSummary.averageLabel + ' ★' : 'New seller'}}</text>
+          <text class="seller-rating__count">{{reviewSummary.count ? reviewSummary.countLabel : 'No reviews yet'}}</text>
+        </view>
+        <text class="seller-note">{{listing.seller.note}}</text>
+        <text class="seller-wechat">WeChat: {{listing.seller.wechat}}</text>
+      </view>
     </view>
-    <text class="report-note">Report scams, wrong categories, or prohibited items.</text>
+    <text class="seller-arrow">›</text>
   </view>
 
   <view class="action-bar">
@@ -70,28 +88,170 @@
     </view>
 
     <view class="action-button action-button--primary" bindtap="contactSeller">
-      <text>Contact in WeChat</text>
+      <view class="action-button__content action-button__content--wechat">
+        <view class="wechat-mark">
+          <view class="wechat-mark__bubble wechat-mark__bubble--back">
+            <view class="wechat-mark__tail wechat-mark__tail--back"></view>
+            <view class="wechat-mark__dots wechat-mark__dots--back">
+              <view class="wechat-mark__dot"></view>
+              <view class="wechat-mark__dot"></view>
+            </view>
+          </view>
+          <view class="wechat-mark__bubble wechat-mark__bubble--front">
+            <view class="wechat-mark__tail wechat-mark__tail--front"></view>
+            <view class="wechat-mark__dots wechat-mark__dots--front">
+              <view class="wechat-mark__dot"></view>
+              <view class="wechat-mark__dot"></view>
+              <view class="wechat-mark__dot"></view>
+            </view>
+          </view>
+        </view>
+        <text>Write in WeChat</text>
+      </view>
     </view>
   </view>
 
-  <view wx:if="{{feedbackVisible}}" class="save-feedback">
-    <view class="save-feedback__icon">{{feedbackIcon}}</view>
-    <text class="save-feedback__text">{{feedbackText}}</text>
+      <view wx:if="{{feedbackVisible}}" class="save-feedback">
+        <view class="save-feedback__icon">{{feedbackIcon}}</view>
+        <text class="save-feedback__text">{{feedbackText}}</text>
+      </view>
+
+      <view wx:if="{{menuOpen}}" class="listing-menu-overlay" bindtap="closeMenu">
+        <view class="listing-menu-sheet" catchtap="stopMenuTap">
+          <view class="listing-menu-sheet__handle"></view>
+          <view class="listing-menu-sheet__header">
+            <text class="listing-menu-sheet__title">Listing options</text>
+            <text class="listing-menu-sheet__subtitle">Share this listing or send a report to moderation.</text>
+          </view>
+
+          <view class="listing-menu-group">
+            <view class="listing-menu-row-shell">
+              <button class="listing-menu-hit" open-type="share" bindtap="closeMenu"></button>
+              <view class="listing-menu-row">
+                <view class="listing-menu-row__icon listing-menu-row__icon--share">↗</view>
+                <view class="listing-menu-row__copy">
+                  <text class="listing-menu-row__title">Share listing</text>
+                  <text class="listing-menu-row__meta">Send the link in WeChat</text>
+                </view>
+              </view>
+            </view>
+
+            <view class="listing-menu-row" bindtap="copyListingLink">
+              <view class="listing-menu-row__icon listing-menu-row__icon--copy">⎘</view>
+              <view class="listing-menu-row__copy">
+                <text class="listing-menu-row__title">Copy link</text>
+                <text class="listing-menu-row__meta">Copy the listing path to clipboard</text>
+              </view>
+            </view>
+
+            <view wx:if="{{listing.seller.wechat}}" class="listing-menu-row" bindtap="copySellerWechat">
+              <view class="listing-menu-row__icon listing-menu-row__icon--wechat">
+                <view class="wechat-mark">
+                  <view class="wechat-mark__bubble wechat-mark__bubble--back">
+                    <view class="wechat-mark__tail wechat-mark__tail--back"></view>
+                    <view class="wechat-mark__dots wechat-mark__dots--back">
+                      <view class="wechat-mark__dot"></view>
+                      <view class="wechat-mark__dot"></view>
+                    </view>
+                  </view>
+                  <view class="wechat-mark__bubble wechat-mark__bubble--front">
+                    <view class="wechat-mark__tail wechat-mark__tail--front"></view>
+                    <view class="wechat-mark__dots wechat-mark__dots--front">
+                      <view class="wechat-mark__dot"></view>
+                      <view class="wechat-mark__dot"></view>
+                      <view class="wechat-mark__dot"></view>
+                    </view>
+                  </view>
+                </view>
+              </view>
+              <view class="listing-menu-row__copy">
+                <text class="listing-menu-row__title">Write in WeChat</text>
+                <text class="listing-menu-row__meta">Copy the seller ID and continue in WeChat search</text>
+              </view>
+            </view>
+
+            <view class="listing-menu-row" bindtap="hideListing">
+              <view class="listing-menu-row__icon listing-menu-row__icon--hide">×</view>
+              <view class="listing-menu-row__copy">
+                <text class="listing-menu-row__title">Hide listing</text>
+                <text class="listing-menu-row__meta">Remove it from your feed on this device</text>
+              </view>
+            </view>
+
+            <view class="listing-menu-row listing-menu-row--danger" bindtap="blockSeller">
+              <view class="listing-menu-row__icon listing-menu-row__icon--block">−</view>
+              <view class="listing-menu-row__copy">
+                <text class="listing-menu-row__title">Block user</text>
+                <text class="listing-menu-row__meta">Hide all listings from this seller on this device</text>
+              </view>
+            </view>
+          </view>
+
+          <view class="listing-menu-group listing-menu-group--danger">
+            <view class="listing-menu-row listing-menu-row--danger" bindtap="reportListing">
+              <view class="listing-menu-row__icon listing-menu-row__icon--report">!</view>
+              <view class="listing-menu-row__copy">
+                <text class="listing-menu-row__title">{{hasReported ? 'Report already sent' : 'Report listing'}}</text>
+                <text class="listing-menu-row__meta">{{hasReported ? 'Moderation already has your report' : 'Scams, wrong category, or prohibited items'}}</text>
+              </view>
+            </view>
+          </view>
+
+          <view class="listing-menu-cancel" bindtap="closeMenu">Cancel</view>
+        </view>
+      </view>
+
+      <photo-viewer
+        visible="{{viewerVisible}}"
+        images="{{viewerImages}}"
+        currentIndex="{{viewerIndex}}"
+        bind:close="closePhotoViewer"
+        bind:change="onPhotoViewerChange"
+      />
+    </view>
+  </scroll-view>
+</view>
+
+<view wx:elif="{{hiddenByUser}}" class="page-shell page-shell--scroll">
+  <app-header title="{{navTitle}}" showBack="{{true}}"></app-header>
+  <view class="listing-empty-page">
+    <view class="listing-empty-card">
+      <text class="listing-empty-title">Listing hidden</text>
+      <text class="listing-empty-copy">You hid this listing on this device, so it no longer appears in your marketplace feed.</text>
+      <button class="listing-empty-button" bindtap="goToHome">Back to listings</button>
+    </view>
   </view>
 </view>
 
-<view wx:elif="{{blockedByModeration}}" class="page-shell listing-empty-page">
-  <view class="listing-empty-card">
-    <text class="listing-empty-title">Listing unavailable</text>
-    <text class="listing-empty-copy">This listing was hidden after moderation review.</text>
-    <button class="listing-empty-button" bindtap="goToHome">Back to listings</button>
+<view wx:elif="{{blockedSeller}}" class="page-shell page-shell--scroll">
+  <app-header title="{{navTitle}}" showBack="{{true}}"></app-header>
+  <view class="listing-empty-page">
+    <view class="listing-empty-card">
+      <text class="listing-empty-title">Seller hidden</text>
+      <text class="listing-empty-copy">You blocked this seller on this device, so their listings are no longer visible here.</text>
+      <button class="listing-empty-button" bindtap="goToHome">Back to listings</button>
+    </view>
   </view>
 </view>
 
-<view wx:elif="{{notFound}}" class="page-shell listing-empty-page">
-  <view class="listing-empty-card">
-    <text class="listing-empty-title">Listing not found</text>
-    <text class="listing-empty-copy">This listing is no longer available or the link is outdated.</text>
-    <button class="listing-empty-button" bindtap="goToHome">Back to listings</button>
+<view wx:elif="{{blockedByModeration}}" class="page-shell page-shell--scroll">
+  <app-header title="{{navTitle}}" showBack="{{true}}"></app-header>
+  <view class="listing-empty-page">
+    <view class="listing-empty-card">
+      <text class="listing-empty-title">Listing unavailable</text>
+      <text class="listing-empty-copy">This listing was hidden after moderation review.</text>
+      <button class="listing-empty-button" bindtap="goToHome">Back to listings</button>
+    </view>
+  </view>
+</view>
+
+<view wx:elif="{{notFound}}" class="page-shell page-shell--scroll">
+  <app-header title="{{navTitle}}" showBack="{{true}}"></app-header>
+  <view class="listing-empty-page">
+    <view class="listing-empty-card">
+      <text class="listing-empty-title">Listing not found</text>
+      <text class="listing-empty-copy">This listing is no longer available or the link is outdated.</text>
+      <button class="listing-empty-button" bindtap="goToHome">Back to listings</button>
+    </view>
   </view>
 </view>

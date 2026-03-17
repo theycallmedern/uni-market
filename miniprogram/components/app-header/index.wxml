@@ -1,0 +1,18 @@
+<view class="app-header" style="padding-top: {{statusBarHeight}}px;">
+  <view class="app-header__bar" style="height: {{navBarHeight}}px;">
+    <view class="app-header__side" style="width: {{sideWidth}}px;">
+      <view wx:if="{{showBack}}" class="app-header__back" bindtap="handleBack">
+        <text class="app-header__back-icon">‹</text>
+      </view>
+    </view>
+
+    <view class="app-header__center">
+      <view class="app-header__title-row">
+        <image class="app-header__title-logo" src="../../assets/brand/unimarket-logo.png" mode="aspectFit" />
+        <text class="app-header__title">{{title}}</text>
+      </view>
+    </view>
+
+    <view class="app-header__side" style="width: {{sideWidth}}px;"></view>
+  </view>
+</view>

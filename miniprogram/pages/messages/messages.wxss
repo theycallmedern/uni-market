@@ -1,5 +1,5 @@
 .manager-page {
-  padding: 22rpx 24rpx 44rpx;
+  padding: 22rpx 24rpx 124rpx;
 }
 
 .manager-hero {
@@ -77,14 +77,18 @@
 }
 
 .manager-new {
-  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 72rpx;
   padding: 0 22rpx;
-  border-radius: 22rpx;
-  background: #111111;
-  color: #ffffff;
+  border-radius: 24rpx;
+  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  color: #2d2d2d;
+  border: 1rpx solid rgba(17, 17, 17, 0.08);
   font-size: 24rpx;
   font-weight: 700;
-  line-height: 64rpx;
+  line-height: 1;
 }
 
 .manager-new::after,
@@ -186,13 +190,15 @@
 }
 
 .manager-open {
-  background: #f5f3ee;
-  color: #111111;
+  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  color: #2d2d2d;
+  border: 1rpx solid rgba(17, 17, 17, 0.08);
 }
 
 .manager-edit {
-  background: #eef4ff;
-  color: #2757a5;
+  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  color: #2d2d2d;
+  border: 1rpx solid rgba(17, 17, 17, 0.08);
 }
 
 .manager-delete {
@@ -224,11 +230,12 @@
 
 .manager-empty__button {
   margin-top: 20rpx;
-  height: 80rpx;
-  border-radius: 24rpx;
-  background: #111111;
-  color: #ffffff;
-  font-size: 26rpx;
-  line-height: 80rpx;
+  height: 92rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  color: #2d2d2d;
+  border: 1rpx solid rgba(17, 17, 17, 0.08);
+  font-size: 28rpx;
+  line-height: 92rpx;
   font-weight: 700;
 }

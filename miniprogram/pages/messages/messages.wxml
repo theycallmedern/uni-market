@@ -1,57 +1,68 @@
-<view class="page-shell manager-page">
-  <view class="manager-hero">
-    <view class="manager-hero__avatar">
-      <image wx:if="{{profile.avatarUrl}}" class="manager-hero__avatar-image" src="{{profile.avatarUrl}}" mode="aspectFill" />
-      <text wx:else>{{avatarInitial}}</text>
-    </view>
-    <view class="manager-hero__copy">
-      <text class="manager-hero__title">My Listings</text>
-      <text class="manager-hero__meta">{{myListings.length}} published · {{savedCount}} saved</text>
-      <text class="manager-hero__note">Track everything you have posted and keep your active marketplace inventory in one place.</text>
-    </view>
-  </view>
+<view class="page-shell page-shell--scroll">
+  <app-header title="My Listings"></app-header>
+  <scroll-view
+    class="page-scroll"
+    scroll-y
+    enhanced
+    bounces="{{false}}"
+    show-scrollbar="{{false}}"
+  >
+    <view class="manager-page page-scroll__content">
+      <view class="manager-hero">
+        <view class="manager-hero__avatar">
+          <image wx:if="{{profile.avatarUrl}}" class="manager-hero__avatar-image" src="{{profile.avatarUrl}}" mode="aspectFill" />
+          <text wx:else>{{avatarInitial}}</text>
+        </view>
+        <view class="manager-hero__copy">
+          <text class="manager-hero__title">My Listings</text>
+          <text class="manager-hero__meta">{{myListings.length}} published · {{savedCount}} saved</text>
+          <text class="manager-hero__note">Track everything you have posted and keep your active marketplace inventory in one place.</text>
+        </view>
+      </view>
 
-  <view class="manager-head">
-    <view>
-      <text class="manager-head__title">Published</text>
-      <text class="manager-head__subtitle">Open or remove any listing you created in the MVP</text>
-    </view>
-    <button class="manager-new" bindtap="goToPost">New</button>
-  </view>
+      <view class="manager-head">
+        <view>
+          <text class="manager-head__title">Published</text>
+          <text class="manager-head__subtitle">Open or remove any listing you created in the MVP</text>
+        </view>
+        <button class="manager-new" bindtap="goToPost">New</button>
+      </view>
 
-  <block wx:if="{{myListings.length}}">
-    <view class="manager-list">
-      <block wx:for="{{myListings}}" wx:key="id">
-        <view class="manager-card">
-          <image class="manager-card__image" src="{{item.image}}" mode="aspectFill" />
-          <view class="manager-card__body">
-            <view class="manager-card__top">
-              <view>
-                <text class="manager-card__price">{{item.price}}</text>
-                <text class="manager-card__title">{{item.title}}</text>
-              </view>
-              <view class="manager-card__badge {{item.isHiddenByModeration ? 'manager-card__badge--hidden' : ''}}">
-                {{item.isHiddenByModeration ? 'Hidden' : 'Live'}}
+      <block wx:if="{{myListings.length}}">
+        <view class="manager-list">
+          <block wx:for="{{myListings}}" wx:key="id">
+            <view class="manager-card">
+              <image class="manager-card__image" src="{{item.image}}" mode="aspectFill" />
+              <view class="manager-card__body">
+                <view class="manager-card__top">
+                  <view>
+                    <text class="manager-card__price">{{item.price}}</text>
+                    <text class="manager-card__title">{{item.title}}</text>
+                  </view>
+                  <view class="manager-card__badge {{item.isHiddenByModeration ? 'manager-card__badge--hidden' : ''}}">
+                    {{item.isHiddenByModeration ? 'Hidden' : 'Live'}}
+                  </view>
+                </view>
+
+                <text class="manager-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
+                <text class="manager-card__sub">{{item.subcategory}}</text>
+
+                <view class="manager-card__actions">
+                  <button class="manager-open" data-id="{{item.id}}" bindtap="openListing">Open</button>
+                  <button class="manager-edit" data-id="{{item.id}}" bindtap="editListing">Edit</button>
+                  <button class="manager-delete" data-id="{{item.id}}" bindtap="deleteListing">Delete</button>
+                </view>
               </view>
             </view>
-
-            <text class="manager-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
-            <text class="manager-card__sub">{{item.subcategory}}</text>
-
-            <view class="manager-card__actions">
-              <button class="manager-open" data-id="{{item.id}}" bindtap="openListing">Open</button>
-              <button class="manager-edit" data-id="{{item.id}}" bindtap="editListing">Edit</button>
-              <button class="manager-delete" data-id="{{item.id}}" bindtap="deleteListing">Delete</button>
-            </view>
-          </view>
+          </block>
         </view>
       </block>
-    </view>
-  </block>
 
-  <view wx:else class="manager-empty">
-    <text class="manager-empty__title">No listings yet</text>
-    <text class="manager-empty__copy">Post your first room, item, or service and it will show up here immediately.</text>
-    <button class="manager-empty__button" bindtap="goToPost">Post a listing</button>
-  </view>
+      <view wx:else class="manager-empty">
+        <text class="manager-empty__title">No listings yet</text>
+        <text class="manager-empty__copy">Post your first room, item, or service and it will show up here immediately.</text>
+        <button class="manager-empty__button" bindtap="goToPost">Post a listing</button>
+      </view>
+    </view>
+  </scroll-view>
 </view>

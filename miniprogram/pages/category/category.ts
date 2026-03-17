@@ -14,7 +14,7 @@ const categoryConfigs: Record<string, CategoryConfig> = {
     title: 'Housing',
     region: 'All districts',
     heroTone: 'blue',
-    subcategories: ['Apartment', 'Room', 'Shared flat', 'Studio', 'Near campus', 'Long-term stay'],
+    subcategories: ['Private room', 'Shared room', 'Shared flat', 'Studio', 'Full apartment', 'Short-term sublet', 'Dorm takeover'],
     primaryFilters: ['Type', 'Rent mode'],
     quickFilters: ['All', 'Budget', 'Near ZJU'],
     secondaryFilters: ['Move-in date', 'Price'],
@@ -24,7 +24,7 @@ const categoryConfigs: Record<string, CategoryConfig> = {
     title: 'Electronics',
     region: 'All campuses',
     heroTone: 'green',
-    subcategories: ['Phones', 'Audio & video', 'Computer parts', 'Gaming', 'Laptops', 'Cameras'],
+    subcategories: ['Phones', 'Laptops', 'Tablets', 'Audio', 'Cameras', 'Gaming gear', 'Accessories'],
     primaryFilters: ['Condition', 'Brand'],
     quickFilters: ['All', 'Popular', 'Student deals'],
     secondaryFilters: ['Price', 'Campus'],
@@ -34,7 +34,7 @@ const categoryConfigs: Record<string, CategoryConfig> = {
     title: 'Transport',
     region: 'All districts',
     heroTone: 'peach',
-    subcategories: ['Bicycles', 'Scooters', 'E-bikes', 'Rentals', 'Accessories', 'Repairs'],
+    subcategories: ['Bikes', 'E-bikes', 'Scooters', 'Ride-sharing', 'Rentals', 'Parts & repair'],
     primaryFilters: ['Vehicle type', 'Use case'],
     quickFilters: ['All', 'Under 500 RMB', 'Near campus'],
     secondaryFilters: ['Condition', 'Price'],
@@ -44,7 +44,7 @@ const categoryConfigs: Record<string, CategoryConfig> = {
     title: 'Items',
     region: 'All campuses',
     heroTone: 'mint',
-    subcategories: ['Dorm setup', 'Kitchen', 'Clothing', 'Bags', 'Decor', 'Bundles'],
+    subcategories: ['Dorm essentials', 'Kitchenware', 'Clothing', 'Bags & luggage', 'Home decor', 'Small appliances', 'Bundles'],
     primaryFilters: ['Item type', 'Condition'],
     quickFilters: ['All', 'Bundles', 'Ready to pick up'],
     secondaryFilters: ['Price', 'Campus'],
@@ -54,17 +54,17 @@ const categoryConfigs: Record<string, CategoryConfig> = {
     title: 'Services',
     region: 'Hangzhou',
     heroTone: 'violet',
-    subcategories: ['Translation', 'Document help', 'Photography', 'Tutoring', 'Airport pickup', 'Errands'],
+    subcategories: ['Translation & paperwork', 'Airport pickup', 'Moving help', 'Photo shoots', 'Tech setup', 'Errands & delivery', 'Cleaning help'],
     primaryFilters: ['Service type', 'Availability'],
     quickFilters: ['All', 'Trusted', 'English-friendly'],
-    secondaryFilters: ['Price', 'Area'],
+    secondaryFilters: ['Price', 'Sort'],
     cta: 'Show 40+ listings'
   },
   study: {
     title: 'Study',
     region: 'All campuses',
     heroTone: 'yellow',
-    subcategories: ['Tutoring', 'Textbooks', 'Language exchange', 'Exam prep', 'Stationery', 'Study groups'],
+    subcategories: ['Tutoring', 'Textbooks', 'Study notes', 'Language exchange', 'HSK / IELTS prep', 'Stationery', 'Study groups'],
     primaryFilters: ['Subject', 'Format'],
     quickFilters: ['All', 'Beginner', 'HSK prep'],
     secondaryFilters: ['Price', 'Campus'],
@@ -74,49 +74,49 @@ const categoryConfigs: Record<string, CategoryConfig> = {
     title: 'Jobs',
     region: 'Hangzhou',
     heroTone: 'sage',
-    subcategories: ['Part-time', 'Internships', 'Campus jobs', 'Remote', 'Freelance', 'Weekend'],
+    subcategories: ['Part-time jobs', 'Internships', 'Freelance gigs', 'Remote jobs', 'Tutoring jobs', 'Event staff', 'Campus ambassador'],
     primaryFilters: ['Role type', 'Schedule'],
     quickFilters: ['All', 'Remote', 'Student-friendly'],
-    secondaryFilters: ['Pay', 'Area'],
+    secondaryFilters: ['Pay', 'Sort'],
     cta: 'Show 25+ listings'
   }
 }
 
 const featuredCards: Record<string, { title: string; caption: string }[]> = {
   housing: [
-    { title: 'Student rooms', caption: 'Near campus' },
-    { title: 'Shared flats', caption: 'Trusted roommates' },
-    { title: 'Studios', caption: 'Private living' }
+    { title: 'Private rooms', caption: 'Best for quiet solo living' },
+    { title: 'Shared flats', caption: 'Lower monthly budget with roommates' },
+    { title: 'Short-term sublets', caption: 'Good for move-ins and semester transitions' }
   ],
   electronics: [
-    { title: 'Phones', caption: 'Used & like new' },
-    { title: 'Laptops', caption: 'For study & work' },
-    { title: 'Accessories', caption: 'Chargers, stands, more' }
+    { title: 'Phones', caption: 'Daily-use upgrades without retail prices' },
+    { title: 'Laptops', caption: 'For classes, coding, and project work' },
+    { title: 'Audio', caption: 'Study-friendly headphones, speakers, and sound gear' }
   ],
   transport: [
-    { title: 'Campus bikes', caption: 'Quick daily commute' },
-    { title: 'Scooters', caption: 'Fast city rides' },
-    { title: 'Repair gear', caption: 'Parts and tools' }
+    { title: 'Bikes', caption: 'Reliable campus commute' },
+    { title: 'E-bikes', caption: 'Better for longer Hangzhou routes' },
+    { title: 'Ride-sharing', caption: 'Flexible transport without owning a vehicle' }
   ],
   items: [
     { title: 'Dorm essentials', caption: 'Move-in faster' },
-    { title: 'Kitchen bundles', caption: 'Save time and money' },
-    { title: 'Bags & storage', caption: 'Small-space friendly' }
+    { title: 'Kitchenware', caption: 'Useful sets for student apartments' },
+    { title: 'Small appliances', caption: 'Everyday extras for easier living' }
   ],
   services: [
-    { title: 'Translation help', caption: 'Banks, hospitals, forms' },
-    { title: 'Tutoring', caption: 'Language and subject help' },
-    { title: 'Errand support', caption: 'Pickup, delivery, setup' }
+    { title: 'Translation & paperwork', caption: 'Banks, forms, hospital visits' },
+    { title: 'Airport pickup', caption: 'Easy arrival support for new students' },
+    { title: 'Tech setup', caption: 'Devices, apps, and everyday account setup help' }
   ],
   study: [
-    { title: 'Exam prep', caption: 'HSK and coursework' },
-    { title: 'Books', caption: 'Find used study materials' },
-    { title: 'Study groups', caption: 'Meet people from campus' }
+    { title: 'Tutoring', caption: 'Language and subject support' },
+    { title: 'Textbooks', caption: 'Find used study materials fast' },
+    { title: 'Study notes', caption: 'Shared materials for classes and revision' }
   ],
   jobs: [
     { title: 'Part-time jobs', caption: 'Flexible student work' },
-    { title: 'Internships', caption: 'Build experience' },
-    { title: 'Freelance tasks', caption: 'Short projects' }
+    { title: 'Internships', caption: 'Gain experience while studying' },
+    { title: 'Remote jobs', caption: 'Flexible work you can do around your schedule' }
   ]
 }
 

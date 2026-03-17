@@ -1,3 +1,4 @@
 {
-  "navigationBarTitleText": "Category"
+  "navigationBarTitleText": "Category",
+  "disableScroll": true
 }

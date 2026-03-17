@@ -1,0 +1,47 @@
+<view wx:if="{{visible}}" class="photo-viewer">
+  <view class="photo-viewer__backdrop" bindtap="handleOverlayTap">
+    <image wx:if="{{currentImage}}" class="photo-viewer__backdrop-image" src="{{currentImage}}" mode="aspectFill" />
+    <view class="photo-viewer__backdrop-overlay"></view>
+  </view>
+
+  <view class="photo-viewer__chrome" catchtap="stopTap">
+    <text class="photo-viewer__counter">{{images.length ? internalIndex + 1 : 0}} / {{images.length}}</text>
+    <view class="photo-viewer__close" bindtap="handleClose">
+      <text class="photo-viewer__close-icon">×</text>
+    </view>
+  </view>
+
+  <swiper
+    class="photo-viewer__swiper"
+    current="{{internalIndex}}"
+    circular="{{images.length > 1}}"
+    indicator-dots="{{false}}"
+    disable-touch="{{currentScale > 1}}"
+    bindchange="handleSwiperChange"
+  >
+    <block wx:for="{{images}}" wx:key="*this">
+      <swiper-item>
+        <view class="photo-viewer__slide">
+          <view class="photo-viewer__tap-zone" bindtap="handleOverlayTap"></view>
+          <view class="photo-viewer__image-wrap" catchtap="stopTap">
+            <movable-area class="photo-viewer__movable-area">
+              <movable-view
+                class="photo-viewer__movable-view"
+                direction="all"
+                inertia
+                out-of-bounds
+                scale
+                scale-min="1"
+                scale-max="4"
+                scale-value="{{currentScale}}"
+                bindscale="handleScale"
+              >
+                <image class="photo-viewer__image" src="{{item}}" mode="aspectFit" />
+              </movable-view>
+            </movable-area>
+          </view>
+        </view>
+      </swiper-item>
+    </block>
+  </swiper>
+</view>

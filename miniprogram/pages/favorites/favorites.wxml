@@ -1,36 +1,85 @@
-<view class="page-shell saved-page">
-  <text class="saved-title">Saved</text>
-  <text class="saved-copy">Your favorite listings stay here for quick access.</text>
+<view class="page-shell page-shell--scroll">
+  <app-header title="Saved"></app-header>
+  <scroll-view
+    class="page-scroll"
+    scroll-y
+    enhanced
+    bounces="{{false}}"
+    show-scrollbar="{{false}}"
+  >
+    <view class="saved-page page-scroll__content">
+      <view class="saved-head">
+        <view>
+          <text class="saved-title">Saved</text>
+          <text class="saved-copy">Your favorite listings stay here for quick access.</text>
+        </view>
+        <view class="saved-count">{{savedCount}}</view>
+      </view>
 
-  <view wx:if="{{listings.length}}" class="saved-list">
-    <block wx:for="{{listings}}" wx:key="id">
-      <view class="saved-card" data-id="{{item.id}}" bindtap="openListing">
-        <view class="saved-card__media">
-          <image class="saved-card__image" src="{{item.image}}" mode="aspectFill" />
-          <view
-            class="saved-card__save saved-card__save--saved {{pulseListingId === item.id ? 'saved-card__save--pulse' : ''}}"
-            data-id="{{item.id}}"
-            catchtap="toggleSave"
-          >
-            <text class="saved-card__save-icon">♥</text>
+      <view wx:if="{{savedCount}}" class="saved-controls">
+        <view class="saved-chip-row">
+          <picker mode="selector" range="{{sortOptions}}" value="{{sortIndex}}" bindchange="onSortChange">
+            <view class="saved-chip saved-chip--dark">
+              <text>{{sortOptions[sortIndex]}}</text>
+              <view class="saved-chip__arrow"></view>
+            </view>
+          </picker>
+
+          <picker mode="selector" range="{{categoryOptions}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
+            <view class="saved-chip saved-chip--wide">
+              <text>{{categoryOptions[categoryIndex]}}</text>
+              <view class="saved-chip__arrow"></view>
+            </view>
+          </picker>
+        </view>
+
+        <view class="saved-actions">
+          <view class="saved-action" bindtap="removeUnavailable">
+            <text class="saved-action__title">Remove unavailable</text>
+            <text class="saved-action__meta">{{unavailableCount}} hidden or deleted</text>
+          </view>
+
+          <view class="saved-action saved-action--danger" bindtap="clearSaved">
+            <text class="saved-action__title">Clear saved</text>
+            <text class="saved-action__meta">Remove all favorites from this device</text>
           </view>
         </view>
-        <view class="saved-card__body">
-          <text class="saved-card__price">{{item.price}}</text>
-          <text class="saved-card__title">{{item.title}}</text>
-          <text class="saved-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
-        </view>
       </view>
-    </block>
-  </view>
 
-  <view wx:else class="saved-empty">
-    <text class="saved-empty__title">Nothing saved yet</text>
-    <text class="saved-empty__copy">Tap the heart on a listing to keep it here.</text>
-  </view>
+      <view wx:if="{{listings.length}}" class="saved-list">
+        <block wx:for="{{listings}}" wx:key="id">
+          <view class="saved-card" data-id="{{item.id}}" bindtap="openListing">
+            <view class="saved-card__media">
+              <image class="saved-card__image" src="{{item.image}}" mode="aspectFill" />
+              <view
+                class="saved-card__save saved-card__save--saved {{pulseListingId === item.id ? 'saved-card__save--pulse' : ''}}"
+                data-id="{{item.id}}"
+                catchtap="toggleSave"
+              >
+                <text class="saved-card__save-icon">♥</text>
+              </view>
+            </view>
+            <view class="saved-card__body">
+              <view class="saved-card__headline">
+                <text class="saved-card__price">{{item.price}}</text>
+                <text class="saved-card__tag">{{item.subcategory}}</text>
+              </view>
+              <text class="saved-card__title">{{item.title}}</text>
+              <text class="saved-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
+            </view>
+          </view>
+        </block>
+      </view>
 
-  <view wx:if="{{feedbackVisible}}" class="save-feedback">
-    <view class="save-feedback__icon">{{feedbackIcon}}</view>
-    <text class="save-feedback__text">{{feedbackText}}</text>
-  </view>
+      <view wx:else class="saved-empty">
+        <text class="saved-empty__title">{{savedCount ? 'No matches for these filters' : 'Nothing saved yet'}}</text>
+        <text class="saved-empty__copy">{{savedCount ? 'Try another category or change the sort.' : 'Tap the heart on a listing to keep it here.'}}</text>
+      </view>
+
+      <view wx:if="{{feedbackVisible}}" class="save-feedback">
+        <view class="save-feedback__icon">{{feedbackIcon}}</view>
+        <text class="save-feedback__text">{{feedbackText}}</text>
+      </view>
+    </view>
+  </scroll-view>
 </view>

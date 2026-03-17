@@ -1,5 +1,9 @@
+.home-scroll {
+  background: #f7f7f7;
+}
+
 .home-page {
-  padding: 22rpx 24rpx 44rpx;
+  padding: 22rpx 24rpx 124rpx;
 }
 
 .hero {
@@ -269,7 +273,7 @@
 }
 
 .listing-like--saved {
-  background: rgba(17, 17, 17, 0.92);
+  background: rgba(211, 47, 47, 0.96);
 }
 
 .listing-like--saved .listing-like__icon {
@@ -364,16 +368,21 @@
   display: flex;
   align-items: flex-end;
   background: rgba(17, 17, 17, 0.24);
-  z-index: 30;
+  z-index: 1200;
 }
 
 .filter-sheet {
   width: 100%;
+  max-height: calc(100vh - 96rpx);
   padding: 18rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
   border-radius: 34rpx 34rpx 0 0;
   background: #ffffff;
   box-sizing: border-box;
   animation: sheet-up 220ms ease;
+}
+
+.filter-sheet__scroll {
+  max-height: calc(100vh - 180rpx - env(safe-area-inset-bottom));
 }
 
 .filter-sheet__handle {
@@ -420,13 +429,16 @@
   min-height: 88rpx;
   padding: 0 22rpx;
   border-radius: 24rpx;
-  background: #f5f3ee;
+  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  border: 1rpx solid rgba(17, 17, 17, 0.08);
   font-size: 28rpx;
+  color: #2d2d2d;
 }
 
 .filter-picker--dark {
-  background: #111111;
-  color: #ffffff;
+  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  color: #2d2d2d;
+  border: 1rpx solid rgba(17, 17, 17, 0.08);
 }
 
 .filter-picker__arrow {
@@ -443,8 +455,8 @@
 }
 
 .filter-picker__arrow--light {
-  border-right-color: #ffffff;
-  border-bottom-color: #ffffff;
+  border-right-color: #2d2d2d;
+  border-bottom-color: #2d2d2d;
 }
 
 .filter-sheet__footer {
@@ -457,8 +469,9 @@
   justify-content: center;
   min-height: 92rpx;
   border-radius: 28rpx;
-  background: #111111;
-  color: #ffffff;
+  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  color: #2d2d2d;
+  border: 1rpx solid rgba(17, 17, 17, 0.08);
   font-size: 30rpx;
   font-weight: 700;
 }

@@ -1,3 +1,4 @@
 {
-  "navigationBarTitleText": "New Listing"
+  "navigationBarTitleText": "New Listing",
+  "disableScroll": true
 }

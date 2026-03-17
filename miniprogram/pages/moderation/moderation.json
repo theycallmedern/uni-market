@@ -1,3 +1,4 @@
 {
-  "navigationBarTitleText": "Moderation"
+  "navigationBarTitleText": "Moderation",
+  "disableScroll": true
 }

@@ -1,19 +1,32 @@
-<view class="page-shell account-page">
-  <view class="account-hero">
-    <view class="account-avatar">
-      <image wx:if="{{profile.avatarUrl}}" class="account-avatar__image" src="{{profile.avatarUrl}}" mode="aspectFill" />
-      <text wx:else>{{avatarInitial}}</text>
-    </view>
-    <view class="account-copy">
-      <text class="account-name">{{profile.name}}</text>
-      <view class="account-meta-chips">
-        <text wx:if="{{isUniversityPublic}}" class="account-meta-chip account-meta-chip--university">{{profile.campus}}</text>
-        <text class="account-meta-chip account-meta-chip--city">{{profile.city}}</text>
-        <text wx:if="{{profile.wechat}}" class="account-meta-chip account-meta-chip--wechat">WeChat: {{profile.wechat}}</text>
+<view class="page-shell page-shell--scroll">
+  <app-header title="Profile"></app-header>
+  <scroll-view
+    class="page-scroll"
+    scroll-y
+    enhanced
+    bounces="{{false}}"
+    show-scrollbar="{{false}}"
+  >
+    <view class="account-page page-scroll__content">
+      <view class="account-hero">
+        <view class="account-hero__top">
+          <view class="account-avatar account-avatar--clickable" bindtap="openOwnPublicProfile">
+            <image wx:if="{{profile.avatarUrl}}" class="account-avatar__image" src="{{profile.avatarUrl}}" mode="aspectFill" />
+            <text wx:else>{{avatarInitial}}</text>
+          </view>
+          <view class="account-copy">
+            <text class="account-eyebrow">Account hub</text>
+            <text class="account-name">{{profile.name}}</text>
+          </view>
+        </view>
+
+        <view class="account-hero__body">
+          <text class="account-note">Open your public profile to preview exactly what buyers see, then edit it there.</text>
+          <view class="account-preview-pill" bindtap="openOwnPublicProfile">
+            <text class="account-preview-hint">Tap avatar to open your public profile</text>
+          </view>
+        </view>
       </view>
-      <text class="account-note">{{profile.bio}}</text>
-    </view>
-  </view>
 
   <view class="account-stats">
     <view class="account-stat">
@@ -32,94 +45,20 @@
 
   <view class="account-section">
     <view class="account-section__head">
-      <text class="account-section__title">Profile</text>
-      <text class="account-section__subtitle">Keep your public details clear for buyers</text>
+      <text class="account-section__title">Public profile</text>
+      <text class="account-section__subtitle">Open the exact version buyers see, then edit it from there</text>
     </view>
 
-    <view wx:if="{{isEditingProfile}}" class="profile-form">
-      <view class="profile-avatar-editor">
-        <view class="profile-avatar-preview">
-          <image wx:if="{{profileDraft.avatarUrl}}" class="profile-avatar-preview__image" src="{{profileDraft.avatarUrl}}" mode="aspectFill" />
-          <text wx:else>{{avatarInitial}}</text>
-        </view>
-        <view class="profile-avatar-editor__actions">
-          <button class="profile-avatar-btn profile-avatar-btn--primary" bindtap="changeProfilePhoto">Change photo</button>
-          <button wx:if="{{profileDraft.avatarUrl}}" class="profile-avatar-btn profile-avatar-btn--ghost" bindtap="removeProfilePhoto">Remove</button>
-        </view>
+    <view class="account-actions">
+      <view class="account-action account-action--dark" bindtap="openOwnPublicProfile">
+        <text class="account-action__title">Open my public profile</text>
+        <text class="account-action__copy">Preview your profile exactly as other students see it and edit it there.</text>
       </view>
 
-      <view class="profile-field">
-        <text class="profile-field__label">Name</text>
-        <input
-          class="profile-field__input"
-          value="{{profileDraft.name}}"
-          maxlength="40"
-          data-field="name"
-          bindinput="onProfileFieldInput"
-        />
+      <view class="account-action" bindtap="goToListings">
+        <text class="account-action__title">Open my listings</text>
+        <text class="account-action__copy">Check what is currently live under your seller profile.</text>
       </view>
-
-      <view class="profile-field">
-        <text class="profile-field__label">University</text>
-        <picker mode="selector" range="{{universityOptions}}" value="{{universityIndex}}" bindchange="onUniversityChange">
-          <view class="profile-field__picker">
-            <text>{{universityOptions[universityIndex]}}</text>
-            <text class="profile-picker__arrow">⌄</text>
-          </view>
-        </picker>
-      </view>
-
-      <view class="profile-field">
-        <text class="profile-field__label">WeChat ID</text>
-        <input
-          class="profile-field__input"
-          value="{{profileDraft.wechat}}"
-          maxlength="40"
-          data-field="wechat"
-          bindinput="onProfileFieldInput"
-        />
-      </view>
-
-      <view class="profile-field">
-        <text class="profile-field__label">Bio</text>
-        <textarea
-          class="profile-field__textarea"
-          value="{{profileDraft.bio}}"
-          maxlength="180"
-          data-field="bio"
-          bindinput="onProfileFieldInput"
-        />
-      </view>
-
-      <view class="profile-actions">
-        <button class="profile-btn profile-btn--ghost" bindtap="cancelEditProfile">Cancel</button>
-        <button class="profile-btn profile-btn--primary" bindtap="saveProfile">Save</button>
-      </view>
-    </view>
-
-    <view wx:else class="profile-view">
-      <view class="profile-row">
-        <text class="profile-row__label">Name</text>
-        <text class="profile-row__value">{{profile.name}}</text>
-      </view>
-      <view wx:if="{{isUniversityPublic}}" class="profile-row">
-        <text class="profile-row__label">University</text>
-        <text class="profile-row__value">{{profile.campus}}</text>
-      </view>
-      <view class="profile-row">
-        <text class="profile-row__label">City</text>
-        <text class="profile-row__value">{{profile.city}}</text>
-      </view>
-      <view class="profile-row">
-        <text class="profile-row__label">WeChat</text>
-        <text class="profile-row__value">{{profile.wechat || 'Not set'}}</text>
-      </view>
-      <view class="profile-row profile-row--bio">
-        <text class="profile-row__label">Bio</text>
-        <text class="profile-row__value">{{profile.bio}}</text>
-      </view>
-
-      <button class="profile-edit" bindtap="startEditProfile">Edit profile</button>
     </view>
   </view>
 
@@ -150,14 +89,16 @@
     </view>
   </view>
 
-  <view class="account-admin">
-    <text class="account-admin__label">Admin</text>
-    <block wx:if="{{isAdmin}}">
-      <button class="account-admin__button account-admin__button--alert" bindtap="goToModeration">Open moderation</button>
-      <button class="account-admin__button account-admin__button--ghost" bindtap="disableAdmin">Exit admin</button>
-    </block>
-    <block wx:else>
-      <button class="account-admin__button account-admin__button--primary" bindtap="openAdminGate">Admin access</button>
-    </block>
-  </view>
+      <view class="account-admin">
+        <text class="account-admin__label">Admin</text>
+        <block wx:if="{{isAdmin}}">
+          <button class="account-admin__button account-admin__button--alert" bindtap="goToModeration">Open moderation</button>
+          <button class="account-admin__button account-admin__button--ghost" bindtap="disableAdmin">Exit admin</button>
+        </block>
+        <block wx:else>
+          <button class="account-admin__button account-admin__button--primary" bindtap="openAdminGate">Admin access</button>
+        </block>
+      </view>
+    </view>
+  </scroll-view>
 </view>

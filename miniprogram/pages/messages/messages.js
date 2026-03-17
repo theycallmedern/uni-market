@@ -1,6 +1,7 @@
 const market = require('../../data/market')
 const savedStore = require('../../utils/saved')
 const profileStore = require('../../utils/profile')
+const tabbarStore = require('../../utils/tabbar')
 
 const INITIAL_PROFILE = profileStore.getProfile()
 
@@ -13,6 +14,7 @@ Page({
   },
 
   onShow() {
+    tabbarStore.syncTabBar(this, 3)
     this.refreshListings()
   },
 

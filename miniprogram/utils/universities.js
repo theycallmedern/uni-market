@@ -54,6 +54,10 @@ function isUniversityPrivateValue(value) {
   return normalized === NONE_UNIVERSITY_OPTION || normalized === OTHER_UNIVERSITY_OPTION
 }
 
+function getPublicUniversityOptions(list = HANGZHOU_UNIVERSITIES) {
+  return list.filter((item) => !isUniversityPrivateValue(item))
+}
+
 module.exports = {
   HANGZHOU_UNIVERSITIES,
   NONE_UNIVERSITY_OPTION,
@@ -61,5 +65,6 @@ module.exports = {
   normalizeUniversity,
   toUniversityKey,
   getUniversityIndex,
-  isUniversityPrivateValue
+  isUniversityPrivateValue,
+  getPublicUniversityOptions
 }

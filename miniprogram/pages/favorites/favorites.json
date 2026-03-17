@@ -1,3 +1,4 @@
 {
-  "navigationBarTitleText": "Saved"
+  "navigationBarTitleText": "Saved",
+  "disableScroll": true
 }

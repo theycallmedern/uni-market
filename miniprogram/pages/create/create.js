@@ -1,6 +1,7 @@
 const market = require('../../data/market')
 const profileStore = require('../../utils/profile')
 const universitiesStore = require('../../utils/universities')
+const tabbarStore = require('../../utils/tabbar')
 const OTHER_SUBCATEGORY_OPTION = 'Other (type your own)'
 const MAX_CUSTOM_SUBCATEGORY_LENGTH = 40
 const FIXED_CITY = 'Hangzhou'
@@ -12,6 +13,7 @@ function normalizeSubcategory(value) {
 
 Page({
   data: {
+    navTitle: 'New Listing',
     categories: [],
     universityOptions: UNIVERSITY_OPTIONS,
     universityIndex: 0,
@@ -67,6 +69,7 @@ Page({
   },
 
   onShow() {
+    tabbarStore.syncTabBar(this, 2)
     const queuedMode = market.consumeCreateMode()
 
     if (!queuedMode) {
@@ -107,6 +110,7 @@ Page({
     const profile = profileStore.getProfile()
     const universityIndex = universitiesStore.getUniversityIndex(profile.campus, UNIVERSITY_OPTIONS)
     return {
+      profile,
       sellerName: profile.name || 'You',
       university: UNIVERSITY_OPTIONS[universityIndex] || UNIVERSITY_OPTIONS[0] || '',
       wechat: profile.wechat || ''
@@ -183,6 +187,7 @@ Page({
     })
 
     this.setData({
+      navTitle: title,
       mode,
       editingId: String(editingId || ''),
       heroTitle: isEdit ? 'Edit your listing' : 'Post a new listing',
@@ -421,7 +426,12 @@ Page({
         name: profileDefaults.sellerName || 'You',
         badge: isEdit ? 'Updated listing' : 'New listing',
         wechat,
-        note: isEdit ? 'Updated just now' : 'Published just now'
+        note: isEdit ? 'Updated just now' : 'Published just now',
+        avatarUrl: profileDefaults.profile && profileDefaults.profile.avatarUrl ? profileDefaults.profile.avatarUrl : '',
+        bio: profileDefaults.profile && profileDefaults.profile.bio ? profileDefaults.profile.bio : '',
+        campus: university,
+        city: location,
+        joinedAt: profileDefaults.profile && profileDefaults.profile.joinedAt ? profileDefaults.profile.joinedAt : ''
       }
     }
 

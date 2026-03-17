@@ -8,20 +8,27 @@
     "pages/messages/messages",
     "pages/profile/profile",
     "pages/moderation/moderation",
-    "pages/listing/listing"
+    "pages/listing/listing",
+    "pages/user-profile/user-profile"
   ],
   "window": {
     "navigationBarTitleText": "UniMarket",
     "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTextStyle": "black",
     "backgroundColor": "#f7f7f7",
-    "backgroundTextStyle": "light"
+    "backgroundTextStyle": "light",
+    "navigationStyle": "custom"
+  },
+  "usingComponents": {
+    "app-header": "/components/app-header/index",
+    "photo-viewer": "/components/photo-viewer/index"
   },
   "tabBar": {
     "color": "#a8a8a8",
     "selectedColor": "#111111",
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
+    "custom": true,
     "list": [
       {
         "pagePath": "pages/index/index",

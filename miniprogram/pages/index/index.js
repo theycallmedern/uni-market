@@ -1,5 +1,9 @@
 const market = require('../../data/market')
 const savedStore = require('../../utils/saved')
+const universitiesStore = require('../../utils/universities')
+const tabbarStore = require('../../utils/tabbar')
+
+const UNIVERSITY_FILTER_OPTIONS = ['All universities', ...universitiesStore.getPublicUniversityOptions()]
 
 function uniqueOptions(listings, field) {
   const values = listings
@@ -21,7 +25,7 @@ Page({
     activeCategoryId: 'all',
     filterPanelOpen: false,
     locationOptions: ['All locations'],
-    universityOptions: ['All universities'],
+    universityOptions: UNIVERSITY_FILTER_OPTIONS,
     locationIndex: 0,
     universityIndex: 0,
     sortOptions: ['Newest', 'Price low to high', 'Price high to low'],
@@ -35,13 +39,14 @@ Page({
   },
 
   onShow() {
+    tabbarStore.syncTabBar(this, 0)
     this.refreshListings()
   },
 
   refreshListings() {
     const allListings = market.getFeedListings()
     const locationOptions = ['All locations', ...uniqueOptions(allListings, 'location')]
-    const universityOptions = ['All universities', ...uniqueOptions(allListings, 'university')]
+    const universityOptions = UNIVERSITY_FILTER_OPTIONS
 
     this.setData({
       allListings,

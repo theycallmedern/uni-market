@@ -1,19 +1,22 @@
-<view class="page-shell results-page">
-  <view class="results-topbar">
-    <view class="results-back" bindtap="goBack">
-      <text class="results-back__icon">←</text>
-    </view>
-
-    <view class="results-search-shell">
-      <text class="results-search__icon">⌕</text>
-      <input
-        class="results-search__input"
-        placeholder="Search within {{categoryTitle}}"
-        value="{{search}}"
-        bindinput="onSearchInput"
-      />
-    </view>
-  </view>
+<view class="page-shell page-shell--scroll">
+  <app-header title="{{navTitle}}" showBack="{{true}}"></app-header>
+  <scroll-view
+    class="page-scroll"
+    scroll-y
+    enhanced
+    bounces="{{false}}"
+    show-scrollbar="{{false}}"
+  >
+    <view class="results-page page-scroll__content">
+      <view class="results-search-shell">
+        <text class="results-search__icon">⌕</text>
+        <input
+          class="results-search__input"
+          placeholder="Search within {{categoryTitle}}"
+          value="{{search}}"
+          bindinput="onSearchInput"
+        />
+      </view>
 
   <view class="results-heading">
     <text class="results-title">{{categoryTitle}}</text>
@@ -101,8 +104,10 @@
     <text class="results-empty__copy">Try a wider price range, another campus, or clear the filters.</text>
   </view>
 
-  <view wx:if="{{feedbackVisible}}" class="save-feedback">
-    <view class="save-feedback__icon">{{feedbackIcon}}</view>
-    <text class="save-feedback__text">{{feedbackText}}</text>
-  </view>
+      <view wx:if="{{feedbackVisible}}" class="save-feedback">
+        <view class="save-feedback__icon">{{feedbackIcon}}</view>
+        <text class="save-feedback__text">{{feedbackText}}</text>
+      </view>
+    </view>
+  </scroll-view>
 </view>

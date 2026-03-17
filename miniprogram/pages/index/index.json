@@ -1,3 +1,5 @@
 {
-  "navigationBarTitleText": "UniMarket"
+  "navigationBarTitleText": "UniMarket",
+  "disableScroll": true,
+  "navigationStyle": "custom"
 }

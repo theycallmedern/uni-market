@@ -1,230 +1,199 @@
 # UniMarket
 
-<p align="center">
-  <img src="./miniprogram/assets/brand/unimarket-logo.png" alt="UniMarket logo" width="112" />
-</p>
+WeChat Mini Program marketplace MVP for international students in Hangzhou.
 
-<p align="center">
-  <strong>WeChat Mini Program marketplace MVP for international students in Hangzhou.</strong>
-</p>
-
-<p align="center">
-  Built to make student housing, resale items, transport, and campus services easier to discover in a familiar WeChat flow.
-</p>
-
-<p align="center">
-  <img alt="Status" src="https://img.shields.io/badge/status-MVP-111111?style=flat-square">
-  <img alt="Platform" src="https://img.shields.io/badge/platform-WeChat%20Mini%20Program-07C160?style=flat-square">
-  <img alt="City" src="https://img.shields.io/badge/city-Hangzhou-1f2937?style=flat-square">
-  <img alt="License" src="https://img.shields.io/badge/license-MIT-1f2937?style=flat-square">
-  <img alt="Security" src="https://img.shields.io/badge/security-local--first-1f2937?style=flat-square">
-</p>
-
-<p align="center">
-  <code>WeChat Mini Program</code>
-  <code>Local-first MVP</code>
-  <code>Student marketplace</code>
-  <code>Admin moderation</code>
-  <code>Profile + listing workflows</code>
-</p>
+Built to make housing, resale items, transport, and lightweight campus services easier to browse in a familiar WeChat-style flow.
 
 ## Overview
 
-UniMarket is a marketplace concept for international students in China, starting with a single-city MVP in Hangzhou.
+UniMarket is a local-first marketplace concept designed around how student communities already operate in China: quick discovery, lightweight trust signals, and handoff through WeChat.
 
-The project is intentionally product-first: it focuses on day-to-day marketplace behavior before introducing a production backend.
-
-The current repository contains a working Mini Program flow for browsing, saving, posting, editing, reporting, and moderating listings using local data and local device storage.
+This repository contains the MVP shell of that experience. Users can browse listings, save favorites, publish their own posts, manage a profile, open seller profiles, and report suspicious content. Admins can review reports and hide listings locally during moderation.
 
 > [!IMPORTANT]
-> UniMarket is currently local-first and MVP-scoped. There is no production backend, payment processing, or cloud sync in this repository.
+> This project is still MVP-scoped and local-first. There is no production backend, no payment flow, no real-time messaging, and no cloud sync in this repository.
 
-### Why it exists
+## Why it exists
 
-Most student marketplace activity in WeChat happens in chat groups, where posts are easy to miss and hard to manage.
+Most student marketplace activity in WeChat groups is fast but messy:
 
-UniMarket exists to provide:
+- posts disappear quickly
+- listings are hard to filter
+- seller identity is inconsistent
+- moderation is usually manual and reactive
 
-- clearer listing discovery
-- better category and filter navigation
-- consistent listing details and contact handoff
-- lightweight moderation controls for community safety
+UniMarket explores a cleaner layer on top of that behavior without leaving the familiar WeChat handoff model.
 
-## Key Features
+## Current feature set
 
-- **Home feed and category discovery**: browse latest listings, switch categories, and open result views quickly.
-- **Search and filtering**: filter by university, sort options, and listing metadata on dedicated result screens.
-- **Saved listings**: bookmark listings locally and revisit them later.
-- **Create + edit listing flow**:
-  - up to 5 photos with preview, reorder arrows, and cover-first behavior
-  - category + subcategory picker with `Other (type your own)` support
-  - fixed city (`Hangzhou`) and university picker validation
-- **Profile editing**:
-  - editable profile fields and avatar upload
-  - university privacy behavior for `None` / `Other`
-  - fixed city policy for one-city MVP mode
-- **Report and moderation system**:
-  - listing reports from users
-  - admin-only moderation page with status updates (`pending`, `reviewing`, `resolved`, `dismissed`)
-  - resolved violations can hide listings from feed visibility
-- **Role-aware listing visibility**:
-  - hidden listings are blocked for regular users
-  - admin can still review hidden content
-  - owner can open their own hidden listing and see hidden-state notice
+### Marketplace browsing
 
-## Product Flow
+- home feed with search and category shortcuts
+- category and results pages with sort, location, university, and price filtering
+- saved listings with local persistence
+- listing detail pages with image gallery, seller card, report actions, and WeChat handoff
+
+### Seller workflows
+
+- create listing flow with up to 5 photos
+- reorderable images and cover-first media behavior
+- category and subcategory selection with `Other (type your own)` support
+- fixed city scope for Hangzhou MVP mode
+- local listing editing and deletion from the `Listings` tab
+
+### Profiles and trust
+
+- editable user profile with avatar, name, university, WeChat ID, and bio
+- separate seller profile page with reviews, listings, and share/copy actions
+- university privacy handling for `None` and `Other`
+- review-ready profile surfaces for marketplace trust building
+
+### Moderation
+
+- listing report creation from user-facing screens
+- device-local admin access gate
+- moderation inbox with `pending`, `reviewing`, `resolved`, and `dismissed` states
+- visibility rules that hide resolved listings from regular users while keeping them reviewable for admins
+
+## Product flow
 
 ### Buyer flow
 
-1. Open home feed and browse categories.
-2. Use search and filters to narrow results.
-3. Open listing detail.
-4. Save listings or copy WeChat contact for handoff.
+1. Open the `Search` tab and browse categories or search directly.
+2. Narrow results with sort, university, city, and price filters.
+3. Open a listing and inspect seller details.
+4. Save the post or copy the seller's WeChat ID to continue outside the Mini Program.
 
 ### Seller flow
 
-1. Open `Post`.
-2. Add photos, category, pricing, and listing details.
-3. Publish listing to local feed.
-4. Manage or edit listing in `Listings`.
+1. Open the `Post` tab.
+2. Add photos, category, price, title, and description.
+3. Publish locally to the marketplace feed.
+4. Manage existing listings from the `Listings` tab.
 
 ### Moderation flow
 
-1. User reports listing from listing detail page.
-2. Admin unlocks admin access on device.
-3. Admin reviews reports and updates report status.
-4. Confirmed violations (`resolved`) can hide affected listings in feed views.
+1. A user reports a listing or profile.
+2. An admin unlocks local moderation access on device.
+3. Reports are reviewed and status is updated.
+4. Resolved violations can hide the associated listing from regular marketplace views.
 
-## Tech Stack
+## App structure
+
+The current Mini Program registers these primary surfaces:
+
+- `Search`: home feed and discovery
+- `Saved`: locally bookmarked listings
+- `Post`: create and edit listing flow
+- `Listings`: seller inventory management
+- `Profile`: account, admin tools, and profile editing
+
+Supporting pages include category results, listing detail, moderation, and a dedicated seller profile page.
+
+## Tech stack
 
 | Layer | Technology |
 | --- | --- |
 | App shell | WeChat Mini Program |
 | UI | WXML + WXSS |
 | Runtime logic | JavaScript |
-| Local persistence | `wx` local storage APIs |
+| Local persistence | `wx` storage APIs |
+| Tooling | Node.js + shell check script |
 | Dev environment | WeChat Developer Tools |
-| Backend direction | Cloudflare Workers + D1 + R2 (planned) |
+| Planned backend direction | Cloudflare Workers + D1 + R2 |
 
-## Getting Started
+## Getting started
 
 ### Prerequisites
 
 - WeChat Developer Tools
-- Node.js (for repository checks)
+- Node.js
 - Git
 
-### Clone and open
+### Clone the repo
 
 ```bash
 git clone https://github.com/theycallmedern/uni-market.git
 cd uni-market
 ```
 
-Open `/path/to/uni-market` in WeChat Developer Tools and compile.
-
-### Local repository check
+### Run the repository check
 
 ```bash
 npm install
 npm run check
 ```
 
-## Usage
+### Open in WeChat DevTools
 
-### Listing creation and editing
+Open the repository folder in WeChat Developer Tools and compile the Mini Program locally.
 
-- Use the `Post` tab to create listings.
-- Use the `Listings` tab to edit or delete your listings.
-- Location is fixed to `Hangzhou` for MVP scope.
-- University is selected from a predefined Hangzhou list.
-
-### Profile and identity fields
-
-- Edit profile in `Profile`.
-- You can set avatar, name, university, WeChat ID, and bio.
-- If university is `None` or `Other`, university is treated as private in public listing surfaces.
-
-### Admin moderation access
-
-- Admin tools are available only after admin unlock on the current device.
-- Admin controls live in the bottom admin section of `Profile`.
-- Reports are managed from the moderation page.
-
-> [!WARNING]
-> The current admin passcode flow is client-side MVP logic and is not production-safe. For production, move role checks and moderation permissions to a backend-authenticated system.
-
-## Project Structure
+## Project structure
 
 | Path | Purpose |
 | --- | --- |
-| [`miniprogram/app.json`](./miniprogram/app.json) | Global page registration and tab bar config |
-| [`miniprogram/pages/index`](./miniprogram/pages/index) | Home feed, categories, and quick filters |
-| [`miniprogram/pages/results`](./miniprogram/pages/results) | Search results and advanced filtering |
-| [`miniprogram/pages/listing`](./miniprogram/pages/listing) | Listing detail, save/report actions |
-| [`miniprogram/pages/create`](./miniprogram/pages/create) | Create/edit listing form |
-| [`miniprogram/pages/messages`](./miniprogram/pages/messages) | My listings management |
-| [`miniprogram/pages/profile`](./miniprogram/pages/profile) | Profile editing and admin entry point |
-| [`miniprogram/pages/moderation`](./miniprogram/pages/moderation) | Admin report review and status updates |
-| [`miniprogram/data/market.js`](./miniprogram/data/market.js) | Local listing model and feed/category helpers |
-| [`miniprogram/utils/reports.js`](./miniprogram/utils/reports.js) | Report storage and moderation decorators |
-| [`miniprogram/utils/admin.js`](./miniprogram/utils/admin.js) | Device-local admin access gate |
-| [`miniprogram/utils/profile.js`](./miniprogram/utils/profile.js) | Profile normalization and persistence |
-| [`miniprogram/utils/universities.js`](./miniprogram/utils/universities.js) | Hangzhou university list and privacy helpers |
-| [`miniprogram/assets/brand/unimarket-logo.png`](./miniprogram/assets/brand/unimarket-logo.png) | UniMarket brand logo used in UI |
-| [`scripts/check.sh`](./scripts/check.sh) | JS syntax validation for repo scripts/pages |
+| `miniprogram/app.json` | Global page registration, window config, and custom tab bar setup |
+| `miniprogram/pages/index` | Home feed, discovery, and filter entry points |
+| `miniprogram/pages/category` | Category-specific listing views |
+| `miniprogram/pages/results` | Result list with filtering and sorting controls |
+| `miniprogram/pages/favorites` | Saved listings and cleanup actions |
+| `miniprogram/pages/create` | Create and edit listing form |
+| `miniprogram/pages/messages` | Seller inventory management |
+| `miniprogram/pages/listing` | Listing detail, gallery, save, report, and WeChat contact handoff |
+| `miniprogram/pages/user-profile` | Seller profile, reviews, and seller listings |
+| `miniprogram/pages/profile` | Personal profile, profile editing, and admin access |
+| `miniprogram/pages/moderation` | Moderation inbox and report state management |
+| `miniprogram/custom-tab-bar` | Custom tab bar UI |
+| `miniprogram/components` | Shared UI such as header and photo viewer |
+| `miniprogram/data/market.js` | Local marketplace dataset and feed helpers |
+| `miniprogram/utils/profile.js` | Profile normalization and persistence |
+| `miniprogram/utils/reports.js` | Report storage and moderation helpers |
+| `miniprogram/utils/saved.js` | Saved listing persistence |
+| `miniprogram/utils/reviews.js` | Review storage and seller summary helpers |
+| `scripts/check.sh` | Repository syntax and consistency check |
 
-## Privacy and Security
+## Privacy and security
 
-UniMarket is currently a local-first MVP:
+UniMarket is intentionally local-first right now:
 
-- listings created in this MVP are stored locally on device
-- saved items and profile fields are stored locally
-- no production server sync is active in this repository
+- listings created in this MVP are stored on device
+- saved items are stored on device
+- profile fields and moderation state are stored on device
+- there is no production sync layer in this repository
 
-Please avoid committing:
+Please do not commit:
 
 - real personal data
 - private WeChat IDs from real users
-- private keys or secrets
+- secrets or tokens
 - sensitive screenshots
 
-For policy and reporting expectations, see [SECURITY.md](./SECURITY.md).
+For repository-level guidance, see [SECURITY.md](./SECURITY.md).
 
-## Development
+> [!WARNING]
+> The admin unlock flow in this MVP is client-side only and is not production-safe. Real moderation and role checks should move behind authenticated backend logic.
 
-When contributing or iterating:
+## Development notes
 
-- run `npm run check` before commit
-- verify behavior in WeChat Developer Tools
-- test key flows after UI updates:
-  - browse and filter
-  - create/edit listing
-  - profile save
-  - report + moderation status update
+Before shipping changes:
+
+- run `npm run check`
+- verify the relevant flow in WeChat Developer Tools
+- retest at least the surfaces touched by the change
+
+For current product-facing updates, see [CHANGELOG.md](./CHANGELOG.md). For contribution guidance, see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Roadmap
 
 - [x] Local marketplace MVP shell
-- [x] Listing create/edit and save flows
+- [x] Listing create, edit, and save flows
 - [x] Profile editing with avatar upload
-- [x] Report + admin moderation status workflow
-- [ ] Backend-connected auth and role management
-- [ ] Real media upload/storage service
-- [ ] Production messaging/inbox
-- [ ] Server-side moderation enforcement
-
-## Contributing
-
-Contributions are welcome.
-
-If you plan a significant change, open an issue first so implementation can stay aligned with the product direction and MVP scope.
-
-Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening large pull requests.
-
-## Changelog
-
-Product-facing updates are tracked in [CHANGELOG.md](./CHANGELOG.md).
+- [x] Seller profile and review surfaces
+- [x] Report and admin moderation workflow
+- [ ] Backend-backed auth and role management
+- [ ] Cloud media storage
+- [ ] Production messaging or inbox layer
+- [ ] Server-enforced moderation and sync
 
 ## License
 

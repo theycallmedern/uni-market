@@ -1,5 +1,18 @@
 const STORAGE_KEY = 'listingReports'
 
+function normalizeStoredReport(report = {}) {
+  const targetType = report.targetType || 'listing'
+
+  return {
+    ...report,
+    targetType,
+    listingId: targetType === 'listing' ? String(report.listingId || '') : '',
+    profileKey: targetType === 'profile' ? String(report.profileKey || '') : '',
+    profileName: targetType === 'profile' ? report.profileName || '' : '',
+    sourceListingId: report.sourceListingId ? String(report.sourceListingId) : ''
+  }
+}
+
 function safeGetStorage(key, fallback = []) {
   if (typeof wx === 'undefined' || !wx.getStorageSync) {
     return fallback
@@ -24,7 +37,7 @@ function safeSetStorage(key, value) {
 }
 
 function getReports() {
-  return safeGetStorage(STORAGE_KEY, [])
+  return safeGetStorage(STORAGE_KEY, []).map((report) => normalizeStoredReport(report))
 }
 
 function saveReports(reports) {
@@ -33,15 +46,40 @@ function saveReports(reports) {
 
 function hasReportedListing(listingId) {
   const normalizedId = String(listingId)
-  return getReports().some((report) => String(report.listingId) === normalizedId)
+  return getReports().some((report) => report.targetType === 'listing' && String(report.listingId) === normalizedId)
+}
+
+function hasReportedProfile(profileKey) {
+  const normalizedKey = String(profileKey || '')
+  return getReports().some((report) => report.targetType === 'profile' && String(report.profileKey) === normalizedKey)
 }
 
 function createReport(payload) {
   const reports = getReports()
   const report = {
     id: Date.now(),
+    targetType: 'listing',
     listingId: String(payload.listingId),
     listingTitle: payload.listingTitle || '',
+    reason: payload.reason || 'Other',
+    note: payload.note || '',
+    createdAt: new Date().toISOString(),
+    status: 'pending'
+  }
+
+  saveReports([report, ...reports])
+
+  return report
+}
+
+function createProfileReport(payload) {
+  const reports = getReports()
+  const report = {
+    id: Date.now(),
+    targetType: 'profile',
+    profileKey: String(payload.profileKey || ''),
+    profileName: payload.profileName || '',
+    sourceListingId: payload.sourceListingId ? String(payload.sourceListingId) : '',
     reason: payload.reason || 'Other',
     note: payload.note || '',
     createdAt: new Date().toISOString(),
@@ -71,6 +109,10 @@ function getListingModerationMap() {
   const map = {}
 
   reports.forEach((report) => {
+    if ((report.targetType || 'listing') !== 'listing') {
+      return
+    }
+
     const listingId = String(report.listingId || '')
     if (!listingId) {
       return
@@ -136,7 +178,9 @@ function filterVisibleListings(listings) {
 module.exports = {
   getReports,
   hasReportedListing,
+  hasReportedProfile,
   createReport,
+  createProfileReport,
   updateReportStatus,
   getListingModerationStatus,
   isListingHiddenByModeration,
