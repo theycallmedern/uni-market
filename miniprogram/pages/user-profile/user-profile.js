@@ -4,6 +4,8 @@ const profileStore = require('../../utils/profile')
 const reportsStore = require('../../utils/reports')
 const visibilityStore = require('../../utils/visibility')
 const reviewsStore = require('../../utils/reviews')
+const feedback = require('../../utils/ui-feedback')
+const uiText = require('../../constants/messages')
 
 const PROFILE_REPORT_REASONS = [
   'Scam or fraud',
@@ -21,6 +23,34 @@ const REVIEW_RATING_OPTIONS = [
   { label: '1 star - Bad', value: 1 }
 ]
 
+const EMPTY_REVIEW_SUMMARY = {
+  average: 0,
+  averageLabel: 'New',
+  count: 0,
+  countLabel: '0 reviews',
+  recentReviews: []
+}
+
+function buildUnavailableState({ navTitle, blockedSeller = false, notFound = false } = {}) {
+  return {
+    navTitle,
+    isOwnProfile: false,
+    seller: null,
+    listings: [],
+    soldCount: 0,
+    avatarInitial: 'U',
+    memberSinceLabel: '',
+    isEditingProfile: false,
+    reviewSummary: { ...EMPTY_REVIEW_SUMMARY },
+    canLeaveReview: false,
+    hasReviewedCurrentListing: false,
+    hasReported: false,
+    isUniversityPublic: false,
+    notFound,
+    blockedSeller
+  }
+}
+
 Page({
   data: {
     navTitle: 'Seller profile',
@@ -29,18 +59,13 @@ Page({
     listingId: '',
     seller: null,
     listings: [],
+    soldCount: 0,
     avatarInitial: 'U',
     memberSinceLabel: '',
     profileDraft: profileStore.getProfile(),
     universityOptions: universitiesStore.HANGZHOU_UNIVERSITIES,
     universityIndex: universitiesStore.getUniversityIndex(profileStore.getProfile().campus, universitiesStore.HANGZHOU_UNIVERSITIES),
-    reviewSummary: {
-      average: 0,
-      averageLabel: 'New',
-      count: 0,
-      countLabel: '0 reviews',
-      recentReviews: []
-    },
+    reviewSummary: { ...EMPTY_REVIEW_SUMMARY },
     canLeaveReview: false,
     hasReviewedCurrentListing: false,
     hasReported: false,
@@ -85,6 +110,7 @@ Page({
       navTitle: 'My profile',
       seller: sellerProfile,
       listings: sellerProfile.listings || [],
+      soldCount: Number(sellerProfile.soldCount || 0),
       avatarInitial: profileStore.getProfileInitial(profile),
       memberSinceLabel: profileStore.formatMemberSince(sellerProfile.joinedAt),
       reviewSummary,
@@ -118,54 +144,18 @@ Page({
     }
 
     if (!sellerProfile && rawSellerProfile && visibilityStore.isSellerBlocked(rawSellerProfile.sellerKey)) {
-      this.setData({
+      this.setData(buildUnavailableState({
         navTitle: 'Seller hidden',
-        isOwnProfile: false,
-        seller: null,
-        listings: [],
-        avatarInitial: 'U',
-        memberSinceLabel: '',
-        isEditingProfile: false,
-        reviewSummary: {
-          average: 0,
-          averageLabel: 'New',
-          count: 0,
-          countLabel: '0 reviews',
-          recentReviews: []
-        },
-        canLeaveReview: false,
-        hasReviewedCurrentListing: false,
-        hasReported: false,
-        isUniversityPublic: false,
-        notFound: false,
         blockedSeller: true
-      })
+      }))
       return
     }
 
     if (!sellerProfile) {
-      this.setData({
+      this.setData(buildUnavailableState({
         navTitle: 'Profile unavailable',
-        isOwnProfile: false,
-        seller: null,
-        listings: [],
-        avatarInitial: 'U',
-        memberSinceLabel: '',
-        isEditingProfile: false,
-        reviewSummary: {
-          average: 0,
-          averageLabel: 'New',
-          count: 0,
-          countLabel: '0 reviews',
-          recentReviews: []
-        },
-        canLeaveReview: false,
-        hasReviewedCurrentListing: false,
-        hasReported: false,
-        isUniversityPublic: false,
-        notFound: true,
-        blockedSeller: false
-      })
+        notFound: true
+      }))
       return
     }
 
@@ -174,6 +164,7 @@ Page({
       isOwnProfile: false,
       seller: sellerProfile,
       listings: sellerProfile.listings || [],
+      soldCount: Number(sellerProfile.soldCount || 0),
       avatarInitial: String(sellerProfile.name || 'U').slice(0, 1).toUpperCase(),
       memberSinceLabel: profileStore.formatMemberSince(sellerProfile.joinedAt),
       reviewSummary: reviewsStore.getSellerReviewSummary(sellerProfile.sellerKey),
@@ -243,11 +234,9 @@ Page({
           canLeaveReview: Boolean(this.data.listingId)
         })
 
-        wx.showModal({
-          title: 'Write in WeChat',
-          content: 'WeChat copied the seller ID. Open WeChat search and paste it to continue, because Mini Programs cannot jump directly into a personal chat/profile.',
-          showCancel: false,
-          confirmText: 'OK'
+        feedback.showInfoModal({
+          title: uiText.COMMON.WRITE_IN_WECHAT_TITLE,
+          content: uiText.COMMON.WRITE_IN_WECHAT_CONTENT
         })
       }
     })
@@ -263,10 +252,7 @@ Page({
     wx.setClipboardData({
       data: path,
       success: () => {
-        wx.showToast({
-          title: 'Link copied',
-          icon: 'success'
-        })
+        feedback.showSuccessToast(uiText.USER_PROFILE.LINK_COPIED)
       }
     })
   },
@@ -296,9 +282,19 @@ Page({
 
   onProfileFieldInput(e) {
     const { field } = e.currentTarget.dataset
+    const rawValue = e.detail.value
+    let value = rawValue
+
+    if (field === 'name') {
+      value = profileStore.sanitizeProfileName(rawValue)
+    } else if (field === 'wechat') {
+      value = profileStore.sanitizeWechatId(rawValue)
+    } else if (field === 'bio') {
+      value = profileStore.sanitizeProfileBio(rawValue)
+    }
 
     this.setData({
-      [`profileDraft.${field}`]: e.detail.value
+      [`profileDraft.${field}`]: value
     })
   },
 
@@ -383,18 +379,17 @@ Page({
     })
 
     if (normalizedProfile.name.length < 2) {
-      wx.showToast({
-        title: 'Name: at least 2 chars',
-        icon: 'none'
-      })
+      feedback.showNeutralToast(uiText.USER_PROFILE.NAME_MIN)
       return
     }
 
     if (!normalizedProfile.campus) {
-      wx.showToast({
-        title: 'Add your university',
-        icon: 'none'
-      })
+      feedback.showNeutralToast(uiText.USER_PROFILE.UNIVERSITY_REQUIRED)
+      return
+    }
+
+    if (!profileStore.isValidWechatId(normalizedProfile.wechat)) {
+      feedback.showNeutralToast(uiText.USER_PROFILE.wechatInvalid(profileStore.WECHAT_MIN_LENGTH, profileStore.WECHAT_MAX_LENGTH))
       return
     }
 
@@ -404,10 +399,7 @@ Page({
     })
     this.refreshOwnProfile()
 
-    wx.showToast({
-      title: 'Profile saved',
-      icon: 'success'
-    })
+    feedback.showSuccessToast(uiText.USER_PROFILE.PROFILE_SAVED)
   },
 
   leaveReview() {
@@ -418,18 +410,12 @@ Page({
     }
 
     if (this.data.hasReviewedCurrentListing) {
-      wx.showToast({
-        title: 'Review already added',
-        icon: 'none'
-      })
+      feedback.showNeutralToast(uiText.USER_PROFILE.REVIEW_ALREADY_ADDED)
       return
     }
 
     if (!this.data.canLeaveReview) {
-      wx.showToast({
-        title: 'Write in WeChat first',
-        icon: 'none'
-      })
+      feedback.showNeutralToast(uiText.USER_PROFILE.REVIEW_UNLOCK_REQUIRED)
       return
     }
 
@@ -442,11 +428,11 @@ Page({
           return
         }
 
-        wx.showModal({
-          title: 'Leave a review',
+        feedback.showModal({
+          title: uiText.USER_PROFILE.REVIEW_MODAL_TITLE,
           editable: true,
-          placeholderText: 'Optional note about the seller',
-          confirmText: 'Post',
+          placeholderText: uiText.USER_PROFILE.REVIEW_MODAL_PLACEHOLDER,
+          confirmText: uiText.USER_PROFILE.REVIEW_MODAL_CONFIRM,
           success: (modalRes) => {
             if (!modalRes.confirm) {
               return
@@ -462,19 +448,13 @@ Page({
             })
 
             if (!review) {
-              wx.showToast({
-                title: 'Review already exists',
-                icon: 'none'
-              })
+              feedback.showNeutralToast(uiText.USER_PROFILE.REVIEW_ALREADY_EXISTS)
               return
             }
 
             this.refreshSellerProfile()
 
-            wx.showToast({
-              title: 'Review posted',
-              icon: 'success'
-            })
+            feedback.showSuccessToast(uiText.USER_PROFILE.REVIEW_POSTED)
           }
         })
       }
@@ -494,19 +474,16 @@ Page({
 
     this.closeMenu()
 
-    wx.showModal({
-      title: 'Block this user?',
-      content: `All listings from ${seller.name || 'this seller'} will be hidden on this device.`,
+    feedback.showModal({
+      title: uiText.USER_PROFILE.BLOCK_TITLE,
+      content: uiText.USER_PROFILE.blockContent(seller.name),
       confirmText: 'Block',
       confirmColor: '#ba2d2d',
       success: (res) => {
         if (!res.confirm) return
 
         visibilityStore.blockSeller(seller.sellerKey)
-        wx.showToast({
-          title: 'User blocked',
-          icon: 'success'
-        })
+        feedback.showSuccessToast(uiText.USER_PROFILE.BLOCKED_SUCCESS)
 
         setTimeout(() => {
           wx.navigateBack({
@@ -550,10 +527,7 @@ Page({
 
     if (reportsStore.hasReportedProfile(seller.sellerKey)) {
       this.setData({ hasReported: true })
-      wx.showToast({
-        title: 'Already reported',
-        icon: 'none'
-      })
+      feedback.showNeutralToast(uiText.USER_PROFILE.ALREADY_REPORTED)
       return
     }
 
@@ -564,11 +538,11 @@ Page({
         if (!reason) return
 
         if (reason === 'Other') {
-          wx.showModal({
-            title: 'Report profile',
+          feedback.showModal({
+            title: uiText.USER_PROFILE.REPORT_PROFILE_TITLE,
             editable: true,
-            placeholderText: 'Tell us what is wrong',
-            confirmText: 'Send',
+            placeholderText: uiText.USER_PROFILE.REPORT_PROFILE_PLACEHOLDER,
+            confirmText: uiText.USER_PROFILE.REPORT_PROFILE_CONFIRM,
             success: (modalRes) => {
               if (modalRes.confirm) {
                 this.submitProfileReport(reason, modalRes.content || '')
@@ -598,10 +572,7 @@ Page({
       hasReported: true
     })
 
-    wx.showToast({
-      title: 'Report sent',
-      icon: 'success'
-    })
+    feedback.showSuccessToast(uiText.USER_PROFILE.REPORT_SENT)
   },
 
   onShareAppMessage() {

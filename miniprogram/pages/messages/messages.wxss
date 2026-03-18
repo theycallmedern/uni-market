@@ -1,5 +1,5 @@
 .manager-page {
-  padding: 22rpx 24rpx 124rpx;
+  padding: 22rpx 24rpx calc(env(safe-area-inset-bottom) + 220rpx);
 }
 
 .manager-hero {
@@ -63,6 +63,22 @@
   margin-bottom: 18rpx;
 }
 
+.manager-head--archive {
+  margin-top: 26rpx;
+}
+
+.manager-head__copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.manager-archive-chevron {
+  font-size: 30rpx;
+  color: #7b7b7b;
+  line-height: 1;
+  margin-left: 12rpx;
+}
+
 .manager-head__title {
   display: block;
   font-size: 36rpx;
@@ -83,7 +99,7 @@
   height: 72rpx;
   padding: 0 22rpx;
   border-radius: 24rpx;
-  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  background: #ffffff;
   color: #2d2d2d;
   border: 1rpx solid rgba(17, 17, 17, 0.08);
   font-size: 24rpx;
@@ -92,7 +108,9 @@
 }
 
 .manager-new::after,
+.manager-archive-toggle::after,
 .manager-open::after,
+.manager-sold::after,
 .manager-edit::after,
 .manager-delete::after,
 .manager-empty__button::after {
@@ -105,11 +123,60 @@
   gap: 16rpx;
 }
 
+.manager-list--archive {
+  margin-top: 10rpx;
+}
+
+.manager-archive-shell {
+  width: 100%;
+}
+
+.manager-archive-toggle {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 100% !important;
+  margin: 16rpx 0 8rpx !important;
+  padding: 0;
+  border-radius: 30rpx;
+  background: #ffffff;
+  border: 0;
+  box-shadow: 0 16rpx 30rpx rgba(17, 17, 17, 0.05);
+  text-align: left;
+  line-height: 1;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.manager-archive-toggle__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  width: 100%;
+  padding: 30rpx;
+  box-sizing: border-box;
+}
+
+.manager-archive-toggle .manager-head__title {
+  font-size: 32rpx;
+}
+
+.manager-archive-toggle .manager-head__subtitle {
+  margin-top: 10rpx;
+  color: #7b7b7b;
+  line-height: 1.45;
+}
+
 .manager-card {
   overflow: hidden;
   border-radius: 30rpx;
   background: #ffffff;
   box-shadow: 0 16rpx 30rpx rgba(17, 17, 17, 0.05);
+}
+
+.manager-card--archived {
+  opacity: 0.96;
 }
 
 .manager-card__image {
@@ -159,6 +226,11 @@
   color: #ba2d2d;
 }
 
+.manager-card__badge--sold {
+  background: #eef8ef;
+  color: #2f7d32;
+}
+
 .manager-card__meta,
 .manager-card__sub {
   display: block;
@@ -167,19 +239,28 @@
   color: #7b7b7b;
 }
 
+.manager-card__archive-note {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #5e7759;
+}
+
 .manager-card__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 12rpx;
   margin-top: 18rpx;
 }
 
 .manager-open,
+.manager-sold,
 .manager-edit,
 .manager-delete {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
+  flex: 1 1 calc(50% - 6rpx);
   height: 76rpx;
   padding: 0;
   border-radius: 24rpx;
@@ -190,15 +271,27 @@
 }
 
 .manager-open {
-  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  background: #ffffff;
   color: #2d2d2d;
   border: 1rpx solid rgba(17, 17, 17, 0.08);
 }
 
 .manager-edit {
-  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  background: #ffffff;
   color: #2d2d2d;
   border: 1rpx solid rgba(17, 17, 17, 0.08);
+}
+
+.manager-sold {
+  background: #ffffff;
+  color: #2d2d2d;
+  border: 1rpx solid rgba(17, 17, 17, 0.08);
+}
+
+.manager-sold--active {
+  background: #eef8ef;
+  color: #2f7d32;
+  border-color: rgba(47, 125, 50, 0.22);
 }
 
 .manager-delete {
@@ -232,7 +325,7 @@
   margin-top: 20rpx;
   height: 92rpx;
   border-radius: 28rpx;
-  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  background: #ffffff;
   color: #2d2d2d;
   border: 1rpx solid rgba(17, 17, 17, 0.08);
   font-size: 28rpx;

@@ -28,6 +28,18 @@
   color: #8a3030;
 }
 
+.listing-status-card--sold {
+  background: #eef8ef;
+}
+
+.listing-status-badge--sold {
+  background: #2f7d32;
+}
+
+.listing-status-card--sold .listing-status-copy {
+  color: #2f6c31;
+}
+
 .gallery-shell {
   position: relative;
 }
@@ -109,9 +121,62 @@
 .listing-chip {
   padding: 10rpx 16rpx;
   border-radius: 999rpx;
-  background: #f4f1ea;
+  background: #f3f1ec;
   font-size: 22rpx;
-  color: #5d5d5d;
+  color: #5f5f5f;
+  border: 1rpx solid rgba(17, 17, 17, 0.04);
+}
+
+.listing-chip--subcategory {
+  background: #f1eef7;
+  color: #5a4c78;
+  border-color: rgba(90, 76, 120, 0.14);
+}
+
+.listing-chip--location {
+  background: #eaf1fc;
+  color: #315784;
+  border-color: rgba(49, 87, 132, 0.14);
+}
+
+.listing-chip--condition {
+  font-weight: 600;
+}
+
+.listing-chip--condition-new {
+  background: #e7f6eb;
+  color: #256b3d;
+  border-color: rgba(37, 107, 61, 0.18);
+}
+
+.listing-chip--condition-like-new {
+  background: #e9f6f1;
+  color: #26645a;
+  border-color: rgba(38, 100, 90, 0.16);
+}
+
+.listing-chip--condition-used {
+  background: #f7f0de;
+  color: #8c6322;
+  border-color: rgba(140, 99, 34, 0.18);
+}
+
+.listing-chip--condition-refurbished {
+  background: #e9f0fa;
+  color: #2f5f95;
+  border-color: rgba(47, 95, 149, 0.16);
+}
+
+.listing-chip--condition-parts {
+  background: #fbe9e9;
+  color: #9a3f3f;
+  border-color: rgba(154, 63, 63, 0.16);
+}
+
+.listing-chip--condition-default {
+  background: #efefef;
+  color: #555555;
+  border-color: rgba(17, 17, 17, 0.1);
 }
 
 .listing-description {
@@ -144,6 +209,53 @@
 .detail-value {
   font-size: 28rpx;
   font-weight: 600;
+}
+
+.listing-address-card {
+  margin-top: 18rpx;
+  padding: 22rpx 24rpx;
+  border-radius: 28rpx;
+  background: #ffffff;
+  box-shadow: 0 14rpx 28rpx rgba(17, 17, 17, 0.04);
+}
+
+.listing-address-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.listing-address-card__label {
+  font-size: 22rpx;
+  color: #8a8a8a;
+}
+
+.listing-address-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 10rpx 14rpx;
+  border-radius: 999rpx;
+  background: #ffffff;
+  border: 1rpx solid rgba(79, 152, 232, 0.32);
+  font-size: 22rpx;
+  line-height: 1;
+  color: #4f98e8;
+  font-weight: 600;
+}
+
+.listing-address-card__action-icon {
+  font-size: 22rpx;
+  line-height: 1;
+}
+
+.listing-address-card__text {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  line-height: 1.45;
+  color: #1f1f1f;
 }
 
 .seller-card {
@@ -461,7 +573,7 @@
 .action-button--ghost {
   width: 210rpx;
   border: 2rpx solid rgba(17, 17, 17, 0.08);
-  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  background: #ffffff;
   color: #2d2d2d;
 }
 
@@ -484,9 +596,15 @@
 
 .action-button--primary {
   flex: 1;
-  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  background: #ffffff;
   color: #2d2d2d;
   border: 1rpx solid rgba(17, 17, 17, 0.08);
+}
+
+.action-button--disabled {
+  background: #ece9e3;
+  color: #9a9a9a;
+  border-color: rgba(17, 17, 17, 0.06);
 }
 
 .wechat-mark {
@@ -625,7 +743,7 @@
   margin-top: 20rpx;
   height: 92rpx;
   border-radius: 28rpx;
-  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  background: #ffffff;
   color: #2d2d2d;
   border: 1rpx solid rgba(17, 17, 17, 0.08);
   font-size: 28rpx;

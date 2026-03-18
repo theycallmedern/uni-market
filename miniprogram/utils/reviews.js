@@ -1,28 +1,6 @@
 const REVIEWS_STORAGE_KEY = 'marketSellerReviews'
 const REVIEW_UNLOCKS_STORAGE_KEY = 'marketReviewUnlocks'
-
-function safeGetStorage(key, fallback) {
-  if (typeof wx === 'undefined' || !wx.getStorageSync) {
-    return fallback
-  }
-
-  try {
-    const value = wx.getStorageSync(key)
-    return value === '' || value === undefined || value === null ? fallback : value
-  } catch (error) {
-    return fallback
-  }
-}
-
-function safeSetStorage(key, value) {
-  if (typeof wx === 'undefined' || !wx.setStorageSync) {
-    return
-  }
-
-  try {
-    wx.setStorageSync(key, value)
-  } catch (error) {}
-}
+const storage = require('./storage')
 
 function cleanText(value, maxLength = 200) {
   return String(value || '').replace(/\s+/g, ' ').trim().slice(0, maxLength)
@@ -60,25 +38,25 @@ function normalizeReview(rawReview = {}) {
 }
 
 function getStoredReviews() {
-  const stored = safeGetStorage(REVIEWS_STORAGE_KEY, [])
+  const stored = storage.safeGetStorage(REVIEWS_STORAGE_KEY, [])
   return Array.isArray(stored)
     ? stored.map(normalizeReview).filter(Boolean)
     : []
 }
 
 function saveReviews(reviews) {
-  safeSetStorage(REVIEWS_STORAGE_KEY, reviews)
+  storage.safeSetStorage(REVIEWS_STORAGE_KEY, reviews)
 }
 
 function getReviewUnlocks() {
-  const stored = safeGetStorage(REVIEW_UNLOCKS_STORAGE_KEY, [])
+  const stored = storage.safeGetStorage(REVIEW_UNLOCKS_STORAGE_KEY, [])
   return Array.isArray(stored)
     ? stored.map((listingId) => String(listingId)).filter(Boolean)
     : []
 }
 
 function saveReviewUnlocks(listingIds) {
-  safeSetStorage(REVIEW_UNLOCKS_STORAGE_KEY, listingIds)
+  storage.safeSetStorage(REVIEW_UNLOCKS_STORAGE_KEY, listingIds)
 }
 
 function unlockReviewForListing(listingId) {

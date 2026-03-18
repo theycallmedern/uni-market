@@ -26,6 +26,13 @@ Run the lightweight repository validation:
 npm run check
 ```
 
+This command includes:
+
+- syntax checks for runtime files
+- smoke tests for core stores and marketplace lifecycle flow
+
+CI runs the same check on push and pull requests via GitHub Actions.
+
 ## Manual Verification (MVP)
 
 For user-facing changes, verify the relevant flow in WeChat Developer Tools:

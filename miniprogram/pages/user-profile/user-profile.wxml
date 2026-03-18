@@ -54,8 +54,8 @@
           <text class="user-stat__label">Listings</text>
         </view>
         <view class="user-stat">
-          <text class="user-stat__value">{{reviewSummary.count}}</text>
-          <text class="user-stat__label">Reviews</text>
+          <text class="user-stat__value">{{soldCount}}</text>
+          <text class="user-stat__label">Sold</text>
         </view>
       </view>
 
@@ -126,7 +126,7 @@
 
           <view class="profile-field">
             <text class="profile-field__label">WeChat ID</text>
-            <input class="profile-field__input" value="{{profileDraft.wechat}}" maxlength="40" data-field="wechat" bindinput="onProfileFieldInput" />
+            <input class="profile-field__input" value="{{profileDraft.wechat}}" maxlength="20" placeholder="wechatid (6-20 chars)" data-field="wechat" bindinput="onProfileFieldInput" />
           </view>
 
           <view class="profile-field">

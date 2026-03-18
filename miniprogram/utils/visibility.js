@@ -1,28 +1,6 @@
 const HIDDEN_LISTING_IDS_STORAGE_KEY = 'marketHiddenListingIds'
 const BLOCKED_SELLER_KEYS_STORAGE_KEY = 'marketBlockedSellerKeys'
-
-function safeGetStorage(key, fallback) {
-  if (typeof wx === 'undefined' || !wx.getStorageSync) {
-    return fallback
-  }
-
-  try {
-    const value = wx.getStorageSync(key)
-    return value === '' || value === undefined || value === null ? fallback : value
-  } catch (error) {
-    return fallback
-  }
-}
-
-function safeSetStorage(key, value) {
-  if (typeof wx === 'undefined' || !wx.setStorageSync) {
-    return
-  }
-
-  try {
-    wx.setStorageSync(key, value)
-  } catch (error) {}
-}
+const storage = require('./storage')
 
 function normalizeList(value) {
   return Array.isArray(value) ? value.map((item) => String(item)).filter(Boolean) : []
@@ -46,11 +24,11 @@ function getSellerKeyFromListing(listing) {
 }
 
 function getHiddenListingIds() {
-  return normalizeList(safeGetStorage(HIDDEN_LISTING_IDS_STORAGE_KEY, []))
+  return normalizeList(storage.safeGetStorage(HIDDEN_LISTING_IDS_STORAGE_KEY, []))
 }
 
 function getBlockedSellerKeys() {
-  return normalizeList(safeGetStorage(BLOCKED_SELLER_KEYS_STORAGE_KEY, []))
+  return normalizeList(storage.safeGetStorage(BLOCKED_SELLER_KEYS_STORAGE_KEY, []))
 }
 
 function isListingHidden(listingId) {
@@ -64,7 +42,7 @@ function isSellerBlocked(sellerKey) {
 function hideListing(listingId) {
   const targetId = String(listingId)
   const nextIds = Array.from(new Set([...getHiddenListingIds(), targetId]))
-  safeSetStorage(HIDDEN_LISTING_IDS_STORAGE_KEY, nextIds)
+  storage.safeSetStorage(HIDDEN_LISTING_IDS_STORAGE_KEY, nextIds)
   return nextIds
 }
 
@@ -76,7 +54,7 @@ function blockSeller(sellerKey) {
   }
 
   const nextKeys = Array.from(new Set([...getBlockedSellerKeys(), normalizedKey]))
-  safeSetStorage(BLOCKED_SELLER_KEYS_STORAGE_KEY, nextKeys)
+  storage.safeSetStorage(BLOCKED_SELLER_KEYS_STORAGE_KEY, nextKeys)
   return nextKeys
 }
 

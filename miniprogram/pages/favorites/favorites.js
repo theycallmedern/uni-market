@@ -1,13 +1,11 @@
 const market = require('../../data/market')
 const savedStore = require('../../utils/saved')
 const tabbarStore = require('../../utils/tabbar')
+const listingsUtils = require('../../utils/listings')
+const feedback = require('../../utils/ui-feedback')
+const uiText = require('../../constants/messages')
 
 const SORT_OPTIONS = ['Newest', 'Price low to high', 'Price high to low']
-
-function parsePriceValue(price = '') {
-  const match = String(price).replace(/,/g, '').match(/(\d+(?:\.\d+)?)/)
-  return match ? Number(match[1]) : 0
-}
 
 Page({
   data: {
@@ -75,11 +73,11 @@ Page({
 
     filtered = filtered.sort((a, b) => {
       if (sortIndex === 1) {
-        return parsePriceValue(a.price) - parsePriceValue(b.price)
+        return listingsUtils.parsePriceValue(a.price) - listingsUtils.parsePriceValue(b.price)
       }
 
       if (sortIndex === 2) {
-        return parsePriceValue(b.price) - parsePriceValue(a.price)
+        return listingsUtils.parsePriceValue(b.price) - listingsUtils.parsePriceValue(a.price)
       }
 
       return Number(b.id) - Number(a.id)
@@ -125,9 +123,9 @@ Page({
       return
     }
 
-    wx.showModal({
-      title: 'Clear all saved?',
-      content: 'This will remove all saved listings from this device.',
+    feedback.showModal({
+      title: uiText.FAVORITES.CLEAR_TITLE,
+      content: uiText.FAVORITES.CLEAR_CONTENT,
       confirmText: 'Clear',
       confirmColor: '#111111',
       success: (res) => {
@@ -136,10 +134,7 @@ Page({
         savedStore.clearSavedListings()
         this.refreshListings()
 
-        wx.showToast({
-          title: 'Saved cleared',
-          icon: 'success'
-        })
+        feedback.showSuccessToast(uiText.FAVORITES.CLEAR_SUCCESS)
       }
     })
   },
@@ -150,16 +145,13 @@ Page({
     const unavailableIds = savedIds.filter((id) => !visibleIds.includes(String(id)))
 
     if (!unavailableIds.length) {
-      wx.showToast({
-        title: 'No unavailable items',
-        icon: 'none'
-      })
+      feedback.showNeutralToast(uiText.FAVORITES.NO_UNAVAILABLE)
       return
     }
 
-    wx.showModal({
-      title: 'Remove unavailable?',
-      content: `Remove ${unavailableIds.length} unavailable saved listing${unavailableIds.length === 1 ? '' : 's'} from this device?`,
+    feedback.showModal({
+      title: uiText.FAVORITES.REMOVE_UNAVAILABLE_TITLE,
+      content: uiText.FAVORITES.removeUnavailableContent(unavailableIds.length),
       confirmText: 'Remove',
       confirmColor: '#111111',
       success: (res) => {
@@ -168,10 +160,7 @@ Page({
         savedStore.removeSavedListings(unavailableIds)
         this.refreshListings()
 
-        wx.showToast({
-          title: 'Unavailable removed',
-          icon: 'success'
-        })
+        feedback.showSuccessToast(uiText.FAVORITES.REMOVE_UNAVAILABLE_SUCCESS)
       }
     })
   },

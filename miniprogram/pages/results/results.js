@@ -1,21 +1,9 @@
 const market = require('../../data/market')
 const savedStore = require('../../utils/saved')
 const universitiesStore = require('../../utils/universities')
+const listingsUtils = require('../../utils/listings')
 
 const UNIVERSITY_FILTER_OPTIONS = ['All universities', ...universitiesStore.getPublicUniversityOptions()]
-
-function parsePriceValue(price = '') {
-  const match = String(price).replace(/,/g, '').match(/(\d+(?:\.\d+)?)/)
-  return match ? Number(match[1]) : 0
-}
-
-function uniqueOptions(listings, field) {
-  const values = listings
-    .map((listing) => listing[field])
-    .filter(Boolean)
-
-  return [...new Set(values)]
-}
 
 Page({
   data: {
@@ -84,7 +72,7 @@ Page({
       return matchesSubcategory && matchesQuickSubcategory
     })
 
-    const locationOptions = ['All locations', ...uniqueOptions(filtered, 'location')]
+    const locationOptions = ['All locations', ...listingsUtils.uniqueOptions(filtered, 'location')]
     const universityOptions = UNIVERSITY_FILTER_OPTIONS
 
     this.setData({
@@ -187,8 +175,8 @@ Page({
     const max = Number(priceMax) || 0
 
     let filtered = allListings.filter((listing) => {
-      const haystack = `${listing.title} ${listing.location} ${listing.university} ${listing.subcategory} ${listing.description}`.toLowerCase()
-      const priceValue = parsePriceValue(listing.price)
+      const haystack = `${listing.title} ${listing.location} ${listing.address || ''} ${listing.university} ${listing.subcategory} ${listing.description}`.toLowerCase()
+      const priceValue = listingsUtils.parsePriceValue(listing.price)
       const matchesKeyword = !keyword || haystack.includes(keyword)
       const matchesLocation = selectedLocation === 'All locations' || listing.location === selectedLocation
       const matchesUniversity = selectedUniversity === 'All universities' || listing.university === selectedUniversity
@@ -200,11 +188,11 @@ Page({
 
     filtered = filtered.sort((a, b) => {
       if (sortIndex === 1) {
-        return parsePriceValue(a.price) - parsePriceValue(b.price)
+        return listingsUtils.parsePriceValue(a.price) - listingsUtils.parsePriceValue(b.price)
       }
 
       if (sortIndex === 2) {
-        return parsePriceValue(b.price) - parsePriceValue(a.price)
+        return listingsUtils.parsePriceValue(b.price) - listingsUtils.parsePriceValue(a.price)
       }
 
       return Number(b.id) - Number(a.id)

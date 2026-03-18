@@ -1,108 +1,99 @@
 # UniMarket
 
-WeChat Mini Program marketplace MVP for international students in Hangzhou.
+<p align="center">
+  <img src="./miniprogram/assets/brand/unimarket-logo.png" alt="UniMarket logo" width="112" />
+</p>
 
-Built to make housing, resale items, transport, and lightweight campus services easier to browse in a familiar WeChat-style flow.
+<p align="center">
+  <strong>Local-first WeChat Mini Program marketplace for international students in Hangzhou.</strong>
+</p>
+
+<p align="center">
+  UniMarket helps students buy, sell, and discover housing, items, electronics, transport, study resources, services, and everything else in one clean flow.
+</p>
+
+<p align="center">
+  <a href="https://github.com/theycallmedern/uni-market/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/theycallmedern/uni-market/ci.yml?style=flat-square&label=checks"></a>
+  <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-1f2937?style=flat-square"></a>
+  <a href="./SECURITY.md"><img alt="Security" src="https://img.shields.io/badge/security-local--first-1f2937?style=flat-square"></a>
+</p>
+
+<p align="center">
+  <code>WeChat Mini Program</code>
+  <code>Local storage MVP</code>
+  <code>Create + Archive listings</code>
+  <code>Seller profiles + reviews</code>
+  <code>Moderation inbox</code>
+</p>
 
 ## Overview
 
-UniMarket is a local-first marketplace concept designed around how student communities already operate in China: quick discovery, lightweight trust signals, and handoff through WeChat.
+UniMarket is a student-focused marketplace shell for WeChat.
 
-This repository contains the MVP shell of that experience. Users can browse listings, save favorites, publish their own posts, manage a profile, open seller profiles, and report suspicious content. Admins can review reports and hide listings locally during moderation.
+The project is intentionally local-first at MVP stage: listings, saved items, profile data, and moderation state are stored on device via `wx` storage APIs.
 
 > [!IMPORTANT]
-> This project is still MVP-scoped and local-first. There is no production backend, no payment flow, no real-time messaging, and no cloud sync in this repository.
+> This repository does not include a production backend, payments, cloud sync, or real in-app chat. Seller contact is handled through WeChat ID handoff.
 
-## Why it exists
+### Why it exists
 
-Most student marketplace activity in WeChat groups is fast but messy:
+Student marketplace activity in group chats is fast, but hard to manage:
 
 - posts disappear quickly
-- listings are hard to filter
-- seller identity is inconsistent
-- moderation is usually manual and reactive
+- filtering and search are weak
+- seller trust context is fragmented
+- moderation is reactive
 
-UniMarket explores a cleaner layer on top of that behavior without leaving the familiar WeChat handoff model.
+UniMarket explores a cleaner marketplace layer while keeping a familiar WeChat-first handoff.
 
-## Current feature set
+## Key Features
 
-### Marketplace browsing
+- **Category-first discovery**: `Items`, `Electronics`, `Transport`, `Study`, `Services`, and `Other`.
+- **Subcategory exploration**: dedicated image cards per subcategory with updated visual packs.
+- **Create and edit flow**: draft support, up to 5 photos, custom subcategory, and condition selection (`Used`, `Like new`, `New`, `Refurbished`, `For parts`).
+- **Listing lifecycle**: mark as sold, choose sale source (`on UniMarket` vs `somewhere else`), and auto-move sold listings to archive.
+- **Seller insights**: sold-on-UniMarket counters shown in listings/profile surfaces.
+- **Saved flow**: local favorites with unavailable cleanup actions.
+- **Trust and moderation**: listing/profile reports, admin moderation statuses, and client-side visibility controls.
+- **Input guardrails**: strict price validation (digits only, max 6), WeChat ID validation, and normalized text handling.
+- **Shared core utilities**: unified storage helpers, validation helpers, and feedback (toast/modal) wrappers for consistent UX.
 
-- home feed with search and category shortcuts
-- category and results pages with sort, location, university, and price filtering
-- saved listings with local persistence
-- listing detail pages with image gallery, seller card, report actions, and WeChat handoff
-
-### Seller workflows
-
-- create listing flow with up to 5 photos
-- reorderable images and cover-first media behavior
-- category and subcategory selection with `Other (type your own)` support
-- fixed city scope for Hangzhou MVP mode
-- local listing editing and deletion from the `Listings` tab
-
-### Profiles and trust
-
-- editable user profile with avatar, name, university, WeChat ID, and bio
-- separate seller profile page with reviews, listings, and share/copy actions
-- university privacy handling for `None` and `Other`
-- review-ready profile surfaces for marketplace trust building
-
-### Moderation
-
-- listing report creation from user-facing screens
-- device-local admin access gate
-- moderation inbox with `pending`, `reviewing`, `resolved`, and `dismissed` states
-- visibility rules that hide resolved listings from regular users while keeping them reviewable for admins
-
-## Product flow
+## Product Flow
 
 ### Buyer flow
 
-1. Open the `Search` tab and browse categories or search directly.
-2. Narrow results with sort, university, city, and price filters.
-3. Open a listing and inspect seller details.
-4. Save the post or copy the seller's WeChat ID to continue outside the Mini Program.
+1. Open `Search`, browse categories, or use filters.
+2. Open listing details with photos, condition chips, and seller card.
+3. Save listing or copy seller WeChat ID to continue in WeChat.
+4. Copy listing address directly from the detail page.
 
 ### Seller flow
 
-1. Open the `Post` tab.
-2. Add photos, category, price, title, and description.
-3. Publish locally to the marketplace feed.
-4. Manage existing listings from the `Listings` tab.
+1. Open `Post`, fill title, price, category/subcategory, condition, address, and photos.
+2. Publish listing (price is normalized with currency).
+3. Manage inventory in `Listings`: open, edit, mark sold, relist, delete.
+4. Sold listings move to archive; active feed stays clean.
 
 ### Moderation flow
 
-1. A user reports a listing or profile.
-2. An admin unlocks local moderation access on device.
-3. Reports are reviewed and status is updated.
-4. Resolved violations can hide the associated listing from regular marketplace views.
+1. User reports a listing or profile.
+2. Admin unlocks local moderation access.
+3. Admin updates report status (`pending`, `reviewing`, `resolved`, `dismissed`).
+4. Resolved listing reports can hide listings from regular feeds.
 
-## App structure
-
-The current Mini Program registers these primary surfaces:
-
-- `Search`: home feed and discovery
-- `Saved`: locally bookmarked listings
-- `Post`: create and edit listing flow
-- `Listings`: seller inventory management
-- `Profile`: account, admin tools, and profile editing
-
-Supporting pages include category results, listing detail, moderation, and a dedicated seller profile page.
-
-## Tech stack
+## Tech Stack
 
 | Layer | Technology |
 | --- | --- |
 | App shell | WeChat Mini Program |
 | UI | WXML + WXSS |
-| Runtime logic | JavaScript |
-| Local persistence | `wx` storage APIs |
-| Tooling | Node.js + shell check script |
-| Dev environment | WeChat Developer Tools |
+| Runtime | JavaScript |
+| Data persistence | `wx` local storage |
+| Quality checks | Node.js + `scripts/check.sh` + smoke tests |
+| CI | GitHub Actions (`.github/workflows/ci.yml`) |
 | Planned backend direction | Cloudflare Workers + D1 + R2 |
 
-## Getting started
+## Getting Started
 
 ### Prerequisites
 
@@ -110,90 +101,98 @@ Supporting pages include category results, listing detail, moderation, and a ded
 - Node.js
 - Git
 
-### Clone the repo
+### Clone
 
 ```bash
 git clone https://github.com/theycallmedern/uni-market.git
 cd uni-market
 ```
 
-### Run the repository check
+### Install and run checks
 
 ```bash
 npm install
 npm run check
 ```
 
+`npm run check` currently runs:
+
+- JavaScript syntax checks across `miniprogram/` and `scripts/`
+- lightweight smoke tests for core stores and marketplace flow scenarios
+
 ### Open in WeChat DevTools
 
-Open the repository folder in WeChat Developer Tools and compile the Mini Program locally.
+Open repository root in WeChat Developer Tools with Mini Program root set to:
 
-## Project structure
+```text
+miniprogram/
+```
+
+## Project Structure
 
 | Path | Purpose |
 | --- | --- |
-| `miniprogram/app.json` | Global page registration, window config, and custom tab bar setup |
-| `miniprogram/pages/index` | Home feed, discovery, and filter entry points |
-| `miniprogram/pages/category` | Category-specific listing views |
-| `miniprogram/pages/results` | Result list with filtering and sorting controls |
-| `miniprogram/pages/favorites` | Saved listings and cleanup actions |
-| `miniprogram/pages/create` | Create and edit listing form |
-| `miniprogram/pages/messages` | Seller inventory management |
-| `miniprogram/pages/listing` | Listing detail, gallery, save, report, and WeChat contact handoff |
-| `miniprogram/pages/user-profile` | Seller profile, reviews, and seller listings |
-| `miniprogram/pages/profile` | Personal profile, profile editing, and admin access |
-| `miniprogram/pages/moderation` | Moderation inbox and report state management |
-| `miniprogram/custom-tab-bar` | Custom tab bar UI |
-| `miniprogram/components` | Shared UI such as header and photo viewer |
-| `miniprogram/data/market.js` | Local marketplace dataset and feed helpers |
-| `miniprogram/utils/profile.js` | Profile normalization and persistence |
-| `miniprogram/utils/reports.js` | Report storage and moderation helpers |
-| `miniprogram/utils/saved.js` | Saved listing persistence |
-| `miniprogram/utils/reviews.js` | Review storage and seller summary helpers |
-| `scripts/check.sh` | Repository syntax and consistency check |
+| [`miniprogram/pages/index`](./miniprogram/pages/index) | Home feed and discovery |
+| [`miniprogram/pages/category`](./miniprogram/pages/category) | Category-level browsing |
+| [`miniprogram/pages/results`](./miniprogram/pages/results) | Search/filter/sort results |
+| [`miniprogram/pages/favorites`](./miniprogram/pages/favorites) | Saved listings management |
+| [`miniprogram/pages/create`](./miniprogram/pages/create) | Create/edit listing flow with draft and validation |
+| [`miniprogram/pages/messages`](./miniprogram/pages/messages) | Seller inventory and archive |
+| [`miniprogram/pages/listing`](./miniprogram/pages/listing) | Listing detail, actions, and reporting |
+| [`miniprogram/pages/user-profile`](./miniprogram/pages/user-profile) | Public/own profile, reviews, and profile reports |
+| [`miniprogram/pages/profile`](./miniprogram/pages/profile) | Profile overview and admin entry |
+| [`miniprogram/pages/moderation`](./miniprogram/pages/moderation) | Moderation inbox and status updates |
+| [`miniprogram/data/market.js`](./miniprogram/data/market.js) | Core market dataset and listing lifecycle |
+| [`miniprogram/utils/storage.js`](./miniprogram/utils/storage.js) | Safe local storage wrappers |
+| [`miniprogram/utils/validation.js`](./miniprogram/utils/validation.js) | Shared validators/normalizers |
+| [`miniprogram/utils/ui-feedback.js`](./miniprogram/utils/ui-feedback.js) | Unified toast/modal wrappers |
+| [`miniprogram/constants/messages.js`](./miniprogram/constants/messages.js) | Centralized UI text constants |
+| [`scripts/smoke-test.js`](./scripts/smoke-test.js) | Core smoke tests |
+| [`scripts/check.sh`](./scripts/check.sh) | Local quality gate |
 
-## Privacy and security
+## Privacy and Security
 
-UniMarket is intentionally local-first right now:
+UniMarket is intentionally local-first in this MVP:
 
-- listings created in this MVP are stored on device
-- saved items are stored on device
-- profile fields and moderation state are stored on device
+- listings are stored locally
+- profile and saved state are stored locally
+- moderation state is stored locally
 - there is no production sync layer in this repository
 
-Please do not commit:
-
-- real personal data
-- private WeChat IDs from real users
-- secrets or tokens
-- sensitive screenshots
-
-For repository-level guidance, see [SECURITY.md](./SECURITY.md).
+For repository-level security policy and reporting guidance, see [SECURITY.md](./SECURITY.md).
 
 > [!WARNING]
-> The admin unlock flow in this MVP is client-side only and is not production-safe. Real moderation and role checks should move behind authenticated backend logic.
+> Admin unlock and moderation authorization are client-side MVP mechanics only and are not production-grade access control.
 
-## Development notes
+## Development
 
-Before shipping changes:
+### Local checks
 
-- run `npm run check`
-- verify the relevant flow in WeChat Developer Tools
-- retest at least the surfaces touched by the change
+```bash
+npm run check
+```
 
-For current product-facing updates, see [CHANGELOG.md](./CHANGELOG.md). For contribution guidance, see [CONTRIBUTING.md](./CONTRIBUTING.md).
+### Before merging
+
+- verify changed flows in WeChat DevTools
+- update docs when user-facing behavior changes
+- add or adjust smoke tests when store/business logic changes
+
+For contribution conventions, see [CONTRIBUTING.md](./CONTRIBUTING.md).  
+For product-facing update history, see [CHANGELOG.md](./CHANGELOG.md).
 
 ## Roadmap
 
 - [x] Local marketplace MVP shell
-- [x] Listing create, edit, and save flows
-- [x] Profile editing with avatar upload
+- [x] Listing lifecycle with sold/archive behavior
 - [x] Seller profile and review surfaces
-- [x] Report and admin moderation workflow
-- [ ] Backend-backed auth and role management
-- [ ] Cloud media storage
-- [ ] Production messaging or inbox layer
-- [ ] Server-enforced moderation and sync
+- [x] Moderation inbox and report statuses
+- [x] Shared validation/storage/feedback utilities
+- [x] Core smoke tests + CI quality gate
+- [ ] Backend-backed auth and moderation roles
+- [ ] Cloud media and multi-device sync
+- [ ] Native map/radius discovery around campus
+- [ ] Production messaging and server-enforced trust signals
 
 ## License
 

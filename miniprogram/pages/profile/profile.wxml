@@ -38,8 +38,8 @@
       <text class="account-stat__label">Saved</text>
     </view>
     <view class="account-stat">
-      <text class="account-stat__value">{{profile.city}}</text>
-      <text class="account-stat__label">City</text>
+      <text class="account-stat__value">{{soldCount}}</text>
+      <text class="account-stat__label">Sold</text>
     </view>
   </view>
 

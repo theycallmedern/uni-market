@@ -2,7 +2,13 @@ const STORAGE_KEY = 'userProfile'
 const CUSTOM_LISTINGS_STORAGE_KEY = 'marketCustomListings'
 const JOINED_AT_STORAGE_KEY = 'userProfileJoinedAt'
 const universitiesStore = require('./universities')
+const storage = require('./storage')
+const validation = require('./validation')
 const FIXED_CITY = 'Hangzhou'
+const PROFILE_NAME_MAX_LENGTH = 40
+const PROFILE_BIO_MAX_LENGTH = 180
+const WECHAT_MIN_LENGTH = validation.WECHAT_MIN_LENGTH
+const WECHAT_MAX_LENGTH = validation.WECHAT_MAX_LENGTH
 
 const DEFAULT_PROFILE = {
   name: 'Misha',
@@ -13,31 +19,28 @@ const DEFAULT_PROFILE = {
   bio: 'Your personal hub for saved items, published listings, and quick access to the student marketplace flow.'
 }
 
-function safeGetStorage(key, fallback = null) {
-  if (typeof wx === 'undefined' || !wx.getStorageSync) {
-    return fallback
-  }
-
-  try {
-    const value = wx.getStorageSync(key)
-    return value === '' || typeof value === 'undefined' ? fallback : value
-  } catch (error) {
-    return fallback
-  }
-}
-
-function safeSetStorage(key, value) {
-  if (typeof wx === 'undefined' || !wx.setStorageSync) {
-    return
-  }
-
-  try {
-    wx.setStorageSync(key, value)
-  } catch (error) {}
-}
-
 function cleanText(value, maxLength = 80) {
-  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, maxLength)
+  return validation.sanitizeSingleLine(value, maxLength)
+}
+
+function sanitizeProfileName(value) {
+  return cleanText(value, PROFILE_NAME_MAX_LENGTH)
+}
+
+function sanitizeProfileBio(value) {
+  return cleanText(value, PROFILE_BIO_MAX_LENGTH)
+}
+
+function sanitizeWechatId(value) {
+  return validation.sanitizeWeChatId(value, WECHAT_MAX_LENGTH)
+}
+
+function isValidWechatId(wechat) {
+  return validation.isValidWeChatId(wechat, {
+    allowEmpty: true,
+    minLength: WECHAT_MIN_LENGTH,
+    maxLength: WECHAT_MAX_LENGTH
+  })
 }
 
 function normalizeDateOnly(value) {
@@ -50,7 +53,7 @@ function getTodayDateOnly() {
 }
 
 function getOldestCustomListingDate() {
-  const listings = safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
+  const listings = storage.safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
 
   if (!Array.isArray(listings) || !listings.length) {
     return ''
@@ -65,13 +68,13 @@ function getOldestCustomListingDate() {
 }
 
 function ensureJoinedAt(rawProfile = {}) {
-  const storedJoinedAt = normalizeDateOnly(safeGetStorage(JOINED_AT_STORAGE_KEY, ''))
+  const storedJoinedAt = normalizeDateOnly(storage.safeGetStorage(JOINED_AT_STORAGE_KEY, ''))
   const profileJoinedAt = normalizeDateOnly(rawProfile.joinedAt)
   const fallbackJoinedAt = getOldestCustomListingDate() || getTodayDateOnly()
   const joinedAt = storedJoinedAt || profileJoinedAt || fallbackJoinedAt
 
   if (joinedAt && joinedAt !== storedJoinedAt) {
-    safeSetStorage(JOINED_AT_STORAGE_KEY, joinedAt)
+    storage.safeSetStorage(JOINED_AT_STORAGE_KEY, joinedAt)
   }
 
   return joinedAt
@@ -100,20 +103,20 @@ function formatMemberSince(joinedAt) {
 }
 
 function inferWechatFromCustomListings() {
-  const listings = safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
+  const listings = storage.safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
   if (!Array.isArray(listings)) {
     return ''
   }
 
   const firstWithWechat = listings.find(
-    (listing) => listing && listing.seller && cleanText(listing.seller.wechat, 40)
+    (listing) => listing && listing.seller && sanitizeWechatId(listing.seller.wechat)
   )
 
   if (!firstWithWechat || !firstWithWechat.seller) {
     return ''
   }
 
-  return cleanText(firstWithWechat.seller.wechat, 40)
+  return sanitizeWechatId(firstWithWechat.seller.wechat)
 }
 
 function normalizeProfile(rawProfile = {}) {
@@ -122,18 +125,18 @@ function normalizeProfile(rawProfile = {}) {
   const joinedAt = ensureJoinedAt(rawProfile)
 
   return {
-    name: cleanText(rawProfile.name || DEFAULT_PROFILE.name, 40) || DEFAULT_PROFILE.name,
+    name: sanitizeProfileName(rawProfile.name || DEFAULT_PROFILE.name) || DEFAULT_PROFILE.name,
     campus: universityOptions[campusIndex] || universityOptions[0] || DEFAULT_PROFILE.campus,
     city: FIXED_CITY,
     avatarUrl: cleanText(rawProfile.avatarUrl || '', 500),
-    wechat: cleanText(rawProfile.wechat || '', 40),
-    bio: cleanText(rawProfile.bio || DEFAULT_PROFILE.bio, 180) || DEFAULT_PROFILE.bio,
+    wechat: sanitizeWechatId(rawProfile.wechat || ''),
+    bio: sanitizeProfileBio(rawProfile.bio || DEFAULT_PROFILE.bio) || DEFAULT_PROFILE.bio,
     joinedAt
   }
 }
 
 function getProfile() {
-  const stored = safeGetStorage(STORAGE_KEY, null)
+  const stored = storage.safeGetStorage(STORAGE_KEY, null)
   const profile = normalizeProfile({
     ...DEFAULT_PROFILE,
     ...(stored || {})
@@ -143,7 +146,7 @@ function getProfile() {
     const inferredWechat = inferWechatFromCustomListings()
     if (inferredWechat) {
       profile.wechat = inferredWechat
-      safeSetStorage(STORAGE_KEY, profile)
+      storage.safeSetStorage(STORAGE_KEY, profile)
     }
   }
 
@@ -152,7 +155,7 @@ function getProfile() {
 
 function saveProfile(nextProfile) {
   const profile = normalizeProfile(nextProfile)
-  safeSetStorage(STORAGE_KEY, profile)
+  storage.safeSetStorage(STORAGE_KEY, profile)
   return profile
 }
 
@@ -166,5 +169,11 @@ module.exports = {
   saveProfile,
   normalizeProfile,
   getProfileInitial,
-  formatMemberSince
+  formatMemberSince,
+  sanitizeProfileName,
+  sanitizeProfileBio,
+  sanitizeWechatId,
+  isValidWechatId,
+  WECHAT_MIN_LENGTH,
+  WECHAT_MAX_LENGTH
 }

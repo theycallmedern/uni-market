@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'listingReports'
+const storage = require('./storage')
 
 function normalizeStoredReport(report = {}) {
   const targetType = report.targetType || 'listing'
@@ -13,35 +14,12 @@ function normalizeStoredReport(report = {}) {
   }
 }
 
-function safeGetStorage(key, fallback = []) {
-  if (typeof wx === 'undefined' || !wx.getStorageSync) {
-    return fallback
-  }
-
-  try {
-    const value = wx.getStorageSync(key)
-    return value === '' || typeof value === 'undefined' ? fallback : value
-  } catch (error) {
-    return fallback
-  }
-}
-
-function safeSetStorage(key, value) {
-  if (typeof wx === 'undefined' || !wx.setStorageSync) {
-    return
-  }
-
-  try {
-    wx.setStorageSync(key, value)
-  } catch (error) {}
-}
-
 function getReports() {
-  return safeGetStorage(STORAGE_KEY, []).map((report) => normalizeStoredReport(report))
+  return storage.safeGetStorage(STORAGE_KEY, []).map((report) => normalizeStoredReport(report))
 }
 
 function saveReports(reports) {
-  safeSetStorage(STORAGE_KEY, reports)
+  storage.safeSetStorage(STORAGE_KEY, reports)
 }
 
 function hasReportedListing(listingId) {
@@ -148,15 +126,6 @@ function getListingModerationMap() {
   return map
 }
 
-function getListingModerationStatus(listingId) {
-  const map = getListingModerationMap()
-  return map[String(listingId)] || 'clear'
-}
-
-function isListingHiddenByModeration(listingId) {
-  return getListingModerationStatus(listingId) === 'resolved'
-}
-
 function decorateListingsWithModeration(listings) {
   const map = getListingModerationMap()
 
@@ -171,10 +140,6 @@ function decorateListingsWithModeration(listings) {
   })
 }
 
-function filterVisibleListings(listings) {
-  return decorateListingsWithModeration(listings).filter((listing) => !listing.isHiddenByModeration)
-}
-
 module.exports = {
   getReports,
   hasReportedListing,
@@ -182,8 +147,5 @@ module.exports = {
   createReport,
   createProfileReport,
   updateReportStatus,
-  getListingModerationStatus,
-  isListingHiddenByModeration,
-  decorateListingsWithModeration,
-  filterVisibleListings
+  decorateListingsWithModeration
 }

@@ -2,12 +2,19 @@ const market = require('../../data/market')
 const savedStore = require('../../utils/saved')
 const profileStore = require('../../utils/profile')
 const tabbarStore = require('../../utils/tabbar')
+const feedback = require('../../utils/ui-feedback')
+const uiText = require('../../constants/messages')
 
 const INITIAL_PROFILE = profileStore.getProfile()
 
 Page({
   data: {
-    myListings: [],
+    activeListings: [],
+    archivedListings: [],
+    activeCount: 0,
+    archivedCount: 0,
+    isArchiveExpanded: false,
+    soldCount: 0,
     savedCount: 0,
     profile: { ...INITIAL_PROFILE },
     avatarInitial: profileStore.getProfileInitial(INITIAL_PROFILE)
@@ -20,9 +27,17 @@ Page({
 
   refreshListings() {
     const profile = profileStore.getProfile()
+    const myListings = market.getMyListings()
+    const archivedListings = myListings.filter((listing) => Boolean(listing && listing.isSold))
+    const activeListings = myListings.filter((listing) => !listing.isSold)
+    const soldCount = archivedListings.filter((listing) => Boolean(listing && listing.soldOnUniMarket)).length
 
     this.setData({
-      myListings: market.getMyListings(),
+      activeListings,
+      archivedListings,
+      activeCount: activeListings.length,
+      archivedCount: archivedListings.length,
+      soldCount,
       savedCount: savedStore.getSavedListingIds().length,
       profile,
       avatarInitial: profileStore.getProfileInitial(profile)
@@ -51,12 +66,57 @@ Page({
     })
   },
 
+  toggleSoldState(e) {
+    const { id, sold } = e.currentTarget.dataset
+    const isSold = String(sold) === '1'
+
+    if (isSold) {
+      const updatedListing = market.setListingSoldState(id, false)
+      if (!updatedListing) {
+        feedback.showNeutralToast(uiText.LISTINGS_MANAGER.LISTING_NOT_FOUND)
+        return
+      }
+
+      this.refreshListings()
+      feedback.showSuccessToast(uiText.LISTINGS_MANAGER.LISTED_AGAIN)
+      return
+    }
+
+    wx.showActionSheet({
+      itemList: ['Sold on UniMarket', 'Sold somewhere else'],
+      success: (res) => {
+        const soldOnUniMarket = Number(res.tapIndex) === 0
+        const updatedListing = market.setListingSoldState(id, true, soldOnUniMarket)
+
+        if (!updatedListing) {
+          feedback.showNeutralToast(uiText.LISTINGS_MANAGER.LISTING_NOT_FOUND)
+          return
+        }
+
+        this.refreshListings()
+        feedback.showSuccessToast(
+          soldOnUniMarket ? uiText.LISTINGS_MANAGER.SOLD_ON_UNIMARKET : uiText.LISTINGS_MANAGER.MOVED_TO_ARCHIVE
+        )
+      }
+    })
+  },
+
+  toggleArchive() {
+    if (!this.data.archivedCount) {
+      return
+    }
+
+    this.setData({
+      isArchiveExpanded: !this.data.isArchiveExpanded
+    })
+  },
+
   deleteListing(e) {
     const { id } = e.currentTarget.dataset
 
-    wx.showModal({
-      title: 'Delete listing?',
-      content: 'This will remove the listing from your listings tab and the marketplace feed.',
+    feedback.showModal({
+      title: uiText.LISTINGS_MANAGER.DELETE_TITLE,
+      content: uiText.LISTINGS_MANAGER.DELETE_CONTENT,
       confirmText: 'Delete',
       confirmColor: '#111111',
       success: (res) => {
@@ -65,10 +125,7 @@ Page({
         market.deleteListing(id)
         this.refreshListings()
 
-        wx.showToast({
-          title: 'Deleted',
-          icon: 'success'
-        })
+        feedback.showSuccessToast(uiText.LISTINGS_MANAGER.DELETED)
       }
     })
   }

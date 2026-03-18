@@ -15,22 +15,22 @@
         </view>
         <view class="manager-hero__copy">
           <text class="manager-hero__title">My Listings</text>
-          <text class="manager-hero__meta">{{myListings.length}} published · {{savedCount}} saved</text>
+          <text class="manager-hero__meta">{{activeCount}} active · {{soldCount}} sold on UniMarket · {{savedCount}} saved</text>
           <text class="manager-hero__note">Track everything you have posted and keep your active marketplace inventory in one place.</text>
         </view>
       </view>
 
       <view class="manager-head">
         <view>
-          <text class="manager-head__title">Published</text>
-          <text class="manager-head__subtitle">Open or remove any listing you created in the MVP</text>
+          <text class="manager-head__title">Your listings</text>
+          <text class="manager-head__subtitle">Open, mark as sold, edit, or remove any listing you created.</text>
         </view>
         <button class="manager-new" bindtap="goToPost">New</button>
       </view>
 
-      <block wx:if="{{myListings.length}}">
+      <block wx:if="{{activeListings.length}}">
         <view class="manager-list">
-          <block wx:for="{{myListings}}" wx:key="id">
+          <block wx:for="{{activeListings}}" wx:key="id">
             <view class="manager-card">
               <image class="manager-card__image" src="{{item.image}}" mode="aspectFill" />
               <view class="manager-card__body">
@@ -39,8 +39,8 @@
                     <text class="manager-card__price">{{item.price}}</text>
                     <text class="manager-card__title">{{item.title}}</text>
                   </view>
-                  <view class="manager-card__badge {{item.isHiddenByModeration ? 'manager-card__badge--hidden' : ''}}">
-                    {{item.isHiddenByModeration ? 'Hidden' : 'Live'}}
+                  <view class="manager-card__badge {{item.isSold ? 'manager-card__badge--sold' : (item.isHiddenByModeration ? 'manager-card__badge--hidden' : '')}}">
+                    {{item.isSold ? 'Sold' : (item.isHiddenByModeration ? 'Hidden' : 'Live')}}
                   </view>
                 </view>
 
@@ -49,6 +49,14 @@
 
                 <view class="manager-card__actions">
                   <button class="manager-open" data-id="{{item.id}}" bindtap="openListing">Open</button>
+                  <button
+                    class="manager-sold {{item.isSold ? 'manager-sold--active' : ''}}"
+                    data-id="{{item.id}}"
+                    data-sold="{{item.isSold ? 1 : 0}}"
+                    bindtap="toggleSoldState"
+                  >
+                    {{item.isSold ? 'List again' : 'Mark sold'}}
+                  </button>
                   <button class="manager-edit" data-id="{{item.id}}" bindtap="editListing">Edit</button>
                   <button class="manager-delete" data-id="{{item.id}}" bindtap="deleteListing">Delete</button>
                 </view>
@@ -59,9 +67,57 @@
       </block>
 
       <view wx:else class="manager-empty">
-        <text class="manager-empty__title">No listings yet</text>
-        <text class="manager-empty__copy">Post your first room, item, or service and it will show up here immediately.</text>
-        <button class="manager-empty__button" bindtap="goToPost">Post a listing</button>
+        <text class="manager-empty__title">No active listings</text>
+        <text class="manager-empty__copy">Post your first room, item, or service with the New button above.</text>
+      </view>
+
+      <view wx:if="{{archivedCount}}" class="manager-archive-shell">
+        <button class="manager-archive-toggle" bindtap="toggleArchive">
+          <view class="manager-archive-toggle__inner">
+            <view class="manager-head__copy">
+              <text class="manager-head__title">Archive</text>
+              <text class="manager-head__subtitle">{{archivedCount}} sold listing{{archivedCount === 1 ? '' : 's'}} moved out of active feed</text>
+            </view>
+            <text class="manager-archive-chevron">{{isArchiveExpanded ? '⌃' : '⌄'}}</text>
+          </view>
+        </button>
+      </view>
+
+      <view wx:if="{{archivedCount && isArchiveExpanded}}" class="manager-list manager-list--archive">
+        <block wx:for="{{archivedListings}}" wx:key="id">
+          <view class="manager-card manager-card--archived">
+            <image class="manager-card__image" src="{{item.image}}" mode="aspectFill" />
+            <view class="manager-card__body">
+              <view class="manager-card__top">
+                <view>
+                  <text class="manager-card__price">{{item.price}}</text>
+                  <text class="manager-card__title">{{item.title}}</text>
+                </view>
+                <view class="manager-card__badge manager-card__badge--sold">
+                  Sold
+                </view>
+              </view>
+
+              <text class="manager-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
+              <text class="manager-card__sub">{{item.subcategory}}</text>
+              <text class="manager-card__archive-note">{{item.soldOnUniMarket ? 'Sale source: UniMarket' : 'Sale source: outside UniMarket'}}</text>
+
+              <view class="manager-card__actions">
+                <button class="manager-open" data-id="{{item.id}}" bindtap="openListing">Open</button>
+                <button
+                  class="manager-sold manager-sold--active"
+                  data-id="{{item.id}}"
+                  data-sold="1"
+                  bindtap="toggleSoldState"
+                >
+                  List again
+                </button>
+                <button class="manager-edit" data-id="{{item.id}}" bindtap="editListing">Edit</button>
+                <button class="manager-delete" data-id="{{item.id}}" bindtap="deleteListing">Delete</button>
+              </view>
+            </view>
+          </view>
+        </block>
       </view>
     </view>
   </scroll-view>

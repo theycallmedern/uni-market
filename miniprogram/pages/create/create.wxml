@@ -77,6 +77,7 @@
             class="field-input"
             placeholder="Room near campus, iPhone 14, bike..."
             value="{{form.title}}"
+            maxlength="70"
             data-field="title"
             bindinput="onFieldInput"
           />
@@ -87,8 +88,10 @@
             <text class="field-label">Price</text>
             <input
               class="field-input"
-              placeholder="2800 RMB"
+              placeholder="2800"
               value="{{form.price}}"
+              type="number"
+              maxlength="6"
               data-field="price"
               bindinput="onFieldInput"
             />
@@ -100,6 +103,18 @@
               <text class="picker-field__locked-value">Hangzhou</text>
             </view>
           </view>
+        </view>
+
+        <view class="field">
+          <text class="field-label">Address</text>
+          <input
+            class="field-input"
+            placeholder="Xixi Campus, Yuhangtang Rd 866, Building 3"
+            value="{{form.address}}"
+            maxlength="120"
+            data-field="address"
+            bindinput="onFieldInput"
+          />
         </view>
 
         <view class="field-row">
@@ -134,6 +149,16 @@
             bindinput="onCustomSubcategoryInput"
           />
         </view>
+
+        <view wx:if="{{requiresCondition}}" class="field">
+          <text class="field-label">Condition</text>
+          <picker mode="selector" range="{{conditionOptions}}" value="{{conditionIndex}}" bindchange="onConditionChange">
+            <view class="picker-field">
+              <text>{{conditionOptions[conditionIndex]}}</text>
+              <text class="picker-arrow">⌄</text>
+            </view>
+          </picker>
+        </view>
       </view>
 
       <view class="form-card">
@@ -156,8 +181,9 @@
           <text class="field-label">WeChat ID</text>
           <input
             class="field-input"
-            placeholder="your-wechat-id"
+            placeholder="wechatid (6-20 chars)"
             value="{{form.wechat}}"
+            maxlength="20"
             data-field="wechat"
             bindinput="onFieldInput"
           />

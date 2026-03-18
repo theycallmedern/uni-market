@@ -241,7 +241,7 @@
   margin-top: 18rpx;
   height: 92rpx;
   border-radius: 28rpx;
-  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  background: #ffffff;
   color: #2d2d2d;
   border: 1rpx solid rgba(17, 17, 17, 0.08);
   font-size: 28rpx;
@@ -314,13 +314,13 @@
 }
 
 .profile-avatar-btn--primary {
-  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  background: #ffffff;
   color: #2d2d2d;
   border: 1rpx solid rgba(17, 17, 17, 0.08);
 }
 
 .profile-avatar-btn--ghost {
-  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  background: #ffffff;
   color: #2d2d2d;
   border: 1rpx solid rgba(17, 17, 17, 0.08);
 }
@@ -398,13 +398,13 @@
 }
 
 .profile-btn--ghost {
-  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  background: #ffffff;
   color: #2d2d2d;
   border: 1rpx solid rgba(17, 17, 17, 0.08);
 }
 
 .profile-btn--primary {
-  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  background: #ffffff;
   color: #2d2d2d;
   border: 1rpx solid rgba(17, 17, 17, 0.08);
 }
@@ -525,7 +525,7 @@
 }
 
 .account-admin__button--primary {
-  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  background: #ffffff;
   color: #2d2d2d;
   border: 1rpx solid rgba(17, 17, 17, 0.08);
 }
@@ -536,7 +536,7 @@
 }
 
 .account-admin__button--ghost {
-  background: linear-gradient(180deg, #f1f1f1, #e6e6e6);
+  background: #ffffff;
   color: #2d2d2d;
   border: 1rpx solid rgba(17, 17, 17, 0.08);
 }

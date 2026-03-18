@@ -8,9 +8,9 @@
     show-scrollbar="{{false}}"
   >
     <view class="listing-page page-scroll__content">
-      <view wx:if="{{hiddenNotice}}" class="listing-status-card">
-        <text class="listing-status-badge">Hidden</text>
-        <text class="listing-status-copy">{{hiddenNotice}}</text>
+      <view wx:if="{{hiddenNotice || soldNotice}}" class="listing-status-card {{soldNotice ? 'listing-status-card--sold' : ''}}">
+        <text class="listing-status-badge {{soldNotice ? 'listing-status-badge--sold' : ''}}">{{soldNotice ? 'Sold' : 'Hidden'}}</text>
+        <text class="listing-status-copy">{{soldNotice || hiddenNotice}}</text>
       </view>
 
   <view class="gallery-shell">
@@ -38,8 +38,9 @@
     <text class="listing-price">{{listing.price}}</text>
     <text class="listing-title">{{listing.title}}</text>
     <view class="listing-meta-row">
-      <text class="listing-chip">{{listing.subcategory}}</text>
-      <text class="listing-chip">{{listing.location}}</text>
+      <text wx:if="{{listing.condition}}" class="listing-chip listing-chip--condition {{conditionChipClass}}">{{listing.condition}}</text>
+      <text class="listing-chip listing-chip--subcategory">{{listing.subcategory}}</text>
+      <text class="listing-chip listing-chip--location">{{listing.location}}</text>
     </view>
     <text class="listing-description">{{listing.description}}</text>
   </view>
@@ -54,6 +55,17 @@
       <text class="detail-label">University</text>
       <text class="detail-value">{{listing.university}}</text>
     </view>
+  </view>
+
+  <view wx:if="{{listing.address}}" class="listing-address-card">
+    <view class="listing-address-card__head">
+      <text class="listing-address-card__label">Address</text>
+      <view class="listing-address-card__action" bindtap="copyAddress">
+        <text class="listing-address-card__action-icon">⎘</text>
+        <text>Copy address</text>
+      </view>
+    </view>
+    <text class="listing-address-card__text">{{listing.address}}</text>
   </view>
 
   <view class="seller-card" bindtap="openSellerProfile">
@@ -87,9 +99,9 @@
       <text>{{isSaved ? 'Saved' : 'Save'}}</text>
     </view>
 
-    <view class="action-button action-button--primary" bindtap="contactSeller">
+    <view class="action-button action-button--primary {{listing.isSold ? 'action-button--disabled' : ''}}" bindtap="contactSeller">
       <view class="action-button__content action-button__content--wechat">
-        <view class="wechat-mark">
+        <view wx:if="{{!listing.isSold}}" class="wechat-mark">
           <view class="wechat-mark__bubble wechat-mark__bubble--back">
             <view class="wechat-mark__tail wechat-mark__tail--back"></view>
             <view class="wechat-mark__dots wechat-mark__dots--back">
@@ -106,7 +118,7 @@
             </view>
           </view>
         </view>
-        <text>Write in WeChat</text>
+        <text>{{listing.isSold ? 'Sold' : 'Write in WeChat'}}</text>
       </view>
     </view>
   </view>

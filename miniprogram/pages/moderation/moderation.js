@@ -1,5 +1,7 @@
 const reportsStore = require('../../utils/reports')
 const adminStore = require('../../utils/admin')
+const feedback = require('../../utils/ui-feedback')
+const uiText = require('../../constants/messages')
 
 const STATUS_OPTIONS = [
   { value: 'pending', label: 'Pending' },
@@ -94,10 +96,7 @@ Page({
         reportsStore.updateReportStatus(id, next.value)
         this.refreshReports()
 
-        wx.showToast({
-          title: 'Status updated',
-          icon: 'success'
-        })
+        feedback.showSuccessToast(uiText.MODERATION.STATUS_UPDATED)
       }
     })
   },

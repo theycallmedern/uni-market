@@ -4,6 +4,8 @@ const reportsStore = require('../../utils/reports')
 const adminStore = require('../../utils/admin')
 const visibilityStore = require('../../utils/visibility')
 const reviewsStore = require('../../utils/reviews')
+const feedback = require('../../utils/ui-feedback')
+const uiText = require('../../constants/messages')
 
 const REPORT_REASONS = [
   'Scam or fraud',
@@ -31,6 +33,8 @@ Page({
     blockedByModeration: false,
     notFound: false,
     hiddenNotice: '',
+    soldNotice: '',
+    conditionChipClass: '',
     hiddenByUser: false,
     blockedSeller: false,
     reviewSummary: {
@@ -75,6 +79,8 @@ Page({
         blockedByModeration: false,
         notFound: false,
         hiddenNotice: '',
+        soldNotice: '',
+        conditionChipClass: '',
         hiddenByUser,
         blockedSeller,
         reviewSummary: {
@@ -98,6 +104,8 @@ Page({
         blockedByModeration: false,
         notFound: true,
         hiddenNotice: '',
+        soldNotice: '',
+        conditionChipClass: '',
         hiddenByUser: false,
         blockedSeller: false,
         reviewSummary: {
@@ -124,6 +132,8 @@ Page({
         blockedByModeration: true,
         notFound: false,
         hiddenNotice: '',
+        soldNotice: '',
+        conditionChipClass: '',
         hiddenByUser: false,
         blockedSeller: false,
         reviewSummary: {
@@ -152,12 +162,31 @@ Page({
       hiddenByUser: false,
       blockedSeller: false,
       reviewSummary: reviewsStore.getSellerReviewSummary(market.getSellerKey(listing)),
+      conditionChipClass: this.getConditionChipClass(listing.condition),
       hiddenNotice: listing.isHiddenByModeration
         ? listing.isCustom
           ? 'Hidden by moderation. Only you and admins can open this listing.'
           : 'Hidden by moderation.'
+        : '',
+      soldNotice: listing.isSold
+        ? listing.soldOnUniMarket
+          ? 'This item was sold on UniMarket.'
+          : 'This item was sold outside UniMarket.'
         : ''
     })
+  },
+
+  getConditionChipClass(condition) {
+    const normalized = String(condition || '').trim().toLowerCase()
+
+    if (normalized === 'new') return 'listing-chip--condition-new'
+    if (normalized === 'like new') return 'listing-chip--condition-like-new'
+    if (normalized === 'used') return 'listing-chip--condition-used'
+    if (normalized === 'refurbished') return 'listing-chip--condition-refurbished'
+    if (normalized === 'for parts') return 'listing-chip--condition-parts'
+    if (normalized) return 'listing-chip--condition-default'
+
+    return ''
   },
 
   onSwiperChange(e) {
@@ -234,6 +263,11 @@ Page({
 
   contactSeller() {
     const listing = this.data.listing || {}
+    if (listing.isSold) {
+      feedback.showNeutralToast(uiText.LISTING.ITEM_ALREADY_SOLD)
+      return
+    }
+
     const seller = listing.seller || {}
     const wechat = seller.wechat || ''
     if (!wechat) return
@@ -246,12 +280,27 @@ Page({
           reviewSummary: reviewsStore.getSellerReviewSummary(market.getSellerKey(listing))
         })
 
-        wx.showModal({
-          title: 'Write in WeChat',
-          content: 'WeChat copied the seller ID. Open WeChat search and paste it to continue, because Mini Programs cannot jump directly into a personal chat/profile.',
-          showCancel: false,
-          confirmText: 'OK'
+        feedback.showInfoModal({
+          title: uiText.COMMON.WRITE_IN_WECHAT_TITLE,
+          content: uiText.COMMON.WRITE_IN_WECHAT_CONTENT
         })
+      }
+    })
+  },
+
+  copyAddress() {
+    const listing = this.data.listing || {}
+    const address = String(listing.address || '').trim()
+
+    if (!address) {
+      feedback.showNeutralToast(uiText.LISTING.ADDRESS_UNAVAILABLE)
+      return
+    }
+
+    wx.setClipboardData({
+      data: address,
+      success: () => {
+        feedback.showSuccessToast(uiText.LISTING.ADDRESS_COPIED)
       }
     })
   },
@@ -266,10 +315,7 @@ Page({
     wx.setClipboardData({
       data: `/pages/listing/listing?id=${this.data.id}`,
       success: () => {
-        wx.showToast({
-          title: 'Link copied',
-          icon: 'success'
-        })
+        feedback.showSuccessToast(uiText.LISTING.LINK_COPIED)
       }
     })
   },
@@ -288,19 +334,16 @@ Page({
 
     this.closeMenu()
 
-    wx.showModal({
-      title: 'Hide this listing?',
-      content: 'This listing will disappear from your feed, search, and saved results on this device.',
+    feedback.showModal({
+      title: uiText.LISTING.HIDE_TITLE,
+      content: uiText.LISTING.HIDE_CONTENT,
       confirmText: 'Hide',
       confirmColor: '#111111',
       success: (res) => {
         if (!res.confirm) return
 
         visibilityStore.hideListing(listing.id)
-        wx.showToast({
-          title: 'Listing hidden',
-          icon: 'success'
-        })
+        feedback.showSuccessToast(uiText.LISTING.HIDDEN_SUCCESS)
 
         setTimeout(() => {
           this.goBackAfterHide()
@@ -320,19 +363,16 @@ Page({
 
     this.closeMenu()
 
-    wx.showModal({
-      title: 'Block this user?',
-      content: `All listings from ${sellerName} will be hidden on this device.`,
+    feedback.showModal({
+      title: uiText.LISTING.BLOCK_TITLE,
+      content: uiText.LISTING.blockContent(sellerName),
       confirmText: 'Block',
       confirmColor: '#ba2d2d',
       success: (res) => {
         if (!res.confirm) return
 
         visibilityStore.blockSeller(sellerKey)
-        wx.showToast({
-          title: 'User blocked',
-          icon: 'success'
-        })
+        feedback.showSuccessToast(uiText.LISTING.BLOCKED_SUCCESS)
 
         setTimeout(() => {
           this.goBackAfterHide()
@@ -376,10 +416,7 @@ Page({
 
     if (reportsStore.hasReportedListing(listingId)) {
       this.setData({ hasReported: true })
-      wx.showToast({
-        title: 'Already reported',
-        icon: 'none'
-      })
+      feedback.showNeutralToast(uiText.LISTING.ALREADY_REPORTED)
       return
     }
 
@@ -390,10 +427,10 @@ Page({
         if (!reason) return
 
         if (reason === 'Other') {
-          wx.showModal({
-            title: 'Report details',
+          feedback.showModal({
+            title: uiText.LISTING.REPORT_DETAILS_TITLE,
             editable: true,
-            placeholderText: 'Tell us what is wrong',
+            placeholderText: uiText.LISTING.REPORT_DETAILS_PLACEHOLDER,
             confirmText: 'Send',
             success: (modalRes) => {
               if (modalRes.confirm) {
@@ -421,10 +458,7 @@ Page({
 
     this.setData({ hasReported: true })
 
-    wx.showToast({
-      title: 'Report sent',
-      icon: 'success'
-    })
+    feedback.showSuccessToast(uiText.LISTING.REPORT_SENT)
   },
 
   onShareAppMessage() {

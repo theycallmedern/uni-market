@@ -1,16 +1,17 @@
 const reportsStore = require('../utils/reports')
 const visibilityStore = require('../utils/visibility')
 const profileStore = require('../utils/profile')
+const storage = require('../utils/storage')
+const validation = require('../utils/validation')
 
 const categories = [
   { id: 'all', name: 'All', emoji: '✨', theme: 'cream' },
-  { id: 'housing', name: 'Housing', emoji: '🏠', theme: 'rose' },
   { id: 'items', name: 'Items', emoji: '📦', theme: 'mint' },
   { id: 'electronics', name: 'Electronics', emoji: '📱', theme: 'sky' },
-  { id: 'services', name: 'Services', emoji: '🛠', theme: 'lilac' },
   { id: 'transport', name: 'Transport', emoji: '🚗', theme: 'peach' },
   { id: 'study', name: 'Study', emoji: '📚', theme: 'butter' },
-  { id: 'jobs', name: 'Jobs', emoji: '💼', theme: 'sage' }
+  { id: 'services', name: 'Services', emoji: '🛠', theme: 'lilac' },
+  { id: 'other', name: 'Other', emoji: '🧩', theme: 'sage' }
 ]
 
 const categoryTitles = {
@@ -20,7 +21,7 @@ const categoryTitles = {
   items: 'Items',
   services: 'Services',
   study: 'Study',
-  jobs: 'Jobs'
+  other: 'Other'
 }
 
 const categoryConfigs = {
@@ -84,15 +85,15 @@ const categoryConfigs = {
     secondaryFilters: ['Price', 'Sort'],
     cta: 'Show 35+ listings'
   },
-  jobs: {
-    title: 'Jobs',
-    region: 'Hangzhou',
+  other: {
+    title: 'Other',
+    region: 'All campuses',
     heroTone: 'sage',
-    subcategories: ['Part-time jobs', 'Internships', 'Freelance gigs', 'Remote jobs', 'Tutoring jobs', 'Event staff', 'Campus ambassador'],
-    primaryFilters: ['Role', 'University'],
-    quickFilters: ['All', 'Remote jobs', 'Tutoring jobs'],
-    secondaryFilters: ['Pay', 'Sort'],
-    cta: 'Show 25+ listings'
+    subcategories: ['Other items', 'Free stuff', 'Collectibles', 'Hobby gear', 'Sports gear', 'Beauty & care', 'Pet supplies'],
+    primaryFilters: ['Type', 'University'],
+    quickFilters: ['All', 'Free stuff', 'ZJU'],
+    secondaryFilters: ['Price', 'Sort'],
+    cta: 'Show 20+ listings'
   }
 }
 
@@ -127,10 +128,10 @@ const featuredCards = {
     { title: 'Textbooks', caption: 'Find used study materials fast' },
     { title: 'Study notes', caption: 'Shared materials for classes and revision' }
   ],
-  jobs: [
-    { title: 'Part-time jobs', caption: 'Flexible work around classes' },
-    { title: 'Internships', caption: 'Gain experience while studying' },
-    { title: 'Remote jobs', caption: 'Flexible work you can do around your schedule' }
+  other: [
+    { title: 'Other items', caption: 'Items that do not fit standard categories' },
+    { title: 'Free stuff', caption: 'Useful giveaways from students' },
+    { title: 'Collectibles', caption: 'Unique hobby and collectible finds' }
   ]
 }
 
@@ -144,58 +145,58 @@ const categoryFallbackImages = {
   items: 'https://images.unsplash.com/photo-1517705008128-361805f42e86?auto=format&fit=crop&w=1200&q=80',
   services: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1200&q=80',
   study: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80',
-  jobs: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1200&q=80'
+  other: '/assets/subcategories/other/other-items.png'
 }
 
 const subcategoryFallbackImages = {
-  'Private room': 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80',
-  'Shared room': 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80',
-  'Shared flat': 'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80',
-  Studio: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80',
-  'Full apartment': 'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?auto=format&fit=crop&w=1200&q=80',
-  'Short-term sublet': 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80',
-  'Dorm takeover': 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80',
-  Phones: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=1200&q=80',
-  Laptops: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1200&q=80',
-  Tablets: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=1200&q=80',
-  Audio: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1200&q=80',
-  Cameras: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1200&q=80',
-  'Gaming gear': 'https://images.unsplash.com/photo-1603481588273-2f908a9a7a1b?auto=format&fit=crop&w=1200&q=80',
-  Accessories: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1200&q=80',
-  Bikes: 'https://images.unsplash.com/photo-1541625602330-2277a4c46182?auto=format&fit=crop&w=1200&q=80',
-  'E-bikes': 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=1200&q=80',
-  Scooters: 'https://images.unsplash.com/photo-1612536057832-2ff7ead58194?auto=format&fit=crop&w=1200&q=80',
-  'Ride-sharing': 'https://images.unsplash.com/photo-1485291571150-772bcfc10da5?auto=format&fit=crop&w=1200&q=80',
-  Rentals: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1200&q=80',
-  'Parts & repair': 'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&fit=crop&w=1200&q=80',
-  'Dorm essentials': 'https://images.unsplash.com/photo-1517705008128-361805f42e86?auto=format&fit=crop&w=1200&q=80',
-  Kitchenware: 'https://images.unsplash.com/photo-1516594798947-e65505dbb29d?auto=format&fit=crop&w=1200&q=80',
-  Clothing: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=80',
-  'Bags & luggage': 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80',
-  'Home decor': 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80',
-  'Small appliances': 'https://images.unsplash.com/photo-1585659722983-3a675dabf23d?auto=format&fit=crop&w=1200&q=80',
-  Bundles: 'https://images.unsplash.com/photo-1517142089942-ba376ce32a2e?auto=format&fit=crop&w=1200&q=80',
-  'Translation & paperwork': 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1200&q=80',
-  'Airport pickup': 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80',
-  'Moving help': 'https://images.unsplash.com/photo-1600518464441-9154a4dea21b?auto=format&fit=crop&w=1200&q=80',
-  'Photo shoots': 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
-  'Tech setup': 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80',
-  Tutoring: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80',
-  'Errands & delivery': 'https://images.unsplash.com/photo-1526367790999-0150786686a2?auto=format&fit=crop&w=1200&q=80',
-  'Cleaning help': 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1200&q=80',
-  Textbooks: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1200&q=80',
-  'Study notes': 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=80',
-  'Language exchange': 'https://images.unsplash.com/photo-1529390079861-591de354faf5?auto=format&fit=crop&w=1200&q=80',
-  'HSK / IELTS prep': 'https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?auto=format&fit=crop&w=1200&q=80',
-  Stationery: 'https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=1200&q=80',
-  'Study groups': 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80',
-  'Part-time jobs': 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80',
-  Internships: 'https://images.unsplash.com/photo-1522202222206-b75035e1f3c0?auto=format&fit=crop&w=1200&q=80',
-  'Freelance gigs': 'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1200&q=80',
-  'Remote jobs': 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80',
-  'Tutoring jobs': 'https://images.unsplash.com/photo-1513258496099-48168024aec0?auto=format&fit=crop&w=1200&q=80',
-  'Event staff': 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
-  'Campus ambassador': 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80'
+  'Private room': '/assets/subcategories/housing/private-room.png',
+  'Shared room': '/assets/subcategories/housing/shared-room.png',
+  'Shared flat': '/assets/subcategories/housing/shared-flat.png',
+  Studio: '/assets/subcategories/housing/studio.png',
+  'Full apartment': '/assets/subcategories/housing/full-apartment.png',
+  'Short-term sublet': '/assets/subcategories/housing/short-term-sublet.png',
+  'Dorm takeover': '/assets/subcategories/housing/dorm-takeover.png',
+  Phones: '/assets/subcategories/electronics/phones.png',
+  Laptops: '/assets/subcategories/electronics/laptops.png',
+  Tablets: '/assets/subcategories/electronics/tablets.png',
+  Audio: '/assets/subcategories/electronics/audio.png',
+  Cameras: '/assets/subcategories/electronics/cameras.png',
+  'Gaming gear': '/assets/subcategories/electronics/accessories.png',
+  Accessories: '/assets/subcategories/electronics/gaming-gear.png',
+  Bikes: '/assets/subcategories/transport/bikes.png',
+  'E-bikes': '/assets/subcategories/transport/e-bikes.png',
+  Scooters: '/assets/subcategories/transport/scooters.png',
+  'Ride-sharing': '/assets/subcategories/transport/rentals.png',
+  Rentals: '/assets/subcategories/transport/parts-repair.png',
+  'Parts & repair': '/assets/subcategories/transport/ride-sharing.png',
+  'Dorm essentials': '/assets/subcategories/items/dorm-essentials.png',
+  Kitchenware: '/assets/subcategories/items/kitchenware.png',
+  Clothing: '/assets/subcategories/items/clothing.png',
+  'Bags & luggage': '/assets/subcategories/items/bags-luggage.png',
+  'Home decor': '/assets/subcategories/items/home-decor.png',
+  'Small appliances': '/assets/subcategories/items/small-appliances.png',
+  Bundles: '/assets/subcategories/items/bundles.png',
+  'Translation & paperwork': '/assets/subcategories/services/translation-paperwork.png',
+  'Airport pickup': '/assets/subcategories/services/airport-pickup.png',
+  'Moving help': '/assets/subcategories/services/moving-help.png',
+  'Photo shoots': '/assets/subcategories/services/photo-shoots.png',
+  'Tech setup': '/assets/subcategories/services/tech-setup.png',
+  Tutoring: '/assets/subcategories/study/tutoring.png',
+  'Errands & delivery': '/assets/subcategories/services/errands-delivery.png',
+  'Cleaning help': '/assets/subcategories/services/cleaning-help.png',
+  Textbooks: '/assets/subcategories/study/textbooks.png',
+  'Study notes': '/assets/subcategories/study/study-notes.png',
+  'Language exchange': '/assets/subcategories/study/language-exchange.png',
+  'HSK / IELTS prep': '/assets/subcategories/study/hsk-ielts-prep.png',
+  Stationery: '/assets/subcategories/study/stationery.png',
+  'Study groups': '/assets/subcategories/study/study-groups.png',
+  'Other items': '/assets/subcategories/other/other-items.png',
+  'Free stuff': '/assets/subcategories/other/free-stuff.png',
+  Collectibles: '/assets/subcategories/other/collectibles.png',
+  'Hobby gear': '/assets/subcategories/other/hobby-gear.png',
+  'Sports gear': '/assets/subcategories/other/sports-gear.png',
+  'Beauty & care': '/assets/subcategories/other/beauty-care.png',
+  'Pet supplies': '/assets/subcategories/other/pet-supplies.png'
 }
 
 const baseListings = [
@@ -459,29 +460,6 @@ const baseListings = [
   }
 ]
 
-function safeGetStorage(key, fallback = []) {
-  if (typeof wx === 'undefined' || !wx.getStorageSync) {
-    return fallback
-  }
-
-  try {
-    const value = wx.getStorageSync(key)
-    return value === '' || typeof value === 'undefined' ? fallback : value
-  } catch (error) {
-    return fallback
-  }
-}
-
-function safeSetStorage(key, value) {
-  if (typeof wx === 'undefined' || !wx.setStorageSync) {
-    return
-  }
-
-  try {
-    wx.setStorageSync(key, value)
-  } catch (error) {}
-}
-
 function toLookupKey(value) {
   return String(value || '')
     .trim()
@@ -493,20 +471,34 @@ function getFallbackImage(categoryId) {
   return categoryFallbackImages[categoryId] || categoryFallbackImages.items
 }
 
+function normalizeCoordinate(value) {
+  const coordinate = Number(value)
+  return Number.isFinite(coordinate) ? coordinate : null
+}
+
 function normalizeCustomListing(rawListing) {
   const categoryId = rawListing.categoryId || 'items'
   const images = Array.isArray(rawListing.images) ? rawListing.images.filter(Boolean) : []
   const image = images[0] || rawListing.image || getFallbackImage(categoryId)
+  const isSold = Boolean(rawListing.isSold)
+  const soldOnUniMarket = isSold ? rawListing.soldOnUniMarket !== false : false
 
   return {
     id: Number(rawListing.id),
     title: rawListing.title || 'Untitled listing',
-    price: rawListing.price || 'Price on request',
+    price: validation.ensurePriceCurrency(rawListing.price || 'Price on request'),
     location: rawListing.location || 'Hangzhou',
+    address: rawListing.address || '',
+    lat: normalizeCoordinate(rawListing.lat || rawListing.latitude),
+    lng: normalizeCoordinate(rawListing.lng || rawListing.longitude),
     university: rawListing.university || 'Student listing',
     image,
     categoryId,
     subcategory: rawListing.subcategory || '',
+    condition: rawListing.condition || '',
+    isSold,
+    soldOnUniMarket,
+    soldAt: isSold ? String(rawListing.soldAt || rawListing.updatedAt || rawListing.createdAt || '') : '',
     description: rawListing.description || 'No description yet.',
     images: images.length ? images : [image],
     createdAt: rawListing.createdAt || new Date().toISOString(),
@@ -525,18 +517,8 @@ function normalizeCustomListing(rawListing) {
   }
 }
 
-function safeRemoveStorage(key) {
-  if (typeof wx === 'undefined' || !wx.removeStorageSync) {
-    return
-  }
-
-  try {
-    wx.removeStorageSync(key)
-  } catch (error) {}
-}
-
 function getCustomListings() {
-  const storedListings = safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
+  const storedListings = storage.safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
 
   return storedListings
     .map((listing) => normalizeCustomListing(listing))
@@ -544,11 +526,15 @@ function getCustomListings() {
 }
 
 function getAllListings(options = {}) {
-  const { includeResolved = true, includeHiddenByUser = false } = options
+  const { includeResolved = true, includeHiddenByUser = false, includeSold = true } = options
   let listings = reportsStore.decorateListingsWithModeration([...getCustomListings(), ...baseListings])
 
   if (!includeHiddenByUser) {
     listings = visibilityStore.filterVisibleListings(listings)
+  }
+
+  if (!includeSold) {
+    listings = listings.filter((listing) => !listing.isSold)
   }
 
   if (includeResolved) {
@@ -563,12 +549,12 @@ function getListingById(id, options = {}) {
 }
 
 function getFeedListings() {
-  return getAllListings({ includeResolved: false })
+  return getAllListings({ includeResolved: false, includeSold: false })
 }
 
 function getListingsByCategory(categoryId, options = {}) {
-  const { includeResolved = true, includeHiddenByUser = false } = options
-  return getAllListings({ includeResolved, includeHiddenByUser }).filter((listing) => listing.categoryId === categoryId)
+  const { includeResolved = true, includeHiddenByUser = false, includeSold = true } = options
+  return getAllListings({ includeResolved, includeHiddenByUser, includeSold }).filter((listing) => listing.categoryId === categoryId)
 }
 
 function getSellerKey(listing) {
@@ -601,11 +587,15 @@ function getSellerProfileByListingId(listingId, options = {}) {
   }
 
   const sellerKey = getSellerKey(listing)
-  const listings = getListingsBySellerKey(sellerKey, { includeResolved: false, includeHiddenByUser })
+  const sellerListingsAllStates = getListingsBySellerKey(sellerKey, { includeResolved: true, includeHiddenByUser: true, includeSold: true })
+  const listings = getListingsBySellerKey(sellerKey, { includeResolved: false, includeHiddenByUser, includeSold: false })
     .sort((a, b) => Number(b.id) - Number(a.id))
+  const soldCount = sellerListingsAllStates
+    .filter((item) => Boolean(item && item.isSold && item.soldOnUniMarket))
+    .length
 
   const seller = listing.seller || {}
-  const fallbackJoinedAt = listings
+  const fallbackJoinedAt = sellerListingsAllStates
     .map((item) => item && item.createdAt ? String(item.createdAt).slice(0, 10) : '')
     .filter(Boolean)
     .sort()[0] || '2025-08-26'
@@ -621,7 +611,8 @@ function getSellerProfileByListingId(listingId, options = {}) {
     campus: seller.campus || listing.university || '',
     city: seller.city || listing.location || 'Hangzhou',
     joinedAt: seller.joinedAt || fallbackJoinedAt,
-    listings
+    listings,
+    soldCount
   }
 }
 
@@ -640,21 +631,28 @@ function getProfileSellerKey(profile, listings = []) {
 
 function getOwnSellerProfile() {
   const profile = profileStore.getProfile()
-  const listings = getMyListings().sort((a, b) => Number(b.id) - Number(a.id))
-  const sellerKey = getProfileSellerKey(profile, listings)
+  const allMyListings = getMyListings().sort((a, b) => Number(b.id) - Number(a.id))
+  const listings = allMyListings.filter((listing) => !listing.isSold)
+  const soldCount = allMyListings.filter((listing) => listing.isSold && listing.soldOnUniMarket).length
+  const sellerKey = getProfileSellerKey(profile, allMyListings)
 
   return {
     sellerKey,
     name: profile.name || 'You',
     badge: 'Verified student',
     wechat: profile.wechat || '',
-    note: listings.length ? 'Active on UniMarket' : 'Build your profile before your first listing',
+    note: listings.length
+      ? 'Active on UniMarket'
+      : soldCount
+        ? `Sold ${soldCount} item${soldCount === 1 ? '' : 's'} on UniMarket`
+        : 'Build your profile before your first listing',
     avatarUrl: profile.avatarUrl || '',
     bio: profile.bio || '',
     campus: profile.campus || '',
     city: profile.city || 'Hangzhou',
     joinedAt: profile.joinedAt || '',
-    listings
+    listings,
+    soldCount
   }
 }
 
@@ -665,32 +663,33 @@ function getSubcategoryCards(categoryId) {
     return []
   }
 
-  const listings = getListingsByCategory(categoryId, { includeResolved: false })
+  const listings = getListingsByCategory(categoryId, { includeResolved: false, includeSold: false })
 
   return category.subcategories.map((name, index) => {
     const matchedListing = listings.find((listing) => listing.subcategory === name && listing.image)
+    const fallbackImage = subcategoryFallbackImages[name]
 
     return {
       id: `${categoryId}-${index}`,
       name,
-      image: matchedListing ? matchedListing.image : subcategoryFallbackImages[name] || getFallbackImage(categoryId)
+      image: fallbackImage || (matchedListing ? matchedListing.image : '') || getFallbackImage(categoryId)
     }
   })
 }
 
 function getFeedListingsByCategory(categoryId) {
-  return getListingsByCategory(categoryId, { includeResolved: false })
+  return getListingsByCategory(categoryId, { includeResolved: false, includeSold: false })
 }
 
 function createListing(payload) {
-  const customListings = safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
+  const customListings = storage.safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
   const listing = normalizeCustomListing({
     ...payload,
     id: Date.now(),
     createdAt: new Date().toISOString()
   })
 
-  safeSetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [listing, ...customListings])
+  storage.safeSetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [listing, ...customListings])
 
   return listing
 }
@@ -705,16 +704,16 @@ function getMyListings() {
 
 function deleteListing(id) {
   const targetId = String(id)
-  const nextListings = safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, []).filter(
+  const nextListings = storage.safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, []).filter(
     (listing) => String(listing.id) !== targetId
   )
 
-  safeSetStorage(CUSTOM_LISTINGS_STORAGE_KEY, nextListings)
+  storage.safeSetStorage(CUSTOM_LISTINGS_STORAGE_KEY, nextListings)
 }
 
 function updateListing(id, payload) {
   const targetId = String(id)
-  const customListings = safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
+  const customListings = storage.safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
   const currentListing = customListings.find((listing) => String(listing.id) === targetId)
 
   if (!currentListing) {
@@ -733,18 +732,28 @@ function updateListing(id, payload) {
     String(listing.id) === targetId ? updatedListing : listing
   )
 
-  safeSetStorage(CUSTOM_LISTINGS_STORAGE_KEY, nextListings)
+  storage.safeSetStorage(CUSTOM_LISTINGS_STORAGE_KEY, nextListings)
 
   return updatedListing
 }
 
+function setListingSoldState(id, isSold, soldOnUniMarket = true) {
+  const sold = Boolean(isSold)
+
+  return updateListing(id, {
+    isSold: sold,
+    soldOnUniMarket: sold ? Boolean(soldOnUniMarket) : false,
+    soldAt: sold ? new Date().toISOString() : ''
+  })
+}
+
 function queueCreateMode(mode) {
-  safeSetStorage(CREATE_MODE_STORAGE_KEY, mode)
+  storage.safeSetStorage(CREATE_MODE_STORAGE_KEY, mode)
 }
 
 function consumeCreateMode() {
-  const mode = safeGetStorage(CREATE_MODE_STORAGE_KEY, null)
-  safeRemoveStorage(CREATE_MODE_STORAGE_KEY)
+  const mode = storage.safeGetStorage(CREATE_MODE_STORAGE_KEY, null)
+  storage.safeRemoveStorage(CREATE_MODE_STORAGE_KEY)
   return mode
 }
 
@@ -768,6 +777,7 @@ module.exports = {
   getMyListings,
   deleteListing,
   updateListing,
+  setListingSoldState,
   queueCreateMode,
   consumeCreateMode,
   getPublishCategories,

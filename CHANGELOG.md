@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.3.0 - 2026-03-18
+
+- expanded marketplace and inventory workflows:
+  - added listing sold/archive lifecycle with sale source tracking (`UniMarket` vs outside)
+  - added sold-on-UniMarket counters in profile surfaces
+  - added collapsible archive UX in `Listings`
+- improved listing creation quality:
+  - added item condition support (`Used`, `Like new`, `New`, `Refurbished`, `For parts`)
+  - tightened price guardrails (digits only, max 6 digits, normalized currency)
+  - improved draft handling and fixed discard behavior to prevent unwanted draft restore prompts
+- refreshed marketplace taxonomy:
+  - removed `Jobs` category
+  - reordered primary categories and added `Other`
+  - updated subcategory image sets across categories
+- standardized app architecture and quality tooling:
+  - moved storage safety helpers to shared `utils/storage.js`
+  - added centralized message constants module for consistent UI copy
+  - added shared validation and UI feedback utilities
+  - added smoke tests for core stores and marketplace flow
+  - added GitHub Actions CI workflow running `npm run check`
+- updated repository documentation and README branding/style
+
 ## 0.2.0 - 2026-03-17
 
 - added report and admin moderation workflow:

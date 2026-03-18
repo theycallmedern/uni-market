@@ -1,5 +1,6 @@
 const market = require('../../data/market')
 const universitiesStore = require('../../utils/universities')
+const listingsUtils = require('../../utils/listings')
 
 const UNIVERSITY_OPTIONS = ['All universities', ...universitiesStore.getPublicUniversityOptions()]
 const SORT_OPTIONS = ['Newest', 'Price low to high', 'Price high to low']
@@ -41,11 +42,11 @@ const PRICE_RANGE_CONFIGS = {
     { label: '100-300 RMB', min: 100, max: 300 },
     { label: '300+ RMB', min: 300 }
   ],
-  jobs: [
-    { label: 'Any pay' },
-    { label: 'Up to 100 RMB', max: 100 },
-    { label: '100-300 RMB', min: 100, max: 300 },
-    { label: '300+ RMB', min: 300 }
+  other: [
+    { label: 'Any price' },
+    { label: 'Up to 300 RMB', max: 300 },
+    { label: '300-1000 RMB', min: 300, max: 1000 },
+    { label: '1000+ RMB', min: 1000 }
   ]
 }
 
@@ -80,16 +81,11 @@ const QUICK_PRESETS = {
     { label: 'HSK / IELTS prep', subcategory: 'HSK / IELTS prep' },
     { label: 'ZJU', university: 'Zhejiang University' }
   ],
-  jobs: [
+  other: [
     { label: 'All' },
-    { label: 'Remote jobs', subcategory: 'Remote jobs' },
-    { label: 'Tutoring jobs', subcategory: 'Tutoring jobs' }
+    { label: 'Free stuff', subcategory: 'Free stuff' },
+    { label: 'ZJU', university: 'Zhejiang University' }
   ]
-}
-
-function parsePriceValue(price = '') {
-  const match = String(price).replace(/,/g, '').match(/(\d+(?:\.\d+)?)/)
-  return match ? Number(match[1]) : 0
 }
 
 function buildPrimaryFilters(category) {
@@ -152,14 +148,6 @@ function getPriceRange(categoryId, selectedIndex) {
   return priceRanges[selectedIndex] || priceRanges[0]
 }
 
-function getDisplayLabel(filter) {
-  if (!filter.selectedIndex) {
-    return filter.label
-  }
-
-  return filter.optionLabels[filter.selectedIndex] || filter.label
-}
-
 function normalizeSelectedFilters(categoryId, primaryFilters, secondaryFilters, quickFilters) {
   const selectedSubcategory =
     primaryFilters[0] && primaryFilters[0].selectedIndex > 0
@@ -195,7 +183,7 @@ function normalizeSelectedFilters(categoryId, primaryFilters, secondaryFilters, 
 
 function filterListings(listings, filters) {
   return listings.filter((listing) => {
-    const priceValue = parsePriceValue(listing.price)
+    const priceValue = listingsUtils.parsePriceValue(listing.price)
     const matchesSubcategory = !filters.subcategory || listing.subcategory === filters.subcategory
     const matchesQuickSubcategory = !filters.quickSubcategory || listing.subcategory === filters.quickSubcategory
     const matchesUniversity = !filters.university || listing.university === filters.university
