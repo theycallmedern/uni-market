@@ -1,5 +1,5 @@
-<view class="tabbar-shell">
-  <view class="tabbar">
+<view class="tabbar-shell tabbar-shell--{{themeMode}}">
+  <view class="tabbar tabbar--{{themeMode}}">
     <block wx:for="{{list}}" wx:key="pagePath">
       <view
         class="tabbar__item {{selected === index ? 'tabbar__item--active' : ''}} {{item.isPrimary ? 'tabbar__item--primary' : ''}}"

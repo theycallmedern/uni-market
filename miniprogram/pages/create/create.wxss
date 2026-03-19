@@ -223,6 +223,17 @@
   color: #666666;
 }
 
+.field-helper {
+  display: block;
+  margin-top: 10rpx;
+  padding: 12rpx 14rpx;
+  border-radius: 14rpx;
+  background: #f7f2e6;
+  color: #8a5a08;
+  font-size: 22rpx;
+  line-height: 1.4;
+}
+
 .field-input,
 .picker-field,
 .description-input {
@@ -293,4 +304,215 @@
 
 .publish-button::after {
   border: 0;
+}
+
+.create-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 32;
+  background: rgba(17, 17, 17, 0.28);
+  backdrop-filter: blur(8rpx);
+}
+
+.create-sheet {
+  position: absolute;
+  left: 20rpx;
+  right: 20rpx;
+  bottom: 16rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+  max-height: 70vh;
+  padding: 18rpx 18rpx calc(env(safe-area-inset-bottom) + 12rpx);
+  border-radius: 36rpx;
+  background: linear-gradient(180deg, #ffffff, #faf8f2);
+  box-shadow: 0 28rpx 56rpx rgba(17, 17, 17, 0.16);
+}
+
+.create-sheet__handle {
+  display: flex;
+  align-self: center;
+  width: 72rpx;
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: rgba(17, 17, 17, 0.14);
+}
+
+.create-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 4rpx 10rpx 0;
+}
+
+.create-sheet__title {
+  font-size: 34rpx;
+  line-height: 1.15;
+  font-weight: 700;
+  color: #111111;
+}
+
+.create-sheet__close {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #6c6c6c;
+}
+
+.create-sheet__scroll {
+  display: flex;
+  flex-direction: column;
+  max-height: 52vh;
+}
+
+.create-sheet__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  min-height: 98rpx;
+  padding: 0 22rpx;
+  border-radius: 24rpx;
+  background: #ffffff;
+  color: #111111;
+  box-shadow: 0 10rpx 22rpx rgba(17, 17, 17, 0.04);
+}
+
+.create-sheet__option + .create-sheet__option {
+  margin-top: 12rpx;
+}
+
+.create-sheet__option--active {
+  background: #eef4e7;
+}
+
+.create-sheet__option-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 28rpx;
+  line-height: 1.3;
+  font-weight: 600;
+  color: inherit;
+}
+
+.create-sheet__option-check {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #2f7d32;
+}
+
+.theme-dark.create-page,
+.theme-dark .create-scroll {
+  background: #0f1113;
+}
+
+.theme-dark .compose-title,
+.theme-dark .card-title {
+  color: #f2f5f7;
+}
+
+.theme-dark .compose-copy,
+.theme-dark .card-hint,
+.theme-dark .card-subhint,
+.theme-dark .field-label {
+  color: #8e99a3;
+}
+
+.theme-dark .compose-chip {
+  background: rgba(54, 88, 60, 0.3);
+  color: #b7dfbe;
+}
+
+.theme-dark .form-card {
+  background: #171b1f;
+  border: 1rpx solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 16rpx 30rpx rgba(0, 0, 0, 0.22);
+}
+
+.theme-dark .photo-add {
+  background: linear-gradient(135deg, #242b30, #171c20);
+  color: #f2f5f7;
+}
+
+.theme-dark .photo-card__image {
+  background: #20262b;
+}
+
+.theme-dark .photo-card__badge {
+  background: rgba(20, 24, 27, 0.88);
+  color: #f2f5f7;
+}
+
+.theme-dark .photo-tool {
+  background: rgba(23, 27, 31, 0.92);
+  color: #f2f5f7;
+}
+
+.theme-dark .field-helper {
+  background: rgba(92, 74, 28, 0.32);
+  color: #e5d3a5;
+}
+
+.theme-dark .field-input,
+.theme-dark .picker-field,
+.theme-dark .description-input,
+.theme-dark .publish-button {
+  background: #20262b;
+  color: #f2f5f7;
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 16rpx 30rpx rgba(0, 0, 0, 0.22);
+}
+
+.theme-dark .field-input::placeholder,
+.theme-dark .description-input::placeholder {
+  color: #8e99a3;
+}
+
+.theme-dark .picker-field--locked {
+  background: #171b1f;
+  color: #f2f5f7;
+}
+
+.theme-dark .picker-field__locked-value {
+  color: #f2f5f7;
+}
+
+.theme-dark .picker-arrow {
+  color: #8e99a3;
+}
+
+.theme-dark .create-sheet-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.theme-dark .create-sheet {
+  background: linear-gradient(180deg, #171b1f, #111417);
+  box-shadow: 0 28rpx 56rpx rgba(0, 0, 0, 0.32);
+}
+
+.theme-dark .create-sheet__handle {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.theme-dark .create-sheet__title {
+  color: #f2f5f7;
+}
+
+.theme-dark .create-sheet__close {
+  color: #8e99a3;
+}
+
+.theme-dark .create-sheet__option {
+  background: #171b1f;
+  color: #f2f5f7;
+  border: 1rpx solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10rpx 22rpx rgba(0, 0, 0, 0.22);
+}
+
+.theme-dark .create-sheet__option--active {
+  background: #20262b;
+}
+
+.theme-dark .create-sheet__option-check {
+  color: #b7dfbe;
 }

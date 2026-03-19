@@ -79,3 +79,42 @@
 .tabbar__item--active .tabbar__label {
   color: #111111;
 }
+
+.tabbar--dark {
+  background: rgba(15, 17, 19, 0.96);
+  border-top-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -14rpx 34rpx rgba(0, 0, 0, 0.28);
+}
+
+.tabbar--dark .tabbar__label {
+  color: #9ca7b0;
+}
+
+.tabbar--dark .tabbar__item--active .tabbar__label {
+  color: #f2f5f7;
+}
+
+.tabbar--dark .tabbar__icon {
+  filter: brightness(0) invert(1);
+  opacity: 0.82;
+}
+
+.tabbar--dark .tabbar__item--active .tabbar__icon {
+  opacity: 1;
+}
+
+.tabbar--dark .tabbar__item--active .tabbar__icon-wrap {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tabbar--dark .tabbar__icon-wrap--primary {
+  background: #1a1f23;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10rpx 20rpx rgba(0, 0, 0, 0.24);
+}
+
+.tabbar--dark .tabbar__item--active .tabbar__icon-wrap--primary {
+  background: #20282e;
+  border-color: rgba(145, 168, 153, 0.18);
+  box-shadow: 0 10rpx 22rpx rgba(0, 0, 0, 0.28);
+}

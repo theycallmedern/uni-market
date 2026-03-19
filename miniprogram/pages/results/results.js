@@ -1,17 +1,23 @@
 const market = require('../../data/market')
 const savedStore = require('../../utils/saved')
+const storage = require('../../utils/storage')
 const universitiesStore = require('../../utils/universities')
 const listingsUtils = require('../../utils/listings')
 
 const UNIVERSITY_FILTER_OPTIONS = ['All universities', ...universitiesStore.getPublicUniversityOptions()]
+const INITIAL_THEME = storage.getThemeData()
 
 Page({
   data: {
+    themeMode: INITIAL_THEME.themeMode,
+    themeClass: INITIAL_THEME.themeClass,
+    isDarkTheme: INITIAL_THEME.isDarkTheme,
     navTitle: 'Results',
     categoryId: '',
     categoryTitle: '',
     subcategory: '',
     quickSubcategory: '',
+    activeSubcategoryLabel: '',
     search: '',
     priceMin: '',
     priceMax: '',
@@ -31,9 +37,11 @@ Page({
   },
 
   onLoad(query) {
+    this.refreshTheme()
     const categoryId = query.categoryId || 'housing'
     const subcategory = decodeURIComponent(query.subcategory || '')
     const quickSubcategory = decodeURIComponent(query.quickSubcategory || '')
+    const activeSubcategoryLabel = subcategory || quickSubcategory
     const categoryTitle = market.categoryTitles[categoryId] || 'Results'
     const pendingInitialFilters = {
       university: decodeURIComponent(query.university || ''),
@@ -43,7 +51,7 @@ Page({
     }
 
     wx.setNavigationBarTitle({
-      title: subcategory ? `${categoryTitle} · ${subcategory}` : categoryTitle
+      title: activeSubcategoryLabel ? `${categoryTitle} · ${activeSubcategoryLabel}` : categoryTitle
     })
 
     this.setData({
@@ -52,6 +60,7 @@ Page({
       categoryTitle,
       subcategory,
       quickSubcategory,
+      activeSubcategoryLabel,
       pendingInitialFilters
     }, () => {
       this.refreshListings()
@@ -59,7 +68,12 @@ Page({
   },
 
   onShow() {
+    this.refreshTheme()
     this.refreshListings()
+  },
+
+  refreshTheme() {
+    this.setData(storage.getThemeData())
   },
 
   refreshListings() {
@@ -199,7 +213,7 @@ Page({
     })
 
     this.setData({
-      visibleListings: savedStore.decorateListingsWithSaved(filtered)
+      visibleListings: savedStore.decorateListingsWithSaved(market.sortByPromotionPriority(filtered))
     })
   },
 

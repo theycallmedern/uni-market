@@ -9,191 +9,323 @@
 </p>
 
 <p align="center">
-  UniMarket helps students buy, sell, and discover housing, items, electronics, transport, study resources, services, and everything else in one clean flow.
+  UniMarket turns scattered chat-based buying and selling into a focused marketplace flow with discovery, trust signals, seller tooling, and moderation-ready controls.
 </p>
 
 <p align="center">
-  <a href="https://github.com/theycallmedern/uni-market/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/theycallmedern/uni-market/ci.yml?style=flat-square&label=checks"></a>
-  <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-1f2937?style=flat-square"></a>
-  <a href="./SECURITY.md"><img alt="Security" src="https://img.shields.io/badge/security-local--first-1f2937?style=flat-square"></a>
+  <a href="https://github.com/theycallmedern/uni-market/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/theycallmedern/uni-market/ci.yml?branch=main&style=flat-square&label=build"></a>
+  <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-111827?style=flat-square"></a>
+  <img alt="Version" src="https://img.shields.io/badge/version-0.1.0--mvp-111827?style=flat-square">
+  <img alt="Platform" src="https://img.shields.io/badge/platform-WeChat%20Mini%20Program-07C160?style=flat-square">
+  <img alt="Status" src="https://img.shields.io/badge/status-local--first%20prototype-1F2937?style=flat-square">
 </p>
 
 <p align="center">
   <code>WeChat Mini Program</code>
+  <code>JavaScript</code>
+  <code>WXML + WXSS</code>
   <code>Local storage MVP</code>
-  <code>Create + Archive listings</code>
-  <code>Seller profiles + reviews</code>
-  <code>Moderation inbox</code>
+  <code>Dark mode</code>
+  <code>Moderation tooling</code>
 </p>
 
-## Overview
+## ✨ Elevator Pitch
 
-UniMarket is a student-focused marketplace shell for WeChat.
+UniMarket is a marketplace shell designed for student communities that still coordinate heavily through WeChat.
 
-The project is intentionally local-first at MVP stage: listings, saved items, profile data, and moderation state are stored on device via `wx` storage APIs.
+Instead of forcing a backend-first marketplace too early, the project focuses on what matters first:
+
+- faster discovery across housing, items, electronics, study resources, services, and transport
+- cleaner posting and seller inventory management
+- richer seller trust context through profiles, reviews, saves, and seller insights
+- moderation flows that can be tested before server-side infrastructure exists
 
 > [!IMPORTANT]
-> This repository does not include a production backend, payments, cloud sync, or real in-app chat. Seller contact is handled through WeChat ID handoff.
+> This repository is intentionally local-first. Listings, saved items, profile state, admin access, and moderation state are stored on-device via `wx` storage APIs. It is an MVP shell, not a production backend.
 
-### Why it exists
+## 🎥 Demo / Screenshots
 
-Student marketplace activity in group chats is fast, but hard to manage:
+### Live App Screen
 
-- posts disappear quickly
-- filtering and search are weak
-- seller trust context is fragmented
-- moderation is reactive
+![UniMarket home feed](./docs/screenshots/app-home-crop.png)
 
-UniMarket explores a cleaner marketplace layer while keeping a familiar WeChat-first handoff.
+### Demo GIF Placeholder
 
-## Key Features
+![Demo placeholder](./docs/screenshots/demo-placeholder.svg)
 
-- **Category-first discovery**: `Items`, `Electronics`, `Transport`, `Study`, `Services`, and `Other`.
-- **Subcategory exploration**: dedicated image cards per subcategory with updated visual packs.
-- **Create and edit flow**: draft support, up to 5 photos, custom subcategory, and condition selection (`Used`, `Like new`, `New`, `Refurbished`, `For parts`).
-- **Listing lifecycle**: mark as sold, choose sale source (`on UniMarket` vs `somewhere else`), and auto-move sold listings to archive.
-- **Seller insights**: sold-on-UniMarket counters shown in listings/profile surfaces.
-- **Saved flow**: local favorites with unavailable cleanup actions.
-- **Trust and moderation**: listing/profile reports, admin moderation statuses, and client-side visibility controls.
-- **Input guardrails**: strict price validation (digits only, max 6), WeChat ID validation, and normalized text handling.
-- **Shared core utilities**: unified storage helpers, validation helpers, and feedback (toast/modal) wrappers for consistent UX.
+## 🚀 Features
 
-## Product Flow
+- **Category-first discovery** for `Housing`, `Items`, `Electronics`, `Transport`, `Study`, `Services`, and `Other`
+- **Fast marketplace browsing** with search, category pages, results filters, subcategory exploration, and promoted listings
+- **Create + edit listing flow** with photo uploads, draft recovery, custom subcategories, price normalization, and condition selection
+- **Seller inventory management** with open, edit, relist, mark-sold, delete, and archive flows
+- **Seller profiles and reviews** with trust states, listing history, review summaries, and public/private profile views
+- **Seller Pro surfaces** with insights, saved/view counts, listing performance, and premium-style profile presentation
+- **Local moderation tooling** for listing reports, profile reports, hidden content states, and admin review actions
+- **Dark theme support** across core screens including profile, settings, listing flows, search, categories, and results
+- **Local-first saved flow** with cleanup mechanics for unavailable listings and blocked sellers
+- **Shared UX infrastructure** for validation, storage, tab bar sync, feedback modals/toasts, and smoke-test coverage
 
-### Buyer flow
-
-1. Open `Search`, browse categories, or use filters.
-2. Open listing details with photos, condition chips, and seller card.
-3. Save listing or copy seller WeChat ID to continue in WeChat.
-4. Copy listing address directly from the detail page.
-
-### Seller flow
-
-1. Open `Post`, fill title, price, category/subcategory, condition, address, and photos.
-2. Publish listing (price is normalized with currency).
-3. Manage inventory in `Listings`: open, edit, mark sold, relist, delete.
-4. Sold listings move to archive; active feed stays clean.
-
-### Moderation flow
-
-1. User reports a listing or profile.
-2. Admin unlocks local moderation access.
-3. Admin updates report status (`pending`, `reviewing`, `resolved`, `dismissed`).
-4. Resolved listing reports can hide listings from regular feeds.
-
-## Tech Stack
+## 🧱 Tech Stack
 
 | Layer | Technology |
 | --- | --- |
 | App shell | WeChat Mini Program |
 | UI | WXML + WXSS |
 | Runtime | JavaScript |
-| Data persistence | `wx` local storage |
-| Quality checks | Node.js + `scripts/check.sh` + smoke tests |
-| CI | GitHub Actions (`.github/workflows/ci.yml`) |
+| Persistence | `wx` local storage |
+| Tooling | Node.js, shell scripts, WeChat DevTools |
+| Quality gate | `scripts/check.sh`, smoke tests, syntax checks |
+| CI | GitHub Actions |
 | Planned backend direction | Cloudflare Workers + D1 + R2 |
 
-## Getting Started
+## 📦 Installation
 
 ### Prerequisites
 
 - WeChat Developer Tools
-- Node.js
+- Node.js 18+ recommended
 - Git
 
-### Clone
+### Clone the repository
 
 ```bash
 git clone https://github.com/theycallmedern/uni-market.git
 cd uni-market
 ```
 
-### Install and run checks
+### Install dependencies
 
 ```bash
 npm install
+```
+
+### Run local quality checks
+
+```bash
 npm run check
 ```
 
 `npm run check` currently runs:
 
-- JavaScript syntax checks across `miniprogram/` and `scripts/`
-- lightweight smoke tests for core stores and marketplace flow scenarios
+- JavaScript syntax validation across `miniprogram/` and `scripts/`
+- smoke tests for listings, saved state, category-to-results flow, and inventory mechanics
+
+## ▶️ Usage
 
 ### Open in WeChat DevTools
 
-Open repository root in WeChat Developer Tools with Mini Program root set to:
+Set the Mini Program root to:
 
 ```text
 miniprogram/
 ```
 
-## Project Structure
+### Typical developer workflow
 
-| Path | Purpose |
+```bash
+# 1. install deps
+npm install
+
+# 2. run checks before opening DevTools
+npm run check
+
+# 3. open the repo in WeChat DevTools
+# Mini Program root: miniprogram/
+```
+
+### Typical product flow
+
+1. Open `Search` and browse by category or search query.
+2. Open a listing and inspect photos, chips, seller card, and saved state.
+3. Switch to `Post` to create or edit a listing.
+4. Manage active and sold inventory in `Listings`.
+5. Open `Profile` and `Settings` to manage public profile, theme, and admin access.
+
+## 🧩 API / CLI
+
+UniMarket does not expose a public API or end-user CLI in this MVP.
+
+The developer-facing commands are intentionally small:
+
+| Command | Purpose |
 | --- | --- |
-| [`miniprogram/pages/index`](./miniprogram/pages/index) | Home feed and discovery |
-| [`miniprogram/pages/category`](./miniprogram/pages/category) | Category-level browsing |
-| [`miniprogram/pages/results`](./miniprogram/pages/results) | Search/filter/sort results |
-| [`miniprogram/pages/favorites`](./miniprogram/pages/favorites) | Saved listings management |
-| [`miniprogram/pages/create`](./miniprogram/pages/create) | Create/edit listing flow with draft and validation |
-| [`miniprogram/pages/messages`](./miniprogram/pages/messages) | Seller inventory and archive |
-| [`miniprogram/pages/listing`](./miniprogram/pages/listing) | Listing detail, actions, and reporting |
-| [`miniprogram/pages/user-profile`](./miniprogram/pages/user-profile) | Public/own profile, reviews, and profile reports |
-| [`miniprogram/pages/profile`](./miniprogram/pages/profile) | Profile overview and admin entry |
-| [`miniprogram/pages/moderation`](./miniprogram/pages/moderation) | Moderation inbox and status updates |
-| [`miniprogram/data/market.js`](./miniprogram/data/market.js) | Core market dataset and listing lifecycle |
-| [`miniprogram/utils/storage.js`](./miniprogram/utils/storage.js) | Safe local storage wrappers |
-| [`miniprogram/utils/validation.js`](./miniprogram/utils/validation.js) | Shared validators/normalizers |
-| [`miniprogram/utils/ui-feedback.js`](./miniprogram/utils/ui-feedback.js) | Unified toast/modal wrappers |
-| [`miniprogram/constants/messages.js`](./miniprogram/constants/messages.js) | Centralized UI text constants |
-| [`scripts/smoke-test.js`](./scripts/smoke-test.js) | Core smoke tests |
-| [`scripts/check.sh`](./scripts/check.sh) | Local quality gate |
+| `npm run check` | Run syntax checks + smoke tests |
+| `bash scripts/check.sh` | Direct quality-gate script |
+| `node scripts/smoke-test.js` | Run smoke scenarios explicitly |
 
-## Privacy and Security
+### Example local listing shape
 
-UniMarket is intentionally local-first in this MVP:
+```js
+{
+  id: 1773928375491,
+  title: "logo",
+  price: "250 RMB",
+  location: "Hangzhou",
+  university: "Zhejiang University",
+  categoryId: "other",
+  subcategory: "Other items",
+  condition: "New",
+  isSold: false,
+  isCustom: true,
+  seller: {
+    name: "demo_anna",
+    wechat: "demo_anna",
+    city: "Hangzhou"
+  }
+}
+```
 
-- listings are stored locally
-- profile and saved state are stored locally
-- moderation state is stored locally
-- there is no production sync layer in this repository
+## 🗂 Project Structure
 
-For repository-level security policy and reporting guidance, see [SECURITY.md](./SECURITY.md).
+```text
+uni-market/
+├── .github/                    # CI workflows and repository automation
+├── docs/
+│   └── screenshots/            # README visual assets
+├── miniprogram/
+│   ├── assets/                 # brand, tab bar, and subcategory media
+│   ├── components/             # shared UI components
+│   ├── custom-tab-bar/         # custom navigation shell
+│   ├── data/                   # local market dataset and config
+│   ├── pages/
+│   │   ├── index/              # home feed
+│   │   ├── category/           # category browsing
+│   │   ├── results/            # filtered results
+│   │   ├── favorites/          # saved listings
+│   │   ├── create/             # create/edit listing flow
+│   │   ├── listing/            # listing detail
+│   │   ├── messages/           # seller inventory + archive
+│   │   ├── user-profile/       # public / own seller profile
+│   │   ├── profile/            # account overview
+│   │   ├── settings/           # theme + admin settings
+│   │   └── moderation/         # moderation inbox
+│   ├── utils/                  # storage, validation, stats, saved state
+│   └── constants/              # centralized UI copy
+├── scripts/
+│   ├── check.sh                # local quality gate
+│   └── smoke-test.js           # smoke scenarios
+├── README.md
+└── package.json
+```
 
-> [!WARNING]
-> Admin unlock and moderation authorization are client-side MVP mechanics only and are not production-grade access control.
+## ⚙️ Configuration
 
-## Development
+This MVP currently requires **no runtime `.env` file**.
 
-### Local checks
+### Current local configuration model
+
+| Key | Where it lives | Purpose |
+| --- | --- | --- |
+| WeChat App ID | `project.config.json` / DevTools | Mini Program project binding |
+| Local theme mode | `wx` storage | Light / dark theme persistence |
+| User profile | `wx` storage | Public profile + seller defaults |
+| Admin unlock state | `wx` storage | Local moderation access |
+| Draft listing data | `wx` storage | Restore unfinished listing flow |
+
+### Future environment variables
+
+These are not active yet, but likely candidates once a backend exists:
+
+```bash
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_D1_DATABASE_ID=
+CLOUDFLARE_R2_BUCKET=
+OPENAI_API_KEY=
+```
+
+## 🧪 Testing
+
+Run the full local check suite:
 
 ```bash
 npm run check
 ```
 
-### Before merging
+Or run the underlying pieces directly:
 
-- verify changed flows in WeChat DevTools
-- update docs when user-facing behavior changes
-- add or adjust smoke tests when store/business logic changes
+```bash
+node --check miniprogram/pages/create/create.js
+node scripts/smoke-test.js
+bash scripts/check.sh
+```
 
-For contribution conventions, see [CONTRIBUTING.md](./CONTRIBUTING.md).  
-For product-facing update history, see [CHANGELOG.md](./CHANGELOG.md).
+What is covered today:
 
-## Roadmap
+- storage and validation paths
+- category-to-results filtering
+- create/edit listing logic
+- favorites flow
+- listing and profile-related state transitions
+
+## 🚢 Deployment
+
+Current deployment target is WeChat DevTools preview / upload flow.
+
+### Local preview
+
+```bash
+# open project in WeChat DevTools
+# use Preview or simulator inside the IDE
+```
+
+### Release path today
+
+1. Run `npm run check`
+2. Validate changed flows in WeChat DevTools
+3. Upload via WeChat DevTools
+4. Promote build through the Mini Program console
+
+### Planned production direction
+
+- backend-backed auth and moderation roles
+- cloud image storage
+- multi-device sync
+- server-enforced reporting and visibility rules
+
+## 🛣 Roadmap
 
 - [x] Local marketplace MVP shell
-- [x] Listing lifecycle with sold/archive behavior
-- [x] Seller profile and review surfaces
-- [x] Moderation inbox and report statuses
-- [x] Shared validation/storage/feedback utilities
-- [x] Core smoke tests + CI quality gate
-- [ ] Backend-backed auth and moderation roles
-- [ ] Cloud media and multi-device sync
-- [ ] Native map/radius discovery around campus
-- [ ] Production messaging and server-enforced trust signals
+- [x] Category and results browsing
+- [x] Create/edit flow with drafts and validation
+- [x] Saved listings and listing lifecycle
+- [x] Seller profile, reviews, and insights
+- [x] Local moderation inbox
+- [x] Dark theme foundation across major surfaces
+- [x] Shared smoke tests + CI
+- [ ] Backend sync and authenticated roles
+- [ ] Cloud media pipeline
+- [ ] Real messaging and notifications
+- [ ] Search ranking and recommendation tuning
+- [ ] Campus-aware map and geo discovery
 
-## License
+## 🤝 Contributing
+
+Contributions are welcome, especially around product polish, Mini Program ergonomics, testing, and local-first architecture improvements.
+
+Before opening a PR:
+
+1. Run `npm run check`
+2. Validate changed flows in WeChat DevTools
+3. Update docs when user-facing behavior changes
+4. Keep changes focused and avoid unrelated reformatting
+
+See:
+
+- [CONTRIBUTING.md](./CONTRIBUTING.md)
+- [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
+- [SECURITY.md](./SECURITY.md)
+
+## 📄 License
 
 This project is licensed under the [MIT License](./LICENSE).
+
+## 👥 Authors / Credits
+
+- **Misha Belakov** — product direction, concept, and implementation
+- **Contributors** — UI, logic, docs, testing, and polish improvements
+
+Additional credits:
+
+- subcategory artwork and UI assets live in `miniprogram/assets/`
+- listing demo imagery currently mixes bundled assets and remote placeholders used for MVP presentation

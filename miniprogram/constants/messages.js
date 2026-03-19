@@ -12,7 +12,19 @@ const CREATE = {
   UP_TO_5_PHOTOS: 'Up to 5 photos',
   UPDATED: 'Updated',
   PUBLISHED: 'Published',
+  PROMOTION_CONTACT_WECHAT: 'miskathaa',
+  PROMOTION_OFFER_TITLE: 'Promote this listing?',
+  PROMOTION_OFFER_COPY:
+    'Featured listings appear first in search and category feeds, get a visible Featured badge, and usually receive more views.',
+  promotionOfferContent: (plansText) =>
+    `Featured listings appear first in search and category feeds, get a visible Featured badge, and usually receive more views.\n\nPlans:\n${plansText}`,
+  PROMOTION_PLAN_PICKER_TITLE: 'Choose promotion duration',
+  PROMOTION_REQUEST_SENT: 'Promotion request sent',
+  PROMOTION_CONTACT_COPIED: 'Support WeChat copied',
+  promotionContactModalContent: (wechatId, planLabel, priceLabel) =>
+    `For ${planLabel} (${priceLabel}), write in WeChat: ${wechatId}. We copied this ID for you.`,
   SAVE_FAILED: 'Could not save listing',
+  ADDRESS_HINT: 'Use a real meetup point: area/campus + building or gate + room/number. Example: Xihu District, ZJU Yuquan Campus, Gate 3, Building 2, Room 402',
   VALIDATION: {
     CATEGORY: 'Choose a category',
     CUSTOM_SUBCATEGORY: 'Custom subcategory: 2-40 chars',
@@ -24,6 +36,7 @@ const CREATE = {
     PRICE_LENGTH: 'Price: up to 6 digits',
     PRICE_RANGE: 'Price must be from 1 to 999999',
     ADDRESS: 'Add a clearer address (at least 6 chars)',
+    ADDRESS_MEANINGFUL: 'Address is too vague. Add area + details (for example: road/campus + building/gate/room)',
     UNIVERSITY: 'Add your university',
     WECHAT_REQUIRED: 'Add your WeChat ID',
     wechatInvalid: (min, max) => `WeChat ID: ${min}-${max} chars, start with letter`,
@@ -39,6 +52,18 @@ const LISTINGS_MANAGER = {
   LISTED_AGAIN: 'Listed again',
   SOLD_ON_UNIMARKET: 'Sold on UniMarket',
   MOVED_TO_ARCHIVE: 'Moved to archive',
+  PROMOTE_TITLE: 'Promote listing?',
+  promoteContent: (planLabel, priceLabel) => `${planLabel} costs ${priceLabel}. Featured listings are pinned higher in feed/results and get a Featured badge.`,
+  PROMOTE_PLAN_PICKER_TITLE: 'Choose promotion duration',
+  PROMOTE_REQUESTED: 'Promotion request sent',
+  PROMOTE_ALREADY_ACTIVE: 'This listing is already featured',
+  PROMOTE_ALREADY_REQUESTED: 'Promotion already requested',
+  PROMOTE_SOLD_UNAVAILABLE: 'Only active listings can be promoted',
+  PROMOTION_ACTIVATED: 'Promotion approved',
+  PROMOTION_REJECTED: 'Promotion rejected',
+  PROMOTION_CONTACT_COPIED: 'Support WeChat copied',
+  promotionContactModalContent: (wechatId, planLabel, priceLabel) =>
+    `For ${planLabel} (${priceLabel}), write in WeChat: ${wechatId}. We copied this ID for you.`,
   DELETE_TITLE: 'Delete listing?',
   DELETE_CONTENT: 'This will remove the listing from your listings tab and the marketplace feed.',
   DELETED: 'Deleted'
@@ -78,7 +103,13 @@ const PROFILE = {
   ADMIN_CONFIRM: 'Unlock',
   ADMIN_UNLOCKED: 'Admin unlocked',
   ADMIN_WRONG_CODE: 'Wrong code',
-  ADMIN_DISABLED: 'Admin disabled'
+  ADMIN_DISABLED: 'Admin disabled',
+  SELLER_PRO_TITLE: 'Upgrade to Seller Pro',
+  SELLER_PRO_CONTACT_COPIED: 'Support WeChat copied',
+  sellerProOfferContent: (priceLabel) =>
+    `Seller Pro (${priceLabel}) helps your profile stand out and attract more buyers.\n\nYou get:\n• Stronger visibility in feed with a premium seller look\n• Up to 10 photos per listing to present items better\n• Custom seller badge to build trust faster\n• Advanced analytics (views, saves, conversion) to learn what works and post smarter\n• Priority support and faster moderation turnaround\n\nConnect Seller Pro now?`,
+  sellerProContactModalContent: (wechatId) =>
+    `For Seller Pro setup, write in WeChat: ${wechatId}. We copied this ID for you.`
 }
 
 const USER_PROFILE = {
@@ -105,7 +136,15 @@ const USER_PROFILE = {
 }
 
 const MODERATION = {
-  STATUS_UPDATED: 'Status updated'
+  STATUS_UPDATED: 'Status updated',
+  PROMOTION_APPROVED: 'Promotion approved',
+  PROMOTION_REJECTED: 'Promotion rejected',
+  SELLER_PRO_TITLE: 'Grant Seller Pro',
+  SELLER_PRO_PLACEHOLDER: 'Enter seller nickname',
+  SELLER_PRO_CONFIRM: 'Grant',
+  SELLER_PRO_NOT_FOUND: 'Seller with this nickname not found',
+  SELLER_PRO_REVOKED: 'Seller Pro removed',
+  sellerProGranted: (grantedCount) => `Seller Pro granted to ${grantedCount} seller${grantedCount === 1 ? '' : 's'}`
 }
 
 module.exports = {

@@ -1,13 +1,18 @@
 const market = require('../../data/market')
 const savedStore = require('../../utils/saved')
+const storage = require('../../utils/storage')
 const universitiesStore = require('../../utils/universities')
 const tabbarStore = require('../../utils/tabbar')
 const listingsUtils = require('../../utils/listings')
 
 const UNIVERSITY_FILTER_OPTIONS = ['All universities', ...universitiesStore.getPublicUniversityOptions()]
+const INITIAL_THEME = storage.getThemeData()
 
 Page({
   data: {
+    themeMode: INITIAL_THEME.themeMode,
+    themeClass: INITIAL_THEME.themeClass,
+    isDarkTheme: INITIAL_THEME.isDarkTheme,
     search: '',
     categories: market.categories,
     activeCategoryId: 'all',
@@ -27,8 +32,16 @@ Page({
   },
 
   onShow() {
-    tabbarStore.syncTabBar(this, 0)
+    this.refreshTheme(() => {
+      tabbarStore.syncTabBar(this, 0, {
+        themeMode: this.data.themeMode
+      })
+    })
     this.refreshListings()
+  },
+
+  refreshTheme(callback) {
+    this.setData(storage.getThemeData(), callback)
   },
 
   refreshListings() {
@@ -180,7 +193,7 @@ Page({
       return Number(b.id) - Number(a.id)
     })
 
-    const visibleListings = savedStore.decorateListingsWithSaved(filtered)
+    const visibleListings = savedStore.decorateListingsWithSaved(market.sortByPromotionPriority(filtered))
 
     this.setData({ visibleListings })
   }

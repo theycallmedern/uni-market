@@ -1,5 +1,5 @@
-<view wx:if="{{isAllCategories}}" class="page-shell page-shell--scroll">
-  <app-header title="{{navTitle}}" showBack="{{true}}"></app-header>
+<view wx:if="{{isAllCategories}}" class="page-shell page-shell--scroll {{themeClass}}">
+  <app-header title="{{navTitle}}" showBack="{{true}}" theme="{{themeMode}}"></app-header>
   <scroll-view
     class="page-scroll"
     scroll-y
@@ -23,8 +23,8 @@
   </scroll-view>
 </view>
 
-<view wx:elif="{{category}}" class="page-shell page-shell--scroll">
-  <app-header title="{{navTitle}}" showBack="{{true}}"></app-header>
+<view wx:elif="{{category}}" class="page-shell page-shell--scroll {{themeClass}}">
+  <app-header title="{{navTitle}}" showBack="{{true}}" theme="{{themeMode}}"></app-header>
   <scroll-view
     class="page-scroll"
     scroll-y
@@ -33,13 +33,13 @@
     show-scrollbar="{{false}}"
   >
     <view class="category-page page-scroll__content">
-      <view class="category-hero category-hero--{{category.heroTone}}">
+      <view class="category-hero category-hero--{{category.heroTone}} category-hero--{{categoryId}}">
       <view class="category-hero__head">
         <view>
           <text class="category-title">{{category.title}}</text>
           <view class="category-region">
             <text class="category-region-icon">⌖</text>
-            <text>{{category.region}}</text>
+            <text>{{categoryRegionLabel || category.region}}</text>
           </view>
         </view>
 
@@ -49,21 +49,21 @@
         </view>
 
     <view class="filter-row filter-row--two">
-      <block wx:for="{{primaryFilters}}" wx:key="key">
-        <picker
-          class="filter-picker-wrap"
-          mode="selector"
-          range="{{item.optionLabels}}"
-          value="{{item.selectedIndex}}"
+      <view
+        wx:for="{{primaryFilters}}"
+        wx:key="key"
+        class="filter-picker-wrap"
+      >
+        <view
+          class="filter-pill {{item.selectedIndex ? 'filter-pill--selected' : ''}}"
+          data-group="primary"
           data-key="{{item.key}}"
-          bindchange="onPrimaryFilterChange"
+          bindtap="openFilterSheet"
         >
-          <view class="filter-pill {{item.selectedIndex ? 'filter-pill--selected' : ''}}">
-            <text>{{item.displayLabel}}</text>
-            <text class="filter-arrow">⌄</text>
-          </view>
-        </picker>
-      </block>
+          <text>{{item.displayLabel}}</text>
+          <text class="filter-arrow">⌄</text>
+        </view>
+      </view>
     </view>
 
     <view class="filter-row filter-row--chips">
@@ -75,21 +75,21 @@
     </view>
 
     <view class="filter-row filter-row--three">
-      <block wx:for="{{secondaryFilters}}" wx:key="key">
-        <picker
-          class="filter-picker-wrap filter-picker-wrap--secondary"
-          mode="selector"
-          range="{{item.optionLabels}}"
-          value="{{item.selectedIndex}}"
+      <view
+        wx:for="{{secondaryFilters}}"
+        wx:key="key"
+        class="filter-picker-wrap filter-picker-wrap--secondary"
+      >
+        <view
+          class="filter-pill filter-pill--secondary {{item.selectedIndex ? 'filter-pill--selected' : ''}}"
+          data-group="secondary"
           data-key="{{item.key}}"
-          bindchange="onSecondaryFilterChange"
+          bindtap="openFilterSheet"
         >
-          <view class="filter-pill filter-pill--secondary {{item.selectedIndex ? 'filter-pill--selected' : ''}}">
-            <text>{{item.displayLabel}}</text>
-            <text class="filter-arrow">⌄</text>
-          </view>
-        </picker>
-      </block>
+          <text>{{item.displayLabel}}</text>
+          <text class="filter-arrow">⌄</text>
+        </view>
+      </view>
       <view class="filter-icon-box" bindtap="resetFilters">
         <text class="filter-icon-box__glyph">⚙</text>
       </view>
@@ -129,6 +129,28 @@
             <view class="featured-card__badge">New</view>
           </view>
         </block>
+      </view>
+
+      <view wx:if="{{filterSheetOpen}}" class="category-sheet-overlay" bindtap="closeFilterSheet">
+        <view class="category-sheet" catchtap="stopFilterSheetTap">
+          <view class="category-sheet__handle"></view>
+          <view class="category-sheet__head">
+            <text class="category-sheet__title">{{filterSheetTitle}}</text>
+            <text class="category-sheet__close" bindtap="closeFilterSheet">Cancel</text>
+          </view>
+          <scroll-view class="category-sheet__scroll" scroll-y enhanced show-scrollbar="{{false}}">
+            <view
+              wx:for="{{filterSheetOptions}}"
+              wx:key="index"
+              class="category-sheet__option {{filterSheetValue === index ? 'category-sheet__option--active' : ''}}"
+              data-index="{{index}}"
+              bindtap="onFilterOptionTap"
+            >
+              <text class="category-sheet__option-label">{{item}}</text>
+              <text wx:if="{{filterSheetValue === index}}" class="category-sheet__option-check">✓</text>
+            </view>
+          </scroll-view>
+        </view>
       </view>
     </view>
   </scroll-view>

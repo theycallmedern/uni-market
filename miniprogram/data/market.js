@@ -1,6 +1,8 @@
 const reportsStore = require('../utils/reports')
 const visibilityStore = require('../utils/visibility')
 const profileStore = require('../utils/profile')
+const listingStatsStore = require('../utils/listing-stats')
+const profileStatsStore = require('../utils/profile-stats')
 const storage = require('../utils/storage')
 const validation = require('../utils/validation')
 
@@ -38,7 +40,7 @@ const categoryConfigs = {
   electronics: {
     title: 'Electronics',
     region: 'All campuses',
-    heroTone: 'green',
+    heroTone: 'blue',
     subcategories: ['Phones', 'Laptops', 'Tablets', 'Audio', 'Cameras', 'Gaming gear', 'Accessories'],
     primaryFilters: ['Type', 'University'],
     quickFilters: ['All', 'Budget', 'ZJU'],
@@ -137,6 +139,40 @@ const featuredCards = {
 
 const CUSTOM_LISTINGS_STORAGE_KEY = 'marketCustomListings'
 const CREATE_MODE_STORAGE_KEY = 'marketCreateMode'
+const PROMOTION_REQUESTS_STORAGE_KEY = 'marketPromotionRequests'
+const SELLER_PRO_STORAGE_KEY = 'marketSellerProSubscriptions'
+const SELLER_PRO_PHOTO_LIMIT = 10
+const DEFAULT_PHOTO_LIMIT = 5
+const PROMOTION_PLAN_CONFIGS = {
+  featured_1d: {
+    id: 'featured_1d',
+    label: 'Featured for 1 day',
+    durationDays: 1,
+    durationHours: 24,
+    priceLabel: '29 RMB'
+  },
+  featured_2d: {
+    id: 'featured_2d',
+    label: 'Featured for 2 days',
+    durationDays: 2,
+    durationHours: 48,
+    priceLabel: '49 RMB'
+  },
+  featured_3d: {
+    id: 'featured_3d',
+    label: 'Featured for 3 days',
+    durationDays: 3,
+    durationHours: 72,
+    priceLabel: '69 RMB'
+  },
+  featured_7d: {
+    id: 'featured_7d',
+    label: 'Featured for 7 days',
+    durationDays: 7,
+    durationHours: 168,
+    priceLabel: '129 RMB'
+  }
+}
 
 const categoryFallbackImages = {
   housing: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80',
@@ -471,9 +507,235 @@ function getFallbackImage(categoryId) {
   return categoryFallbackImages[categoryId] || categoryFallbackImages.items
 }
 
+function addOneMonth(value) {
+  const baseDate = value ? new Date(value) : new Date()
+  const date = Number.isNaN(baseDate.getTime()) ? new Date() : new Date(baseDate)
+  date.setMonth(date.getMonth() + 1)
+  return date.toISOString()
+}
+
+function normalizeSellerProSubscription(rawSubscription = {}) {
+  const nickname = String(rawSubscription.nickname || '').trim()
+  const sellerKey = toLookupKey(rawSubscription.sellerKey || '')
+  const nicknameKey = toLookupKey(rawSubscription.nicknameKey || nickname)
+  const wechat = String(rawSubscription.wechat || '').trim()
+  const wechatKey = toLookupKey(rawSubscription.wechatKey || wechat)
+  const id = String(rawSubscription.id || `pro-${sellerKey || nicknameKey}`)
+  const grantedAt = String(rawSubscription.grantedAt || '')
+  const expiresAt = String(rawSubscription.expiresAt || addOneMonth(grantedAt))
+  const expiresAtTs = Date.parse(expiresAt)
+  const isExpired = Number.isFinite(expiresAtTs) && expiresAtTs <= Date.now()
+
+  return {
+    id,
+    sellerKey,
+    nickname,
+    nicknameKey,
+    wechat,
+    wechatKey,
+    isActive: rawSubscription.isActive !== false && !isExpired,
+    grantedAt,
+    expiresAt,
+    grantedBy: String(rawSubscription.grantedBy || 'admin')
+  }
+}
+
+function getStoredSellerProSubscriptions() {
+  const stored = storage.safeGetStorage(SELLER_PRO_STORAGE_KEY, [])
+  return (Array.isArray(stored) ? stored : [])
+    .map((subscription) => normalizeSellerProSubscription(subscription))
+    .filter((subscription) => subscription.id && (subscription.sellerKey || subscription.nicknameKey || subscription.wechatKey))
+}
+
+function saveSellerProSubscriptions(subscriptions) {
+  storage.safeSetStorage(SELLER_PRO_STORAGE_KEY, subscriptions)
+}
+
+function revokeSellerProSubscription(id) {
+  const targetId = String(id || '')
+
+  if (!targetId) {
+    return null
+  }
+
+  const subscriptions = getStoredSellerProSubscriptions()
+  const target = subscriptions.find((subscription) => subscription.id === targetId)
+
+  if (!target) {
+    return null
+  }
+
+  const nextSubscriptions = subscriptions.map((subscription) => (
+    subscription.id === targetId
+      ? normalizeSellerProSubscription({
+        ...subscription,
+        isActive: false,
+        expiresAt: subscription.expiresAt || new Date(Date.now()).toISOString()
+      })
+      : subscription
+  ))
+
+  saveSellerProSubscriptions(nextSubscriptions)
+  return nextSubscriptions.find((subscription) => subscription.id === targetId) || null
+}
+
+function getSellerProLookup() {
+  const activeSubscriptions = getStoredSellerProSubscriptions()
+    .filter((subscription) => subscription.isActive)
+
+  const sellerKeys = new Set()
+  const nicknameKeys = new Set()
+  const wechatKeys = new Set()
+
+  activeSubscriptions.forEach((subscription) => {
+    if (subscription.sellerKey) {
+      sellerKeys.add(subscription.sellerKey)
+    }
+    if (subscription.nicknameKey) {
+      nicknameKeys.add(subscription.nicknameKey)
+    }
+    if (subscription.wechatKey) {
+      wechatKeys.add(subscription.wechatKey)
+    }
+  })
+
+  return { sellerKeys, nicknameKeys, wechatKeys }
+}
+
+function isSellerProSeller(sellerKey, sellerName, sellerWechat = '', lookup = null) {
+  const safeLookup = lookup && lookup.sellerKeys && lookup.nicknameKeys && lookup.wechatKeys
+    ? lookup
+    : getSellerProLookup()
+  const normalizedSellerKey = toLookupKey(sellerKey)
+  const normalizedSellerName = toLookupKey(sellerName)
+  const normalizedSellerWechat = toLookupKey(sellerWechat)
+  return safeLookup.sellerKeys.has(normalizedSellerKey) ||
+    safeLookup.nicknameKeys.has(normalizedSellerName) ||
+    safeLookup.wechatKeys.has(normalizedSellerWechat)
+}
+
+function decorateListingSellerPro(listing = {}, sellerProLookup = null) {
+  const seller = listing.seller || {}
+  const sellerKey = getSellerKey(listing)
+  const isSellerPro = isSellerProSeller(sellerKey, seller.name || '', seller.wechat || '', sellerProLookup)
+
+  if (!isSellerPro) {
+    return {
+      ...listing,
+      isSellerPro: false
+    }
+  }
+
+  return {
+    ...listing,
+    isSellerPro: true,
+    seller: {
+      ...seller,
+      badge: 'Seller Pro'
+    }
+  }
+}
+
 function normalizeCoordinate(value) {
   const coordinate = Number(value)
   return Number.isFinite(coordinate) ? coordinate : null
+}
+
+function normalizePromotion(rawPromotion = {}) {
+  const now = Date.now()
+  const status = String(rawPromotion.status || 'none')
+  const planId = rawPromotion.plan && PROMOTION_PLAN_CONFIGS[rawPromotion.plan]
+    ? rawPromotion.plan
+    : 'featured_1d'
+  const requestedAt = String(rawPromotion.requestedAt || '')
+  const activatedAt = String(rawPromotion.activatedAt || '')
+  const activeUntil = String(rawPromotion.activeUntil || '')
+  const activeUntilTs = Date.parse(activeUntil)
+  const isActive = status === 'active' && Number.isFinite(activeUntilTs) && activeUntilTs > now
+  const normalizedStatus = isActive
+    ? 'active'
+    : status === 'requested'
+      ? 'requested'
+      : status === 'active'
+        ? 'expired'
+        : status
+
+  return {
+    status: ['none', 'requested', 'active', 'expired'].includes(normalizedStatus) ? normalizedStatus : 'none',
+    plan: planId,
+    requestedAt,
+    activatedAt,
+    activeUntil,
+    label: PROMOTION_PLAN_CONFIGS[planId].label,
+    priceLabel: PROMOTION_PLAN_CONFIGS[planId].priceLabel
+  }
+}
+
+function decorateListingPromotion(listing = {}) {
+  const promotion = normalizePromotion(listing.promotion || {})
+
+  return {
+    ...listing,
+    promotion,
+    promotionStatus: promotion.status,
+    promotionPlan: promotion.plan,
+    promotionRequestedAt: promotion.requestedAt,
+    promotionActiveUntil: promotion.activeUntil,
+    isPromotionRequested: promotion.status === 'requested',
+    isPromoted: promotion.status === 'active'
+  }
+}
+
+function sortByPromotionPriority(listings = []) {
+  return [...listings].sort((a, b) => {
+    const promotedDiff = Number(Boolean(b && b.isPromoted)) - Number(Boolean(a && a.isPromoted))
+    if (promotedDiff !== 0) {
+      return promotedDiff
+    }
+
+    const sellerProDiff = Number(Boolean(b && b.isSellerPro)) - Number(Boolean(a && a.isSellerPro))
+    if (sellerProDiff !== 0) {
+      return sellerProDiff
+    }
+
+    return 0
+  })
+}
+
+function normalizePromotionRequest(rawRequest = {}) {
+  const planId = rawRequest.planId && PROMOTION_PLAN_CONFIGS[rawRequest.planId]
+    ? rawRequest.planId
+    : 'featured_1d'
+  const plan = PROMOTION_PLAN_CONFIGS[planId]
+  const status = String(rawRequest.status || 'pending')
+
+  return {
+    id: String(rawRequest.id || ''),
+    listingId: String(rawRequest.listingId || ''),
+    listingTitle: String(rawRequest.listingTitle || ''),
+    sellerName: String(rawRequest.sellerName || ''),
+    sellerWechat: String(rawRequest.sellerWechat || ''),
+    planId,
+    planLabel: plan.label,
+    durationDays: plan.durationDays,
+    priceLabel: plan.priceLabel,
+    status: ['pending', 'approved', 'rejected'].includes(status) ? status : 'pending',
+    note: String(rawRequest.note || ''),
+    source: String(rawRequest.source || 'manual'),
+    createdAt: String(rawRequest.createdAt || ''),
+    reviewedAt: String(rawRequest.reviewedAt || '')
+  }
+}
+
+function getStoredPromotionRequests() {
+  const stored = storage.safeGetStorage(PROMOTION_REQUESTS_STORAGE_KEY, [])
+  return (Array.isArray(stored) ? stored : [])
+    .map((request) => normalizePromotionRequest(request))
+    .filter((request) => request.id && request.listingId)
+}
+
+function savePromotionRequests(requests) {
+  storage.safeSetStorage(PROMOTION_REQUESTS_STORAGE_KEY, requests)
 }
 
 function normalizeCustomListing(rawListing) {
@@ -482,13 +744,14 @@ function normalizeCustomListing(rawListing) {
   const image = images[0] || rawListing.image || getFallbackImage(categoryId)
   const isSold = Boolean(rawListing.isSold)
   const soldOnUniMarket = isSold ? rawListing.soldOnUniMarket !== false : false
+  const promotion = normalizePromotion(rawListing.promotion || {})
 
   return {
     id: Number(rawListing.id),
     title: rawListing.title || 'Untitled listing',
     price: validation.ensurePriceCurrency(rawListing.price || 'Price on request'),
     location: rawListing.location || 'Hangzhou',
-    address: rawListing.address || '',
+    address: validation.sanitizeAddress(rawListing.address || '', validation.DEFAULT_ADDRESS_MAX_LENGTH),
     lat: normalizeCoordinate(rawListing.lat || rawListing.latitude),
     lng: normalizeCoordinate(rawListing.lng || rawListing.longitude),
     university: rawListing.university || 'Student listing',
@@ -499,6 +762,7 @@ function normalizeCustomListing(rawListing) {
     isSold,
     soldOnUniMarket,
     soldAt: isSold ? String(rawListing.soldAt || rawListing.updatedAt || rawListing.createdAt || '') : '',
+    promotion,
     description: rawListing.description || 'No description yet.',
     images: images.length ? images : [image],
     createdAt: rawListing.createdAt || new Date().toISOString(),
@@ -537,11 +801,14 @@ function getAllListings(options = {}) {
     listings = listings.filter((listing) => !listing.isSold)
   }
 
-  if (includeResolved) {
-    return listings
-  }
+  const resolvedListings = includeResolved
+    ? listings
+    : listings.filter((listing) => !listing.isHiddenByModeration)
+  const sellerProLookup = getSellerProLookup()
 
-  return listings.filter((listing) => !listing.isHiddenByModeration)
+  return resolvedListings
+    .map((listing) => decorateListingSellerPro(listing, sellerProLookup))
+    .map((listing) => decorateListingPromotion(listing))
 }
 
 function getListingById(id, options = {}) {
@@ -549,12 +816,14 @@ function getListingById(id, options = {}) {
 }
 
 function getFeedListings() {
-  return getAllListings({ includeResolved: false, includeSold: false })
+  return sortByPromotionPriority(getAllListings({ includeResolved: false, includeSold: false }))
 }
 
 function getListingsByCategory(categoryId, options = {}) {
   const { includeResolved = true, includeHiddenByUser = false, includeSold = true } = options
-  return getAllListings({ includeResolved, includeHiddenByUser, includeSold }).filter((listing) => listing.categoryId === categoryId)
+  return sortByPromotionPriority(
+    getAllListings({ includeResolved, includeHiddenByUser, includeSold }).filter((listing) => listing.categoryId === categoryId)
+  )
 }
 
 function getSellerKey(listing) {
@@ -578,6 +847,44 @@ function getListingsBySellerKey(sellerKey, options = {}) {
   return getAllListings(options).filter((listing) => getSellerKey(listing) === normalizedKey)
 }
 
+function buildSellerAnalytics(listings = [], soldCount = 0) {
+  const aggregate = listingStatsStore.getListingsAggregateStats(listings)
+  const views = Number(aggregate.views || 0)
+  const saves = Number(aggregate.saves || 0)
+  const conversionRate = views > 0
+    ? Math.round((Number(soldCount || 0) / views) * 1000) / 10
+    : 0
+
+  return {
+    views,
+    saves,
+    conversionRate
+  }
+}
+
+function buildOwnSellerAnalytics(sellerKey, listings = []) {
+  const aggregate = listingStatsStore.getListingsAggregateStats(listings)
+  const profileStats = profileStatsStore.getProfileStats(sellerKey)
+
+  return {
+    profileViews: Number(profileStats.views || 0),
+    recentProfileViews: Number(profileStats.recentViews || 0),
+    listingSaves: Number(aggregate.saves || 0),
+    recentListingSaves: Number(aggregate.recentSaves || 0)
+  }
+}
+
+function getListingAnalytics(id) {
+  const stats = listingStatsStore.getListingStats(id)
+
+  return {
+    views: Number(stats.views || 0),
+    recentViews: Number(stats.recentViews || 0),
+    saves: Number(stats.saves || 0),
+    recentSaves: Number(stats.recentSaves || 0)
+  }
+}
+
 function getSellerProfileByListingId(listingId, options = {}) {
   const { includeHiddenByUser = false } = options
   const listing = getListingById(listingId, { includeHiddenByUser })
@@ -593,8 +900,9 @@ function getSellerProfileByListingId(listingId, options = {}) {
   const soldCount = sellerListingsAllStates
     .filter((item) => Boolean(item && item.isSold && item.soldOnUniMarket))
     .length
-
   const seller = listing.seller || {}
+  const isSellerPro = isSellerProSeller(sellerKey, seller.name || '', seller.wechat || '')
+  const analytics = buildSellerAnalytics(sellerListingsAllStates, soldCount)
   const fallbackJoinedAt = sellerListingsAllStates
     .map((item) => item && item.createdAt ? String(item.createdAt).slice(0, 10) : '')
     .filter(Boolean)
@@ -603,7 +911,7 @@ function getSellerProfileByListingId(listingId, options = {}) {
   return {
     sellerKey,
     name: seller.name || 'Student seller',
-    badge: seller.badge || 'Community member',
+    badge: isSellerPro ? 'Seller Pro' : (seller.badge || 'Community member'),
     wechat: seller.wechat || '',
     note: seller.note || '',
     avatarUrl: seller.avatarUrl || '',
@@ -612,7 +920,9 @@ function getSellerProfileByListingId(listingId, options = {}) {
     city: seller.city || listing.location || 'Hangzhou',
     joinedAt: seller.joinedAt || fallbackJoinedAt,
     listings,
-    soldCount
+    soldCount,
+    isSellerPro,
+    analytics
   }
 }
 
@@ -635,11 +945,13 @@ function getOwnSellerProfile() {
   const listings = allMyListings.filter((listing) => !listing.isSold)
   const soldCount = allMyListings.filter((listing) => listing.isSold && listing.soldOnUniMarket).length
   const sellerKey = getProfileSellerKey(profile, allMyListings)
+  const isSellerPro = isSellerProSeller(sellerKey, profile.name || '', profile.wechat || '')
+  const analytics = buildOwnSellerAnalytics(sellerKey, allMyListings)
 
   return {
     sellerKey,
     name: profile.name || 'You',
-    badge: 'Verified student',
+    badge: isSellerPro ? 'Seller Pro' : 'Verified student',
     wechat: profile.wechat || '',
     note: listings.length
       ? 'Active on UniMarket'
@@ -652,7 +964,9 @@ function getOwnSellerProfile() {
     city: profile.city || 'Hangzhou',
     joinedAt: profile.joinedAt || '',
     listings,
-    soldCount
+    soldCount,
+    isSellerPro,
+    analytics
   }
 }
 
@@ -683,15 +997,24 @@ function getFeedListingsByCategory(categoryId) {
 
 function createListing(payload) {
   const customListings = storage.safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
-  const listing = normalizeCustomListing({
+  const profile = profileStore.getProfile()
+  const isSellerPro = isSellerProSeller('', profile.name || '', profile.wechat || '')
+  const nextPayload = {
     ...payload,
+    seller: {
+      ...(payload && payload.seller ? payload.seller : {}),
+      badge: isSellerPro ? 'Seller Pro' : (payload && payload.seller && payload.seller.badge ? payload.seller.badge : 'Student seller')
+    }
+  }
+  const listing = normalizeCustomListing({
+    ...nextPayload,
     id: Date.now(),
     createdAt: new Date().toISOString()
   })
 
   storage.safeSetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [listing, ...customListings])
 
-  return listing
+  return decorateListingPromotion(decorateListingSellerPro(listing))
 }
 
 function getPublishCategories() {
@@ -699,7 +1022,10 @@ function getPublishCategories() {
 }
 
 function getMyListings() {
-  return reportsStore.decorateListingsWithModeration(getCustomListings())
+  const listings = reportsStore.decorateListingsWithModeration(getCustomListings())
+    .map((listing) => decorateListingSellerPro(listing))
+    .map((listing) => decorateListingPromotion(listing))
+  return sortByPromotionPriority(listings)
 }
 
 function deleteListing(id) {
@@ -734,7 +1060,7 @@ function updateListing(id, payload) {
 
   storage.safeSetStorage(CUSTOM_LISTINGS_STORAGE_KEY, nextListings)
 
-  return updatedListing
+  return decorateListingPromotion(decorateListingSellerPro(updatedListing))
 }
 
 function setListingSoldState(id, isSold, soldOnUniMarket = true) {
@@ -745,6 +1071,383 @@ function setListingSoldState(id, isSold, soldOnUniMarket = true) {
     soldOnUniMarket: sold ? Boolean(soldOnUniMarket) : false,
     soldAt: sold ? new Date().toISOString() : ''
   })
+}
+
+function getPromotionPlans() {
+  return Object.values(PROMOTION_PLAN_CONFIGS).sort((a, b) => a.durationDays - b.durationDays)
+}
+
+function getPromotionRequests(options = {}) {
+  const statusFilter = options.status ? String(options.status) : ''
+  const requests = getStoredPromotionRequests()
+
+  const filtered = statusFilter
+    ? requests.filter((request) => request.status === statusFilter)
+    : requests
+
+  return filtered
+    .map((request) => {
+      const listing = getListingById(request.listingId, {
+        includeResolved: true,
+        includeHiddenByUser: true,
+        includeSold: true
+      })
+
+      return {
+        ...request,
+        listingExists: Boolean(listing),
+        listingIsSold: Boolean(listing && listing.isSold),
+        listingStatusLabel: listing ? (listing.isSold ? 'Sold' : 'Active') : 'Missing',
+        isSellerPro: Boolean(listing && listing.isSellerPro)
+      }
+    })
+    .sort((a, b) => {
+      const proDiff = Number(Boolean(b && b.isSellerPro)) - Number(Boolean(a && a.isSellerPro))
+      if (proDiff !== 0) {
+        return proDiff
+      }
+
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    })
+}
+
+function requestListingPromotion(id, planId = 'featured_1d', options = {}) {
+  const listing = getListingById(id, { includeSold: true, includeResolved: true, includeHiddenByUser: true })
+  if (!listing || !listing.isCustom || listing.isSold) {
+    return null
+  }
+
+  const safePlanId = PROMOTION_PLAN_CONFIGS[planId] ? planId : 'featured_1d'
+  const existingPending = getStoredPromotionRequests()
+    .find((request) => request.listingId === String(id) && request.status === 'pending')
+
+  if (listing.isPromoted || existingPending) {
+    return listing
+  }
+
+  const nowIso = new Date(Date.now()).toISOString()
+  const requestId = `promo-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+  const plan = PROMOTION_PLAN_CONFIGS[safePlanId]
+  const request = normalizePromotionRequest({
+    id: requestId,
+    listingId: String(id),
+    listingTitle: listing.title || 'Untitled listing',
+    sellerName: listing.seller && listing.seller.name ? listing.seller.name : 'Seller',
+    sellerWechat: listing.seller && listing.seller.wechat ? listing.seller.wechat : '',
+    planId: safePlanId,
+    status: 'pending',
+    note: options.note || '',
+    source: options.source || 'manual',
+    createdAt: nowIso
+  })
+  const nextRequests = [request, ...getStoredPromotionRequests()]
+  savePromotionRequests(nextRequests)
+
+  const updatedListing = updateListing(id, {
+    promotion: {
+      status: 'requested',
+      plan: safePlanId,
+      requestedAt: nowIso,
+      activatedAt: '',
+      activeUntil: ''
+    }
+  })
+
+  return updatedListing || decorateListingPromotion({
+    ...listing,
+    promotion: {
+      status: 'requested',
+      plan: safePlanId,
+      requestedAt: nowIso,
+      activatedAt: '',
+      activeUntil: ''
+    },
+    promotionRequestId: requestId,
+    promotionPriceLabel: plan.priceLabel
+  })
+}
+
+function activateListingPromotion(id, options = {}) {
+  const listing = getListingById(id, { includeSold: true, includeResolved: true, includeHiddenByUser: true })
+  if (!listing || !listing.isCustom || listing.isSold) {
+    return null
+  }
+
+  const planId = options.planId && PROMOTION_PLAN_CONFIGS[options.planId]
+    ? options.planId
+    : 'featured_1d'
+  const durationHoursRaw = Number(options.durationHours)
+  const durationHours = Number.isFinite(durationHoursRaw) && durationHoursRaw > 0
+    ? durationHoursRaw
+    : PROMOTION_PLAN_CONFIGS[planId].durationHours
+  const now = Date.now()
+  const activeUntil = new Date(now + durationHours * 60 * 60 * 1000).toISOString()
+
+  return updateListing(id, {
+    promotion: {
+      status: 'active',
+      plan: planId,
+      requestedAt: listing.promotionRequestedAt || new Date(now).toISOString(),
+      activatedAt: new Date(now).toISOString(),
+      activeUntil
+    }
+  })
+}
+
+function rejectListingPromotion(id) {
+  const listing = getListingById(id, { includeSold: true, includeResolved: true, includeHiddenByUser: true })
+  if (!listing || !listing.isCustom) {
+    return null
+  }
+
+  return updateListing(id, {
+    promotion: {
+      status: 'none',
+      plan: listing.promotionPlan || 'featured_1d',
+      requestedAt: '',
+      activatedAt: '',
+      activeUntil: ''
+    }
+  })
+}
+
+function reviewPromotionRequest(requestId, action, options = {}) {
+  const targetId = String(requestId || '')
+  const decision = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : ''
+  if (!targetId || !decision) {
+    return null
+  }
+
+  const requests = getStoredPromotionRequests()
+  const target = requests.find((request) => request.id === targetId)
+  if (!target || target.status !== 'pending') {
+    return null
+  }
+
+  let listing = null
+  if (decision === 'approved') {
+    listing = activateListingPromotion(target.listingId, {
+      planId: target.planId,
+      durationHours: target.durationDays * 24
+    })
+  } else {
+    listing = rejectListingPromotion(target.listingId)
+  }
+
+  const reviewedAt = new Date().toISOString()
+  const nextRequests = requests.map((request) => (
+    request.id === targetId
+      ? normalizePromotionRequest({
+        ...request,
+        status: decision,
+        reviewedAt,
+        note: options.note || request.note || ''
+      })
+      : request
+  ))
+  savePromotionRequests(nextRequests)
+
+  return {
+    request: nextRequests.find((request) => request.id === targetId) || null,
+    listing
+  }
+}
+
+function getSellerProSubscriptions() {
+  return getStoredSellerProSubscriptions()
+    .filter((subscription) => subscription.isActive)
+    .sort((a, b) => new Date(b.grantedAt).getTime() - new Date(a.grantedAt).getTime())
+}
+
+function getCurrentSellerPhotoLimit() {
+  const profile = profileStore.getProfile()
+  const profileSellerKey = getProfileSellerKey(profile, getCustomListings())
+  return isSellerProSeller(profileSellerKey, profile.name || '', profile.wechat || '')
+    ? SELLER_PRO_PHOTO_LIMIT
+    : DEFAULT_PHOTO_LIMIT
+}
+
+function grantSellerProByNickname(nickname, options = {}) {
+  const normalizedNickname = toLookupKey(nickname)
+  const trimmedNickname = String(nickname || '').trim()
+
+  if (!normalizedNickname) {
+    return null
+  }
+
+  const targets = []
+  const pushTarget = (sellerKey, sellerName, sellerWechat = '') => {
+    const normalizedSellerKey = toLookupKey(sellerKey)
+    const normalizedSellerName = toLookupKey(sellerName)
+    const normalizedSellerWechat = toLookupKey(sellerWechat)
+    if (!normalizedSellerKey && !normalizedSellerName) {
+      return
+    }
+    targets.push({
+      sellerKey: normalizedSellerKey,
+      nickname: String(sellerName || trimmedNickname).trim() || trimmedNickname,
+      nicknameKey: normalizedSellerName || normalizedNickname,
+      wechat: String(sellerWechat || '').trim(),
+      wechatKey: normalizedSellerWechat
+    })
+  }
+
+  ;[...getCustomListings(), ...baseListings].forEach((listing) => {
+    const seller = listing && listing.seller ? listing.seller : {}
+    if (toLookupKey(seller.name) === normalizedNickname) {
+      pushTarget(getSellerKey(listing), seller.name || '', seller.wechat || '')
+    }
+  })
+
+  const profile = profileStore.getProfile()
+  if (toLookupKey(profile.name) === normalizedNickname) {
+    const profileSellerKey = getProfileSellerKey(profile, getCustomListings())
+    pushTarget(profileSellerKey, profile.name || trimmedNickname, profile.wechat || '')
+  }
+
+  const uniqueTargets = targets.reduce((acc, target) => {
+    const key = target.sellerKey || `name:${target.nicknameKey}`
+    if (!acc.some((item) => (item.sellerKey || `name:${item.nicknameKey}`) === key)) {
+      acc.push(target)
+    }
+    return acc
+  }, [])
+
+  if (!uniqueTargets.length) {
+    return null
+  }
+
+  const nowIso = new Date(Date.now()).toISOString()
+  const activeSubscriptions = getStoredSellerProSubscriptions()
+  const nextSubscriptions = [...activeSubscriptions]
+  let grantedCount = 0
+
+  uniqueTargets.forEach((target) => {
+    const matchIndex = nextSubscriptions.findIndex((subscription) => (
+      (target.sellerKey && subscription.sellerKey === target.sellerKey) ||
+      subscription.nicknameKey === target.nicknameKey ||
+      (target.wechatKey && subscription.wechatKey === target.wechatKey)
+    ))
+
+    const nextSubscription = normalizeSellerProSubscription({
+      id: target.sellerKey ? `pro-${target.sellerKey}` : `pro-name-${target.nicknameKey}`,
+      sellerKey: target.sellerKey,
+      nickname: target.nickname,
+      nicknameKey: target.nicknameKey,
+      wechat: target.wechat,
+      isActive: true,
+      grantedAt: nowIso,
+      expiresAt: addOneMonth(nowIso),
+      grantedBy: options.grantedBy || 'admin'
+    })
+
+    if (matchIndex >= 0) {
+      nextSubscriptions[matchIndex] = nextSubscription
+    } else {
+      nextSubscriptions.push(nextSubscription)
+    }
+
+    grantedCount += 1
+  })
+
+  saveSellerProSubscriptions(nextSubscriptions)
+
+  return {
+    nickname: trimmedNickname || uniqueTargets[0].nickname,
+    grantedCount,
+    subscriptions: uniqueTargets
+  }
+}
+
+function syncCurrentProfileIntoListings(previousProfile = null, nextProfile = null) {
+  const prevProfile = previousProfile ? profileStore.normalizeProfile(previousProfile) : null
+  const currentProfile = profileStore.normalizeProfile(nextProfile || profileStore.getProfile())
+  const rawListings = storage.safeGetStorage(CUSTOM_LISTINGS_STORAGE_KEY, [])
+
+  if (!Array.isArray(rawListings) || !rawListings.length) {
+    return []
+  }
+
+  const previousKeys = new Set()
+
+  if (prevProfile) {
+    previousKeys.add(toLookupKey(prevProfile.name))
+    previousKeys.add(toLookupKey(prevProfile.wechat))
+    previousKeys.add(getProfileSellerKey(prevProfile, rawListings.map((listing) => normalizeCustomListing(listing))))
+  }
+
+  const nextListings = rawListings.map((rawListing) => {
+    const listing = normalizeCustomListing(rawListing)
+    const seller = listing.seller || {}
+    const shouldSync = !previousKeys.size ||
+      previousKeys.has(getSellerKey(listing)) ||
+      previousKeys.has(toLookupKey(seller.name)) ||
+      previousKeys.has(toLookupKey(seller.wechat))
+
+    if (!shouldSync) {
+      return rawListing
+    }
+
+    return {
+      ...rawListing,
+      seller: {
+        ...(rawListing && rawListing.seller ? rawListing.seller : {}),
+        name: currentProfile.name,
+        wechat: currentProfile.wechat,
+        avatarUrl: currentProfile.avatarUrl,
+        campus: currentProfile.campus,
+        city: currentProfile.city,
+        joinedAt: currentProfile.joinedAt
+      }
+    }
+  })
+
+  storage.safeSetStorage(CUSTOM_LISTINGS_STORAGE_KEY, nextListings)
+  return nextListings
+}
+
+function preserveCurrentProfileSellerPro(previousProfile = null, nextProfile = null) {
+  const prevProfile = previousProfile ? profileStore.normalizeProfile(previousProfile) : null
+  const currentProfile = profileStore.normalizeProfile(nextProfile || profileStore.getProfile())
+
+  if (!prevProfile) {
+    return false
+  }
+
+  const currentListings = getCustomListings()
+  const prevSellerKey = getProfileSellerKey(prevProfile, currentListings)
+  const nextSellerKey = getProfileSellerKey(currentProfile, currentListings)
+  const prevNameKey = toLookupKey(prevProfile.name)
+  const prevWechatKey = toLookupKey(prevProfile.wechat)
+  const nextSubscriptions = getStoredSellerProSubscriptions().map((subscription) => {
+    const matched = (prevSellerKey && subscription.sellerKey === prevSellerKey) ||
+      (prevNameKey && subscription.nicknameKey === prevNameKey) ||
+      (prevWechatKey && subscription.wechatKey === prevWechatKey)
+
+    if (!matched) {
+      return subscription
+    }
+
+    return normalizeSellerProSubscription({
+      ...subscription,
+      id: nextSellerKey ? `pro-${nextSellerKey}` : subscription.id,
+      sellerKey: nextSellerKey || subscription.sellerKey,
+      nickname: currentProfile.name || subscription.nickname,
+      nicknameKey: toLookupKey(currentProfile.name || subscription.nickname),
+      wechat: currentProfile.wechat || subscription.wechat
+    })
+  })
+
+  saveSellerProSubscriptions(nextSubscriptions)
+  return true
+}
+
+function recordListingView(id) {
+  return listingStatsStore.incrementViews(id)
+}
+
+function recordSellerProfileView(sellerKey) {
+  return profileStatsStore.incrementViews(sellerKey)
 }
 
 function queueCreateMode(mode) {
@@ -771,6 +1474,7 @@ module.exports = {
   getListingsBySellerKey,
   getSellerProfileByListingId,
   getOwnSellerProfile,
+  getListingAnalytics,
   getSubcategoryCards,
   getFeedListingsByCategory,
   createListing,
@@ -778,6 +1482,20 @@ module.exports = {
   deleteListing,
   updateListing,
   setListingSoldState,
+  getPromotionPlans,
+  getPromotionRequests,
+  requestListingPromotion,
+  activateListingPromotion,
+  reviewPromotionRequest,
+  getSellerProSubscriptions,
+  revokeSellerProSubscription,
+  grantSellerProByNickname,
+  syncCurrentProfileIntoListings,
+  preserveCurrentProfileSellerPro,
+  getCurrentSellerPhotoLimit,
+  recordListingView,
+  recordSellerProfileView,
+  sortByPromotionPriority,
   queueCreateMode,
   consumeCreateMode,
   getPublishCategories,

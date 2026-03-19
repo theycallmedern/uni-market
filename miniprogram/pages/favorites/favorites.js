@@ -1,14 +1,19 @@
 const market = require('../../data/market')
 const savedStore = require('../../utils/saved')
+const storage = require('../../utils/storage')
 const tabbarStore = require('../../utils/tabbar')
 const listingsUtils = require('../../utils/listings')
 const feedback = require('../../utils/ui-feedback')
 const uiText = require('../../constants/messages')
 
 const SORT_OPTIONS = ['Newest', 'Price low to high', 'Price high to low']
+const INITIAL_THEME = storage.getThemeData()
 
 Page({
   data: {
+    themeMode: INITIAL_THEME.themeMode,
+    themeClass: INITIAL_THEME.themeClass,
+    isDarkTheme: INITIAL_THEME.isDarkTheme,
     allListings: [],
     listings: [],
     categoryOptions: ['All categories'],
@@ -24,8 +29,16 @@ Page({
   },
 
   onShow() {
-    tabbarStore.syncTabBar(this, 1)
+    this.refreshTheme(() => {
+      tabbarStore.syncTabBar(this, 1, {
+        themeMode: this.data.themeMode
+      })
+    })
     this.refreshListings()
+  },
+
+  refreshTheme(callback) {
+    this.setData(storage.getThemeData(), callback)
   },
 
   refreshListings() {

@@ -1,6 +1,7 @@
 Component({
   data: {
     selected: 0,
+    themeMode: 'light',
     color: '#9b9b9b',
     selectedColor: '#111111',
     list: [

@@ -9,6 +9,11 @@ page {
   box-sizing: border-box;
 }
 
+.page-shell.theme-dark {
+  background: #0f1113;
+  color: #f2f5f7;
+}
+
 .page-shell--scroll {
   display: flex;
   flex-direction: column;
@@ -19,6 +24,10 @@ page {
 .page-scroll {
   flex: 1;
   min-height: 0;
+}
+
+.page-shell.theme-dark .page-scroll {
+  background: #0f1113;
 }
 
 .page-scroll__content {

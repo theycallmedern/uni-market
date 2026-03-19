@@ -1,8 +1,13 @@
-<view class="app-header" style="padding-top: {{statusBarHeight}}px;">
+<view class="app-header app-header--{{theme}}" style="padding-top: {{statusBarHeight}}px;">
   <view class="app-header__bar" style="height: {{navBarHeight}}px;">
     <view class="app-header__side" style="width: {{sideWidth}}px;">
-      <view wx:if="{{showBack}}" class="app-header__back" bindtap="handleBack">
-        <text class="app-header__back-icon">‹</text>
+      <view
+        wx:if="{{showBack}}"
+        class="app-header__back"
+        style="width: {{backButtonSize}}px; height: {{backButtonSize}}px; border-radius: {{backButtonRadius}}px;"
+        bindtap="handleBack"
+      >
+        <text class="app-header__back-icon" style="font-size: {{backIconSize}}px;">‹</text>
       </view>
     </view>
 

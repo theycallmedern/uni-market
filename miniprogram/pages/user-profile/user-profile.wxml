@@ -1,5 +1,5 @@
-<view class="page-shell page-shell--scroll">
-  <app-header title="{{navTitle}}" showBack="{{true}}"></app-header>
+<view class="page-shell page-shell--scroll {{themeClass}}">
+  <app-header title="{{navTitle}}" showBack="{{true}}" theme="{{themeMode}}"></app-header>
   <scroll-view
     class="page-scroll"
     scroll-y
@@ -24,20 +24,27 @@
             </view>
 
             <view class="user-meta-chips">
-              <text wx:if="{{isUniversityPublic}}" class="user-meta-chip user-meta-chip--campus">{{seller.campus}}</text>
-              <text wx:if="{{seller.city}}" class="user-meta-chip user-meta-chip--city">{{seller.city}}</text>
-              <text wx:if="{{reviewSummary.count}}" class="user-meta-chip user-meta-chip--rating">★ {{reviewSummary.averageLabel}}</text>
+              <view
+                wx:if="{{seller.badge}}"
+                class="user-meta-chip user-meta-chip--badge {{seller.badge === 'Seller Pro' ? 'user-meta-chip--badge-pro' : 'user-meta-chip--badge-default'}}"
+              >
+                {{seller.badge}}
+              </view>
+              <view wx:if="{{isUniversityPublic}}" class="user-meta-chip user-meta-chip--campus">{{seller.campus}}</view>
+              <view wx:if="{{reviewSummary.count}}" class="user-meta-chip user-meta-chip--rating">★ {{reviewSummary.averageLabel}}</view>
             </view>
           </view>
         </view>
 
-        <view class="user-copy user-copy--full">
-          <view wx:if="{{memberSinceLabel}}" class="user-member-badge">
-            <view class="user-member-badge__icon-wrap">
-              <text class="user-member-badge__icon">✦</text>
-            </view>
-            <text class="user-member-badge__text">{{memberSinceLabel}}</text>
+        <view wx:if="{{seller.city || memberSinceChipLabel}}" class="user-meta-chips user-meta-chips--secondary">
+          <view wx:if="{{seller.city}}" class="user-meta-chip user-meta-chip--city">{{seller.city}}</view>
+          <view wx:if="{{memberSinceChipLabel}}" class="user-meta-chip user-meta-chip--since">
+            <text class="user-meta-chip__icon">✦</text>
+            <text>{{memberSinceChipLabel}}</text>
           </view>
+        </view>
+
+        <view class="user-copy user-copy--full">
           <text wx:if="{{seller.bio}}" class="user-note">{{seller.bio}}</text>
           <text wx:elif="{{seller.note}}" class="user-note">{{seller.note}}</text>
           <text wx:if="{{seller.wechat}}" class="user-wechat">WeChat: {{seller.wechat}}</text>
@@ -56,6 +63,25 @@
         <view class="user-stat">
           <text class="user-stat__value">{{soldCount}}</text>
           <text class="user-stat__label">Sold</text>
+        </view>
+      </view>
+
+      <view wx:if="{{isOwnProfile && seller.isSellerPro && seller.analytics}}" class="user-pro-analytics">
+        <view class="user-pro-analytics__head">
+          <text class="user-pro-analytics__title">Seller Pro insights</text>
+          <text class="user-pro-analytics__subtitle">See how many students open your profile and save your listings</text>
+        </view>
+        <view class="user-pro-analytics__grid">
+          <view class="user-pro-analytics__item">
+            <text class="user-pro-analytics__value">{{seller.analytics.profileViews}}</text>
+            <text class="user-pro-analytics__label">Profile views</text>
+            <text class="user-pro-analytics__trend">+{{seller.analytics.recentProfileViews}} this week</text>
+          </view>
+          <view class="user-pro-analytics__item">
+            <text class="user-pro-analytics__value">{{seller.analytics.listingSaves}}</text>
+            <text class="user-pro-analytics__label">Listing saves</text>
+            <text class="user-pro-analytics__trend">+{{seller.analytics.recentListingSaves}} this week</text>
+          </view>
         </view>
       </view>
 
@@ -111,17 +137,18 @@
 
           <view class="profile-field">
             <text class="profile-field__label">Name</text>
-            <input class="profile-field__input" value="{{profileDraft.name}}" maxlength="40" data-field="name" bindinput="onProfileFieldInput" />
+            <view class="profile-field__picker profile-field__picker--locked">
+              <text>{{profileDraft.name}}</text>
+            </view>
+            <text class="profile-field__hint">Synced from your WeChat ID to keep your profile and Seller Pro stable.</text>
           </view>
 
           <view class="profile-field">
             <text class="profile-field__label">University</text>
-            <picker mode="selector" range="{{universityOptions}}" value="{{universityIndex}}" bindchange="onUniversityChange">
-              <view class="profile-field__picker">
-                <text>{{universityOptions[universityIndex]}}</text>
-                <text class="profile-picker__arrow">⌄</text>
-              </view>
-            </picker>
+            <view class="profile-field__picker" bindtap="openUniversitySheet">
+              <text>{{universityOptions[universityIndex]}}</text>
+              <text class="profile-picker__arrow">⌄</text>
+            </view>
           </view>
 
           <view class="profile-field">
@@ -177,12 +204,17 @@
 
         <view wx:if="{{listings.length}}" class="user-list">
           <block wx:for="{{listings}}" wx:key="id">
-            <view class="user-card" data-id="{{item.id}}" bindtap="openListing">
-              <image class="user-card__image" src="{{item.image}}" mode="aspectFill" />
-              <view class="user-card__body">
-                <text class="user-card__price">{{item.price}}</text>
-                <text class="user-card__title">{{item.title}}</text>
-                <text class="user-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
+            <view class="user-card {{item.isPromoted ? 'user-card--promoted' : ''}}" data-id="{{item.id}}" bindtap="openListing">
+              <view class="user-card__inner">
+                <view class="user-card__media">
+                  <image class="user-card__image" src="{{item.image}}" mode="aspectFill" />
+                  <view wx:if="{{item.isPromoted}}" class="user-card__featured">✦ Promoted</view>
+                </view>
+                <view class="user-card__body">
+                  <text class="user-card__price">{{item.price}}</text>
+                  <text class="user-card__title">{{item.title}}</text>
+                  <text class="user-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
+                </view>
               </view>
             </view>
           </block>
@@ -286,6 +318,28 @@
         bind:close="closePhotoViewer"
         bind:change="onPhotoViewerChange"
       />
+
+      <view wx:if="{{universitySheetOpen}}" class="profile-sheet-overlay" bindtap="closeUniversitySheet">
+        <view class="profile-sheet" catchtap="stopUniversitySheetTap">
+          <view class="profile-sheet__handle"></view>
+          <view class="profile-sheet__head">
+            <text class="profile-sheet__title">University</text>
+            <text class="profile-sheet__close" bindtap="closeUniversitySheet">Close</text>
+          </view>
+          <scroll-view class="profile-sheet__scroll" scroll-y enhanced show-scrollbar="{{false}}">
+            <view
+              wx:for="{{universityOptions}}"
+              wx:key="*this"
+              class="profile-sheet__option {{index === universityIndex ? 'profile-sheet__option--active' : ''}}"
+              data-index="{{index}}"
+              bindtap="onUniversityChange"
+            >
+              <text class="profile-sheet__option-label">{{item}}</text>
+              <text wx:if="{{index === universityIndex}}" class="profile-sheet__option-check">✓</text>
+            </view>
+          </scroll-view>
+        </view>
+      </view>
     </view>
 
     <view wx:elif="{{blockedSeller}}" class="user-empty-page page-scroll__content">

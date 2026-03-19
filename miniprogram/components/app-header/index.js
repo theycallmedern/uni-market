@@ -7,13 +7,20 @@ Component({
     showBack: {
       type: Boolean,
       value: false
+    },
+    theme: {
+      type: String,
+      value: 'light'
     }
   },
 
   data: {
     statusBarHeight: 20,
     navBarHeight: 44,
-    sideWidth: 96
+    sideWidth: 96,
+    backButtonSize: 32,
+    backButtonRadius: 16,
+    backIconSize: 18
   },
 
   lifetimes: {
@@ -27,7 +34,10 @@ Component({
       const fallback = {
         statusBarHeight: 20,
         navBarHeight: 44,
-        sideWidth: 96
+        sideWidth: 96,
+        backButtonSize: 32,
+        backButtonRadius: 16,
+        backIconSize: 18
       }
 
       try {
@@ -46,7 +56,10 @@ Component({
         this.setData({
           statusBarHeight,
           navBarHeight,
-          sideWidth: menuButton.width
+          sideWidth: menuButton.width,
+          backButtonSize: menuButton.height,
+          backButtonRadius: Math.round(menuButton.height / 2),
+          backIconSize: Math.max(Math.round(menuButton.height * 0.58), 18)
         })
       } catch (error) {
         this.setData(fallback)

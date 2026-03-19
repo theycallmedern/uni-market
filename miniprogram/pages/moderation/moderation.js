@@ -1,5 +1,7 @@
 const reportsStore = require('../../utils/reports')
+const market = require('../../data/market')
 const adminStore = require('../../utils/admin')
+const storage = require('../../utils/storage')
 const feedback = require('../../utils/ui-feedback')
 const uiText = require('../../constants/messages')
 
@@ -14,6 +16,7 @@ const STATUS_LABELS = STATUS_OPTIONS.reduce((acc, option) => {
   acc[option.value] = option.label
   return acc
 }, {})
+const INITIAL_THEME = storage.getThemeData()
 
 function formatDate(value) {
   const date = new Date(value)
@@ -54,19 +57,45 @@ function buildSummary(reports) {
   )
 }
 
+function normalizePromotionRequest(request) {
+  return {
+    ...request,
+    createdLabel: formatDate(request.createdAt)
+  }
+}
+
+function normalizeSellerProSubscription(subscription) {
+  return {
+    ...subscription,
+    grantedLabel: formatDate(subscription.grantedAt),
+    expiresLabel: formatDate(subscription.expiresAt)
+  }
+}
+
 Page({
   data: {
+    themeMode: INITIAL_THEME.themeMode,
+    themeClass: INITIAL_THEME.themeClass,
+    isDarkTheme: INITIAL_THEME.isDarkTheme,
     isAdmin: false,
     reports: [],
+    activeReports: [],
+    archivedReports: [],
+    reportsArchiveOpen: false,
+    promotionRequests: [],
+    sellerProSubscriptions: [],
     summary: {
       pending: 0,
       reviewing: 0,
       resolved: 0,
       dismissed: 0
-    }
+    },
+    pendingPromotionCount: 0,
+    sellerProCount: 0
   },
 
   onShow() {
+    this.refreshTheme()
     const isAdmin = adminStore.isAdmin()
     this.setData({ isAdmin })
 
@@ -77,10 +106,29 @@ Page({
     this.refreshReports()
   },
 
+  refreshTheme(callback) {
+    this.setData(storage.getThemeData(), callback)
+  },
+
   refreshReports() {
     const reports = reportsStore.getReports().map(normalizeReport)
+    const activeReports = reports.filter((report) => report.status === 'pending' || report.status === 'reviewing')
+    const archivedReports = reports.filter((report) => report.status === 'resolved' || report.status === 'dismissed')
     const summary = buildSummary(reports)
-    this.setData({ reports, summary })
+    const promotionRequests = market.getPromotionRequests({ status: 'pending' }).map(normalizePromotionRequest)
+    const sellerProSubscriptions = market.getSellerProSubscriptions().map(normalizeSellerProSubscription)
+    const sellerProCount = sellerProSubscriptions.length
+
+    this.setData({
+      reports,
+      activeReports,
+      archivedReports,
+      summary,
+      promotionRequests,
+      sellerProSubscriptions,
+      pendingPromotionCount: promotionRequests.length,
+      sellerProCount
+    })
   },
 
   openStatusSheet(e) {
@@ -116,6 +164,80 @@ Page({
 
     wx.navigateTo({
       url: `/pages/user-profile/user-profile?listingId=${id}`
+    })
+  },
+
+  approvePromotionRequest(e) {
+    const { id } = e.currentTarget.dataset
+    const result = market.reviewPromotionRequest(id, 'approve')
+
+    if (!result) {
+      feedback.showNeutralToast(uiText.LISTINGS_MANAGER.LISTING_NOT_FOUND)
+      return
+    }
+
+    this.refreshReports()
+    feedback.showSuccessToast(uiText.MODERATION.PROMOTION_APPROVED)
+  },
+
+  rejectPromotionRequest(e) {
+    const { id } = e.currentTarget.dataset
+    const result = market.reviewPromotionRequest(id, 'reject')
+
+    if (!result) {
+      feedback.showNeutralToast(uiText.LISTINGS_MANAGER.LISTING_NOT_FOUND)
+      return
+    }
+
+    this.refreshReports()
+    feedback.showSuccessToast(uiText.MODERATION.PROMOTION_REJECTED)
+  },
+
+  grantSellerProByNickname() {
+    feedback.showModal({
+      title: uiText.MODERATION.SELLER_PRO_TITLE,
+      editable: true,
+      placeholderText: uiText.MODERATION.SELLER_PRO_PLACEHOLDER,
+      confirmText: uiText.MODERATION.SELLER_PRO_CONFIRM,
+      success: (res) => {
+        if (!res.confirm) return
+
+        const result = market.grantSellerProByNickname(res.content || '', {
+          grantedBy: 'admin-panel'
+        })
+
+        if (!result) {
+          feedback.showNeutralToast(uiText.MODERATION.SELLER_PRO_NOT_FOUND)
+          return
+        }
+
+        this.refreshReports()
+        feedback.showSuccessToast(uiText.MODERATION.sellerProGranted(result.grantedCount))
+      }
+    })
+  },
+
+  revokeSellerPro(e) {
+    const { id } = e.currentTarget.dataset
+
+    if (!id) {
+      return
+    }
+
+    const result = market.revokeSellerProSubscription(id)
+
+    if (!result) {
+      feedback.showNeutralToast(uiText.MODERATION.SELLER_PRO_NOT_FOUND)
+      return
+    }
+
+    this.refreshReports()
+    feedback.showSuccessToast(uiText.MODERATION.SELLER_PRO_REVOKED)
+  },
+
+  toggleReportsArchive() {
+    this.setData({
+      reportsArchiveOpen: !this.data.reportsArchiveOpen
     })
   }
 })

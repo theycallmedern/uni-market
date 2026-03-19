@@ -123,13 +123,16 @@ function normalizeProfile(rawProfile = {}) {
   const universityOptions = universitiesStore.HANGZHOU_UNIVERSITIES
   const campusIndex = universitiesStore.getUniversityIndex(rawProfile.campus || DEFAULT_PROFILE.campus, universityOptions)
   const joinedAt = ensureJoinedAt(rawProfile)
+  const wechat = sanitizeWechatId(rawProfile.wechat || '')
+  const fallbackName = sanitizeProfileName(rawProfile.name || DEFAULT_PROFILE.name) || DEFAULT_PROFILE.name
+  const syncedName = wechat || fallbackName
 
   return {
-    name: sanitizeProfileName(rawProfile.name || DEFAULT_PROFILE.name) || DEFAULT_PROFILE.name,
+    name: syncedName,
     campus: universityOptions[campusIndex] || universityOptions[0] || DEFAULT_PROFILE.campus,
     city: FIXED_CITY,
     avatarUrl: cleanText(rawProfile.avatarUrl || '', 500),
-    wechat: sanitizeWechatId(rawProfile.wechat || ''),
+    wechat,
     bio: sanitizeProfileBio(rawProfile.bio || DEFAULT_PROFILE.bio) || DEFAULT_PROFILE.bio,
     joinedAt
   }

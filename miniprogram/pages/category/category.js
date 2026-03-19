@@ -1,9 +1,11 @@
 const market = require('../../data/market')
+const storage = require('../../utils/storage')
 const universitiesStore = require('../../utils/universities')
 const listingsUtils = require('../../utils/listings')
 
 const UNIVERSITY_OPTIONS = ['All universities', ...universitiesStore.getPublicUniversityOptions()]
 const SORT_OPTIONS = ['Newest', 'Price low to high', 'Price high to low']
+const INITIAL_THEME = storage.getThemeData()
 
 const PRICE_RANGE_CONFIGS = {
   housing: [
@@ -204,10 +206,14 @@ function buildShowResultsLabel(count) {
 
 Page({
   data: {
+    themeMode: INITIAL_THEME.themeMode,
+    themeClass: INITIAL_THEME.themeClass,
+    isDarkTheme: INITIAL_THEME.isDarkTheme,
     navTitle: 'Categories',
     categoryId: '',
     isAllCategories: false,
     category: null,
+    categoryRegionLabel: '',
     subcategoryCards: [],
     featured: [],
     categories: [],
@@ -215,11 +221,18 @@ Page({
     primaryFilters: [],
     secondaryFilters: [],
     quickFilters: [],
+    filterSheetOpen: false,
+    filterSheetGroup: '',
+    filterSheetKey: '',
+    filterSheetTitle: '',
+    filterSheetOptions: [],
+    filterSheetValue: 0,
     filteredCount: 0,
     showResultsLabel: 'Show listings'
   },
 
   onLoad(query) {
+    this.refreshTheme()
     const categoryId = query.id || 'all'
 
     if (categoryId === 'all') {
@@ -240,6 +253,7 @@ Page({
   },
 
   onShow() {
+    this.refreshTheme()
     if (!this.data.isAllCategories && this.data.categoryId) {
       this.setData({
         allListings: market.getFeedListingsByCategory(this.data.categoryId),
@@ -248,6 +262,10 @@ Page({
         this.applyFilters()
       })
     }
+  },
+
+  refreshTheme() {
+    this.setData(storage.getThemeData())
   },
 
   initializeCategory(categoryId) {
@@ -267,6 +285,7 @@ Page({
       categoryId,
       isAllCategories: false,
       category,
+      categoryRegionLabel: category.region,
       featured,
       allListings,
       primaryFilters,
@@ -279,11 +298,12 @@ Page({
   },
 
   applyFilters() {
-    const { categoryId, allListings, primaryFilters, secondaryFilters, quickFilters } = this.data
+    const { categoryId, category, allListings, primaryFilters, secondaryFilters, quickFilters } = this.data
     const selectedFilters = normalizeSelectedFilters(categoryId, primaryFilters, secondaryFilters, quickFilters)
     const filteredListings = filterListings(allListings, selectedFilters)
 
     this.setData({
+      categoryRegionLabel: selectedFilters.university || (category ? category.region : ''),
       filteredCount: filteredListings.length,
       showResultsLabel: buildShowResultsLabel(filteredListings.length)
     })
@@ -333,6 +353,68 @@ Page({
     })
   },
 
+  openFilterSheet(e) {
+    const { group, key } = e.currentTarget.dataset
+    const sourceFilters = group === 'secondary' ? this.data.secondaryFilters : this.data.primaryFilters
+    const targetFilter = (sourceFilters || []).find((filter) => filter.key === key)
+
+    if (!targetFilter || !Array.isArray(targetFilter.optionLabels) || !targetFilter.optionLabels.length) {
+      return
+    }
+
+    this.setData({
+      filterSheetOpen: true,
+      filterSheetGroup: group || 'primary',
+      filterSheetKey: key || '',
+      filterSheetTitle: targetFilter.label || 'Select option',
+      filterSheetOptions: targetFilter.optionLabels,
+      filterSheetValue: Number(targetFilter.selectedIndex) || 0
+    })
+  },
+
+  closeFilterSheet() {
+    this.setData({
+      filterSheetOpen: false
+    })
+  },
+
+  stopFilterSheetTap() {},
+
+  onFilterOptionTap(e) {
+    const selectedIndex = Number(e.currentTarget.dataset.index)
+    const group = this.data.filterSheetGroup
+    const key = this.data.filterSheetKey
+
+    this.setData({
+      filterSheetOpen: false
+    })
+
+    if (group === 'secondary') {
+      this.onSecondaryFilterChange({
+        currentTarget: {
+          dataset: {
+            key
+          }
+        },
+        detail: {
+          value: selectedIndex
+        }
+      })
+      return
+    }
+
+    this.onPrimaryFilterChange({
+      currentTarget: {
+        dataset: {
+          key
+        }
+      },
+      detail: {
+        value: selectedIndex
+      }
+    })
+  },
+
   onQuickFilterTap(e) {
     const selectedIndex = Number(e.currentTarget.dataset.index)
     const nextFilters = (this.data.quickFilters || []).map((filter, index) => ({
@@ -353,7 +435,8 @@ Page({
     this.setData({
       primaryFilters: buildPrimaryFilters(category),
       secondaryFilters: buildSecondaryFilters(categoryId, category),
-      quickFilters: buildQuickFilters(categoryId)
+      quickFilters: buildQuickFilters(categoryId),
+      filterSheetOpen: false
     }, () => {
       this.applyFilters()
     })

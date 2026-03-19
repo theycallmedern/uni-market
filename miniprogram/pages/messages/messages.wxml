@@ -1,5 +1,5 @@
-<view class="page-shell page-shell--scroll">
-  <app-header title="My Listings"></app-header>
+<view class="page-shell page-shell--scroll {{themeClass}}">
+  <app-header title="My Listings" theme="{{themeMode}}"></app-header>
   <scroll-view
     class="page-scroll"
     scroll-y
@@ -31,34 +31,46 @@
       <block wx:if="{{activeListings.length}}">
         <view class="manager-list">
           <block wx:for="{{activeListings}}" wx:key="id">
-            <view class="manager-card">
-              <image class="manager-card__image" src="{{item.image}}" mode="aspectFill" />
-              <view class="manager-card__body">
-                <view class="manager-card__top">
-                  <view>
-                    <text class="manager-card__price">{{item.price}}</text>
-                    <text class="manager-card__title">{{item.title}}</text>
+            <view class="manager-card {{item.isPromoted ? 'manager-card--promoted' : ''}}">
+              <view class="manager-card__inner">
+                <image class="manager-card__image" src="{{item.image}}" mode="aspectFill" />
+                <view class="manager-card__body">
+                  <view class="manager-card__top">
+                    <view>
+                      <text class="manager-card__price">{{item.price}}</text>
+                      <text class="manager-card__title">{{item.title}}</text>
+                    </view>
+                    <view class="manager-card__badge {{item.isSold ? 'manager-card__badge--sold' : (item.isHiddenByModeration ? 'manager-card__badge--hidden' : '')}}">
+                      {{item.isSold ? 'Sold' : (item.isHiddenByModeration ? 'Hidden' : 'Live')}}
+                    </view>
                   </view>
-                  <view class="manager-card__badge {{item.isSold ? 'manager-card__badge--sold' : (item.isHiddenByModeration ? 'manager-card__badge--hidden' : '')}}">
-                    {{item.isSold ? 'Sold' : (item.isHiddenByModeration ? 'Hidden' : 'Live')}}
+
+                  <text class="manager-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
+                  <text class="manager-card__sub">{{item.subcategory}}</text>
+                  <text wx:if="{{item.isPromoted}}" class="manager-card__promo-note">✦ Promoted</text>
+                  <text wx:if="{{item.isPromotionRequested}}" class="manager-card__promo-note manager-card__promo-note--pending">Promotion request pending</text>
+
+                  <view class="manager-card__actions">
+                    <button class="manager-open" data-id="{{item.id}}" bindtap="openListing">Open</button>
+                    <button
+                      class="manager-sold {{item.isSold ? 'manager-sold--active' : ''}}"
+                      data-id="{{item.id}}"
+                      data-sold="{{item.isSold ? 1 : 0}}"
+                      bindtap="toggleSoldState"
+                    >
+                      {{item.isSold ? 'List again' : 'Mark sold'}}
+                    </button>
+                    <button
+                      class="manager-promote {{item.isPromoted ? 'manager-promote--active' : ''}} {{item.isPromotionRequested ? 'manager-promote--pending' : ''}}"
+                      data-id="{{item.id}}"
+                      bindtap="requestPromotion"
+                      disabled="{{item.isPromoted || item.isPromotionRequested}}"
+                    >
+                      {{item.isPromoted ? 'Featured' : (item.isPromotionRequested ? 'Requested' : 'Promote')}}
+                    </button>
+                    <button class="manager-edit" data-id="{{item.id}}" bindtap="editListing">Edit</button>
+                    <button class="manager-delete" data-id="{{item.id}}" bindtap="deleteListing">Delete</button>
                   </view>
-                </view>
-
-                <text class="manager-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
-                <text class="manager-card__sub">{{item.subcategory}}</text>
-
-                <view class="manager-card__actions">
-                  <button class="manager-open" data-id="{{item.id}}" bindtap="openListing">Open</button>
-                  <button
-                    class="manager-sold {{item.isSold ? 'manager-sold--active' : ''}}"
-                    data-id="{{item.id}}"
-                    data-sold="{{item.isSold ? 1 : 0}}"
-                    bindtap="toggleSoldState"
-                  >
-                    {{item.isSold ? 'List again' : 'Mark sold'}}
-                  </button>
-                  <button class="manager-edit" data-id="{{item.id}}" bindtap="editListing">Edit</button>
-                  <button class="manager-delete" data-id="{{item.id}}" bindtap="deleteListing">Delete</button>
                 </view>
               </view>
             </view>
@@ -85,35 +97,38 @@
 
       <view wx:if="{{archivedCount && isArchiveExpanded}}" class="manager-list manager-list--archive">
         <block wx:for="{{archivedListings}}" wx:key="id">
-          <view class="manager-card manager-card--archived">
-            <image class="manager-card__image" src="{{item.image}}" mode="aspectFill" />
-            <view class="manager-card__body">
-              <view class="manager-card__top">
-                <view>
-                  <text class="manager-card__price">{{item.price}}</text>
-                  <text class="manager-card__title">{{item.title}}</text>
+          <view class="manager-card manager-card--archived {{item.isPromoted ? 'manager-card--promoted' : ''}}">
+            <view class="manager-card__inner">
+              <image class="manager-card__image" src="{{item.image}}" mode="aspectFill" />
+              <view class="manager-card__body">
+                <view class="manager-card__top">
+                  <view>
+                    <text class="manager-card__price">{{item.price}}</text>
+                    <text class="manager-card__title">{{item.title}}</text>
+                  </view>
+                  <view class="manager-card__badge manager-card__badge--sold">
+                    Sold
+                  </view>
                 </view>
-                <view class="manager-card__badge manager-card__badge--sold">
-                  Sold
+
+                <text class="manager-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
+                <text class="manager-card__sub">{{item.subcategory}}</text>
+                <text class="manager-card__archive-note">{{item.soldOnUniMarket ? 'Sale source: UniMarket' : 'Sale source: outside UniMarket'}}</text>
+                <text wx:if="{{item.isPromoted}}" class="manager-card__promo-note">✦ Promoted</text>
+
+                <view class="manager-card__actions">
+                  <button class="manager-open" data-id="{{item.id}}" bindtap="openListing">Open</button>
+                  <button
+                    class="manager-sold manager-sold--active"
+                    data-id="{{item.id}}"
+                    data-sold="1"
+                    bindtap="toggleSoldState"
+                  >
+                    List again
+                  </button>
+                  <button class="manager-edit" data-id="{{item.id}}" bindtap="editListing">Edit</button>
+                  <button class="manager-delete" data-id="{{item.id}}" bindtap="deleteListing">Delete</button>
                 </view>
-              </view>
-
-              <text class="manager-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
-              <text class="manager-card__sub">{{item.subcategory}}</text>
-              <text class="manager-card__archive-note">{{item.soldOnUniMarket ? 'Sale source: UniMarket' : 'Sale source: outside UniMarket'}}</text>
-
-              <view class="manager-card__actions">
-                <button class="manager-open" data-id="{{item.id}}" bindtap="openListing">Open</button>
-                <button
-                  class="manager-sold manager-sold--active"
-                  data-id="{{item.id}}"
-                  data-sold="1"
-                  bindtap="toggleSoldState"
-                >
-                  List again
-                </button>
-                <button class="manager-edit" data-id="{{item.id}}" bindtap="editListing">Edit</button>
-                <button class="manager-delete" data-id="{{item.id}}" bindtap="deleteListing">Delete</button>
               </view>
             </view>
           </view>

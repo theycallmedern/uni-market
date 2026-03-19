@@ -1,0 +1,317 @@
+.settings-page {
+  padding: 22rpx 24rpx 44rpx;
+}
+
+.settings-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  padding: 30rpx 28rpx;
+  border-radius: 34rpx;
+  background: linear-gradient(135deg, #eef4ea, #dbe7d3);
+}
+
+.settings-hero__eyebrow {
+  font-size: 20rpx;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 1rpx;
+  text-transform: uppercase;
+  color: #8a8a8a;
+}
+
+.settings-hero__title {
+  font-size: 38rpx;
+  line-height: 1.12;
+  font-weight: 700;
+  color: #1f1f1f;
+}
+
+.settings-hero__copy {
+  font-size: 24rpx;
+  line-height: 1.42;
+  color: #6f6f6f;
+}
+
+.settings-section {
+  margin-top: 24rpx;
+  padding: 28rpx;
+  border-radius: 30rpx;
+  background: #ffffff;
+  box-shadow: 0 16rpx 30rpx rgba(17, 17, 17, 0.05);
+}
+
+.settings-section__head {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.settings-section__title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #1f1f1f;
+}
+
+.settings-section__subtitle {
+  font-size: 24rpx;
+  line-height: 1.45;
+  color: #7d7d7d;
+}
+
+.settings-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+  margin-top: 20rpx;
+}
+
+.settings-theme-note {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  padding: 18rpx 2rpx 10rpx;
+  border-bottom: 1rpx solid rgba(17, 17, 17, 0.06);
+}
+
+.settings-theme-note__head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12rpx;
+}
+
+.settings-theme-note__label-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
+  min-width: 0;
+}
+
+.settings-theme-note__dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 999rpx;
+  background: #8d9197;
+  flex-shrink: 0;
+}
+
+.settings-theme-note__label {
+  font-size: 20rpx;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 1rpx;
+  text-transform: uppercase;
+  color: #8d9197;
+}
+
+.settings-theme-note__copy {
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #70757c;
+  max-width: 560rpx;
+}
+
+.settings-theme-note__status {
+  margin-left: 6rpx;
+}
+
+.settings-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 22rpx;
+  border-radius: 26rpx;
+  background: #ffffff;
+  color: #2d2d2d;
+  border: 1rpx solid rgba(17, 17, 17, 0.05);
+  text-align: left;
+  box-shadow: 0 16rpx 30rpx rgba(17, 17, 17, 0.05);
+}
+
+.settings-action__title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #2d2d2d;
+}
+
+.settings-action__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  width: 100%;
+}
+
+.settings-action__meta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-height: 40rpx;
+  padding: 0 14rpx;
+  box-sizing: border-box;
+  border-radius: 18rpx;
+  background: #f1f2f4;
+  border: 1rpx solid transparent;
+  font-size: 18rpx;
+  line-height: 1;
+  font-weight: 700;
+  color: #8a8a8a;
+}
+
+.settings-action__meta-label {
+  display: block;
+  line-height: 1;
+}
+
+.settings-action__meta--green {
+  background: #edf5ee;
+  color: #34753a;
+  border-color: rgba(52, 117, 58, 0.12);
+}
+
+.settings-action__meta--purple {
+  background: #efe9fb;
+  color: #6d53a7;
+  border-color: rgba(109, 83, 167, 0.14);
+}
+
+.settings-action__meta--danger {
+  background: #ffe7ea;
+  color: #b2384d;
+  border-color: rgba(178, 56, 77, 0.14);
+}
+
+.settings-action__copy {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  line-height: 1.4;
+  color: #6e6e6e;
+}
+
+.settings-action--spotlight {
+  background: linear-gradient(135deg, #ffffff, #f4f5f7);
+  border-color: rgba(17, 17, 17, 0.06);
+}
+
+.settings-action--danger {
+  background: #fff1f1;
+  border-color: rgba(138, 37, 37, 0.12);
+}
+
+.settings-action--danger .settings-action__title {
+  color: #8a2525;
+}
+
+.settings-action--danger .settings-action__copy {
+  color: #8c3c3c;
+}
+
+.settings-action--selected {
+  border-color: rgba(47, 125, 50, 0.16);
+  box-shadow: 0 12rpx 24rpx rgba(47, 125, 50, 0.08);
+}
+
+.settings-action--selected-dark {
+  border-color: rgba(106, 70, 179, 0.18);
+  box-shadow: 0 12rpx 24rpx rgba(106, 70, 179, 0.08);
+}
+
+.theme-dark .settings-hero {
+  background: linear-gradient(135deg, #171c20, #111417);
+  border: 1rpx solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 18rpx 36rpx rgba(0, 0, 0, 0.24);
+}
+
+.theme-dark .settings-hero__eyebrow,
+.theme-dark .settings-theme-note__label,
+.theme-dark .settings-section__subtitle,
+.theme-dark .settings-theme-note__copy,
+.theme-dark .settings-action__copy,
+.theme-dark .settings-action__meta {
+  color: #8e99a3;
+}
+
+.theme-dark .settings-hero__title,
+.theme-dark .settings-section__title,
+.theme-dark .settings-action__title {
+  color: #f2f5f7;
+}
+
+.theme-dark .settings-hero__copy {
+  color: #a7b2bb;
+}
+
+.theme-dark .settings-section,
+ .theme-dark .settings-action {
+  background: #171b1f;
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 16rpx 30rpx rgba(0, 0, 0, 0.22);
+}
+
+.theme-dark .settings-theme-note {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.theme-dark .settings-theme-note__dot {
+  background: #727d87;
+}
+
+.theme-dark .settings-action__meta {
+  background: #1f2529;
+  color: #9ba7b0;
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.theme-dark .settings-action__meta--green {
+  background: rgba(41, 67, 46, 0.5);
+  color: #bfe0c3;
+  border-color: rgba(111, 167, 121, 0.18);
+}
+
+.theme-dark .settings-action__meta--purple {
+  background: rgba(73, 57, 109, 0.5);
+  color: #d9cff1;
+  border-color: rgba(150, 122, 214, 0.18);
+}
+
+.theme-dark .settings-action__meta--danger {
+  background: rgba(98, 39, 50, 0.46);
+  color: #efb3bc;
+  border-color: rgba(180, 79, 92, 0.2);
+}
+
+.theme-dark .settings-action--spotlight {
+  background: linear-gradient(135deg, #1b2025, #171b1f);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.theme-dark .settings-action--selected {
+  border-color: rgba(111, 167, 121, 0.14);
+  box-shadow: 0 12rpx 24rpx rgba(0, 0, 0, 0.24);
+}
+
+.theme-dark .settings-action--selected-dark {
+  border-color: rgba(150, 122, 214, 0.2);
+}
+
+.theme-dark .settings-action--danger {
+  background: rgba(77, 30, 35, 0.34);
+  border-color: rgba(180, 79, 92, 0.22);
+}
+
+.theme-dark .settings-action--danger .settings-action__title {
+  color: #f1b3bb;
+}
+
+.theme-dark .settings-action--danger .settings-action__copy {
+  color: #d89aa2;
+}

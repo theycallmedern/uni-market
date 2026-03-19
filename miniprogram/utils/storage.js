@@ -31,8 +31,38 @@ function safeRemoveStorage(key) {
   } catch (error) {}
 }
 
+const THEME_STORAGE_KEY = 'uiThemeMode'
+const LIGHT_THEME = 'light'
+const DARK_THEME = 'dark'
+
+function normalizeThemeMode(value) {
+  return value === DARK_THEME ? DARK_THEME : LIGHT_THEME
+}
+
+function saveThemeMode(value) {
+  const themeMode = normalizeThemeMode(value)
+  safeSetStorage(THEME_STORAGE_KEY, themeMode)
+  return themeMode
+}
+
+function getThemeData() {
+  const themeMode = normalizeThemeMode(safeGetStorage(THEME_STORAGE_KEY, LIGHT_THEME))
+
+  return {
+    themeMode,
+    themeClass: themeMode === DARK_THEME ? 'theme-dark' : 'theme-light',
+    isDarkTheme: themeMode === DARK_THEME
+  }
+}
+
 module.exports = {
   safeGetStorage,
   safeSetStorage,
-  safeRemoveStorage
+  safeRemoveStorage,
+  THEME_STORAGE_KEY,
+  LIGHT_THEME,
+  DARK_THEME,
+  normalizeThemeMode,
+  saveThemeMode,
+  getThemeData
 }

@@ -23,6 +23,7 @@ const DESCRIPTION_MIN_LENGTH = 12
 const DESCRIPTION_MAX_LENGTH = 600
 const PUBLISH_RATE_LIMIT_MS = 15000
 const LAST_PUBLISH_AT_STORAGE_KEY = 'marketCreateLastPublishAtMs'
+const INITIAL_THEME = storage.getThemeData()
 
 function normalizeSubcategory(value) {
   return String(value || '').replace(/\s+/g, ' ').trim()
@@ -50,6 +51,9 @@ function getDuplicateSignature({ title = '', price = '', image = '' } = {}) {
 
 Page({
   data: {
+    themeMode: INITIAL_THEME.themeMode,
+    themeClass: INITIAL_THEME.themeClass,
+    isDarkTheme: INITIAL_THEME.isDarkTheme,
     navTitle: 'New Listing',
     categories: [],
     universityOptions: UNIVERSITY_OPTIONS,
@@ -59,6 +63,11 @@ Page({
     subcategoryIndex: 0,
     conditionOptions: CONDITION_OPTIONS,
     conditionIndex: 0,
+    createSheetOpen: false,
+    createSheetField: '',
+    createSheetTitle: '',
+    createSheetOptions: [],
+    createSheetValue: 0,
     requiresCondition: false,
     isCustomSubcategory: false,
     customSubcategory: '',
@@ -68,8 +77,11 @@ Page({
     heroCopy: 'Share something useful with students around Hangzhou and publish it straight into the MVP.',
     heroChip: 'Live preview flow',
     submitLabel: 'Publish listing',
+    photoLimit: market.getCurrentSellerPhotoLimit(),
     submitting: false,
     draftChecked: false,
+    addressHintVisible: false,
+    addressHintText: uiText.CREATE.ADDRESS_HINT,
     form: {
       title: '',
       price: '',
@@ -94,9 +106,11 @@ Page({
     const requiresCondition = this.requiresCondition(initialCategory.id)
     const profileDefaults = this.getProfileDefaults()
     const universityIndex = universitiesStore.getUniversityIndex(profileDefaults.university, UNIVERSITY_OPTIONS)
+    const photoLimit = market.getCurrentSellerPhotoLimit()
 
     this.setData({
       categories,
+      photoLimit,
       subcategoryOptions,
       categoryIndex: 0,
       universityIndex,
@@ -116,7 +130,14 @@ Page({
   },
 
   onShow() {
-    tabbarStore.syncTabBar(this, 2)
+    this.refreshTheme(() => {
+      tabbarStore.syncTabBar(this, 2, {
+        themeMode: this.data.themeMode
+      })
+    })
+    this.setData({
+      photoLimit: market.getCurrentSellerPhotoLimit()
+    })
     const queuedMode = market.consumeCreateMode()
 
     if (!queuedMode) {
@@ -148,6 +169,10 @@ Page({
       this.resetForm()
       this.tryRestoreDraft()
     }
+  },
+
+  refreshTheme(callback) {
+    this.setData(storage.getThemeData(), callback)
   },
 
   getSubcategoryOptions(categoryId) {
@@ -187,6 +212,39 @@ Page({
     }
   },
 
+  getAddressValidationMessage(address) {
+    const normalized = validation.sanitizeAddress(address, ADDRESS_MAX_LENGTH)
+
+    if (!normalized) {
+      return ''
+    }
+
+    if (normalized.length < ADDRESS_MIN_LENGTH) {
+      return uiText.CREATE.VALIDATION.ADDRESS
+    }
+
+    if (!validation.hasMeaningfulAddress(normalized)) {
+      return uiText.CREATE.VALIDATION.ADDRESS_MEANINGFUL
+    }
+
+    return ''
+  },
+
+  updateAddressHint(address, options = {}) {
+    const { showForEmpty = false } = options
+    const normalized = validation.sanitizeAddress(address, ADDRESS_MAX_LENGTH)
+    const validationMessage = this.getAddressValidationMessage(normalized)
+    const shouldShow = Boolean(validationMessage && (showForEmpty || normalized))
+
+    if (this.data.addressHintVisible === shouldShow) {
+      return
+    }
+
+    this.setData({
+      addressHintVisible: shouldShow
+    })
+  },
+
   getCreateDraft() {
     const draft = storage.safeGetStorage(DRAFT_STORAGE_KEY, null)
     if (!draft || typeof draft !== 'object' || !draft.form || typeof draft.form !== 'object') {
@@ -219,18 +277,19 @@ Page({
     }
 
     const currentForm = this.data.form || {}
+    const photoLimit = Number(this.data.photoLimit) || 5
     const draftForm = {
       title: String(currentForm.title || ''),
       price: validation.extractPriceDigits(currentForm.price || ''),
       location: FIXED_CITY,
-      address: String(currentForm.address || ''),
+      address: validation.sanitizeAddress(currentForm.address || '', ADDRESS_MAX_LENGTH),
       university: String(currentForm.university || ''),
       wechat: String(currentForm.wechat || ''),
       description: String(currentForm.description || ''),
       categoryId: String(currentForm.categoryId || ''),
       subcategory: String(currentForm.subcategory || ''),
       condition: String(currentForm.condition || ''),
-      images: Array.isArray(currentForm.images) ? currentForm.images.filter(Boolean).slice(0, 5) : []
+      images: Array.isArray(currentForm.images) ? currentForm.images.filter(Boolean).slice(0, photoLimit) : []
     }
 
     if (!this.hasDraftContent(draftForm)) {
@@ -300,10 +359,13 @@ Page({
     const conditionIndex = this.getConditionIndex(draftForm.condition)
     const universityValue = String(draftForm.university || profileDefaults.university || '')
     const universityIndex = universitiesStore.getUniversityIndex(universityValue, UNIVERSITY_OPTIONS)
-    const images = Array.isArray(draftForm.images) ? draftForm.images.filter(Boolean).slice(0, 5) : []
+    const photoLimit = Number(this.data.photoLimit) || 5
+    const images = Array.isArray(draftForm.images) ? draftForm.images.filter(Boolean).slice(0, photoLimit) : []
 
     this.setData({
       draftChecked: true,
+      createSheetOpen: false,
+      addressHintVisible: false,
       categoryIndex,
       universityIndex,
       subcategoryOptions,
@@ -316,7 +378,7 @@ Page({
         title: String(draftForm.title || ''),
         price: validation.extractPriceDigits(draftForm.price || ''),
         location: FIXED_CITY,
-        address: String(draftForm.address || ''),
+        address: validation.sanitizeAddress(draftForm.address || '', ADDRESS_MAX_LENGTH),
         university: UNIVERSITY_OPTIONS[universityIndex] || UNIVERSITY_OPTIONS[0] || '',
         wechat: String(draftForm.wechat || profileDefaults.wechat || ''),
         description: String(draftForm.description || ''),
@@ -370,6 +432,7 @@ Page({
     const university = UNIVERSITY_OPTIONS[universityIndex] || UNIVERSITY_OPTIONS[0] || ''
 
     this.setData({
+      createSheetOpen: false,
       universityIndex,
       'form.university': university
     }, () => {
@@ -394,6 +457,7 @@ Page({
       : ''
 
     this.setData({
+      createSheetOpen: false,
       categoryIndex,
       subcategoryOptions,
       subcategoryIndex: 0,
@@ -414,6 +478,7 @@ Page({
     const condition = CONDITION_OPTIONS[conditionIndex] || DEFAULT_CONDITION
 
     this.setData({
+      createSheetOpen: false,
       conditionIndex,
       'form.condition': condition
     }, () => {
@@ -428,6 +493,7 @@ Page({
     const normalizedCustomSubcategory = normalizeSubcategory(this.data.customSubcategory).slice(0, MAX_CUSTOM_SUBCATEGORY_LENGTH)
 
     this.setData({
+      createSheetOpen: false,
       subcategoryIndex,
       isCustomSubcategory,
       customSubcategory: isCustomSubcategory ? normalizedCustomSubcategory : '',
@@ -448,6 +514,83 @@ Page({
     })
   },
 
+  openCreateSheet(e) {
+    const { field } = e.currentTarget.dataset
+    let title = ''
+    let options = []
+    let value = 0
+
+    if (field === 'category') {
+      title = 'Category'
+      options = (this.data.categories || []).map((item) => item.name)
+      value = Number(this.data.categoryIndex) || 0
+    } else if (field === 'subcategory') {
+      title = 'Subcategory'
+      options = this.data.subcategoryOptions || []
+      value = Number(this.data.subcategoryIndex) || 0
+    } else if (field === 'condition') {
+      title = 'Condition'
+      options = this.data.conditionOptions || []
+      value = Number(this.data.conditionIndex) || 0
+    } else if (field === 'university') {
+      title = 'University'
+      options = this.data.universityOptions || []
+      value = Number(this.data.universityIndex) || 0
+    }
+
+    if (!options.length) {
+      return
+    }
+
+    this.setData({
+      createSheetOpen: true,
+      createSheetField: field || '',
+      createSheetTitle: title,
+      createSheetOptions: options,
+      createSheetValue: value
+    })
+  },
+
+  closeCreateSheet() {
+    this.setData({
+      createSheetOpen: false
+    })
+  },
+
+  stopCreateSheetTap() {},
+
+  onCreateSheetOptionTap(e) {
+    const value = Number(e.currentTarget.dataset.index)
+    const field = this.data.createSheetField
+    const event = {
+      detail: {
+        value
+      }
+    }
+
+    if (field === 'category') {
+      this.onCategoryChange(event)
+      return
+    }
+
+    if (field === 'subcategory') {
+      this.onSubcategoryChange(event)
+      return
+    }
+
+    if (field === 'condition') {
+      this.onConditionChange(event)
+      return
+    }
+
+    if (field === 'university') {
+      this.onUniversityChange(event)
+      return
+    }
+
+    this.closeCreateSheet()
+  },
+
   onFieldInput(e) {
     const { field } = e.currentTarget.dataset
     const rawValue = e.detail.value
@@ -458,17 +601,124 @@ Page({
     } else if (field === 'title') {
       value = validation.sanitizeSingleLine(rawValue, TITLE_MAX_LENGTH)
     } else if (field === 'address') {
-      value = validation.sanitizeSingleLine(rawValue, ADDRESS_MAX_LENGTH)
+      value = validation.sanitizeAddress(rawValue, ADDRESS_MAX_LENGTH)
     } else if (field === 'wechat') {
       value = validation.sanitizeWeChatId(rawValue)
     } else if (field === 'description') {
-      value = validation.sanitizeMultiline(rawValue, DESCRIPTION_MAX_LENGTH)
+      value = String(rawValue || '')
+        .replace(/\r\n/g, '\n')
+        .slice(0, DESCRIPTION_MAX_LENGTH)
     }
 
     this.setData({
       [`form.${field}`]: value
     }, () => {
+      if (field === 'address') {
+        this.updateAddressHint(value)
+      }
       this.scheduleDraftSave()
+    })
+  },
+
+  onAddressBlur(e) {
+    const normalized = validation.sanitizeAddress(e.detail && e.detail.value, ADDRESS_MAX_LENGTH)
+
+    if (normalized !== this.data.form.address) {
+      this.setData({
+        'form.address': normalized
+      }, () => {
+        this.updateAddressHint(normalized)
+        this.scheduleDraftSave()
+      })
+      return
+    }
+
+    this.updateAddressHint(normalized)
+  },
+
+  pickPromotionPlan(onPicked) {
+    const plans = market.getPromotionPlans()
+    if (!plans.length) {
+      if (typeof onPicked === 'function') {
+        onPicked(null)
+      }
+      return
+    }
+
+    wx.showActionSheet({
+      itemList: plans.map((plan) => `${plan.durationDays}d · ${plan.priceLabel}`),
+      success: (res) => {
+        const picked = plans[Number(res.tapIndex)] || null
+        if (typeof onPicked === 'function') {
+          onPicked(picked)
+        }
+      },
+      fail: () => {
+        if (typeof onPicked === 'function') {
+          onPicked(null)
+        }
+      }
+    })
+  },
+
+  copyPromotionWechat(plan, onDone) {
+    const wechatId = uiText.CREATE.PROMOTION_CONTACT_WECHAT
+    const finalize = () => {
+      if (typeof onDone === 'function') {
+        onDone()
+      }
+    }
+
+    wx.setClipboardData({
+      data: wechatId,
+      success: () => {
+        feedback.showSuccessToast(uiText.CREATE.PROMOTION_CONTACT_COPIED)
+        feedback.showModal({
+          title: uiText.COMMON.WRITE_IN_WECHAT_TITLE,
+          content: uiText.CREATE.promotionContactModalContent(wechatId, plan.label, plan.priceLabel),
+          showCancel: false,
+          confirmText: 'OK',
+          success: finalize
+        })
+      },
+      fail: finalize
+    })
+  },
+
+  offerPromotionAfterPublish(listing, onDone) {
+    const plans = market.getPromotionPlans()
+    const plansText = plans
+      .map((plan) => `${plan.durationDays}d — ${plan.priceLabel}`)
+      .join('\n')
+
+    feedback.showModal({
+      title: uiText.CREATE.PROMOTION_OFFER_TITLE,
+      content: uiText.CREATE.promotionOfferContent(plansText),
+      confirmText: 'Yes',
+      cancelText: 'No',
+      success: (res) => {
+        if (!res.confirm) {
+          if (typeof onDone === 'function') {
+            onDone()
+          }
+          return
+        }
+
+        this.pickPromotionPlan((plan) => {
+          if (!plan) {
+            if (typeof onDone === 'function') {
+              onDone()
+            }
+            return
+          }
+
+          market.requestListingPromotion(listing.id, plan.id, {
+            source: 'post_publish'
+          })
+          feedback.showSuccessToast(uiText.CREATE.PROMOTION_REQUEST_SENT)
+          this.copyPromotionWechat(plan, onDone)
+        })
+      }
     })
   },
 
@@ -522,6 +772,8 @@ Page({
     const conditionIndex = this.getConditionIndex(listing.condition)
 
     this.setData({
+      createSheetOpen: false,
+      addressHintVisible: false,
       categoryIndex,
       universityIndex,
       subcategoryOptions,
@@ -534,7 +786,7 @@ Page({
         title: listing.title || '',
         price: validation.extractPriceDigits(listing.price || ''),
         location: FIXED_CITY,
-        address: listing.address || '',
+        address: validation.sanitizeAddress(listing.address || '', ADDRESS_MAX_LENGTH),
         university: UNIVERSITY_OPTIONS[universityIndex] || UNIVERSITY_OPTIONS[0] || '',
         wechat: listing.seller && listing.seller.wechat ? listing.seller.wechat : '',
         description: listing.description || '',
@@ -552,16 +804,18 @@ Page({
 
   choosePhotos() {
     const currentImages = this.data.form.images || []
-    const remainingCount = 5 - currentImages.length
+    const photoLimit = Number(this.data.photoLimit) || 5
+    const remainingCount = photoLimit - currentImages.length
+    const pickerCount = Math.min(remainingCount, 9)
 
     if (remainingCount <= 0) {
-      feedback.showNeutralToast(uiText.CREATE.UP_TO_5_PHOTOS)
+      feedback.showNeutralToast(`Up to ${photoLimit} photos`)
       return
     }
 
     const onSuccess = (res) => {
       const files = res.tempFiles || []
-      const nextImages = currentImages.concat(files.map((file) => file.tempFilePath)).slice(0, 5)
+      const nextImages = currentImages.concat(files.map((file) => file.tempFilePath)).slice(0, photoLimit)
       this.setData({
         'form.images': nextImages
       }, () => {
@@ -571,7 +825,7 @@ Page({
 
     if (wx.chooseMedia) {
       wx.chooseMedia({
-        count: remainingCount,
+        count: pickerCount,
         mediaType: ['image'],
         sizeType: ['compressed'],
         sourceType: ['album', 'camera'],
@@ -581,7 +835,7 @@ Page({
     }
 
     wx.chooseImage({
-      count: remainingCount,
+      count: pickerCount,
       sizeType: ['compressed'],
       sourceType: ['album', 'camera'],
       success: (res) => {
@@ -651,7 +905,7 @@ Page({
     const rawPrice = validation.extractPriceDigits(form.price)
     const price = validation.ensurePriceCurrency(rawPrice)
     const location = FIXED_CITY
-    const address = validation.sanitizeSingleLine(form.address, ADDRESS_MAX_LENGTH)
+    const address = validation.sanitizeAddress(form.address, ADDRESS_MAX_LENGTH)
     const selectedUniversity = UNIVERSITY_OPTIONS[this.data.universityIndex] || UNIVERSITY_OPTIONS[0] || ''
     const isUniversityPrivate = universitiesStore.isUniversityPrivateValue(selectedUniversity)
     const university = isUniversityPrivate ? '' : selectedUniversity
@@ -718,9 +972,18 @@ Page({
     }
 
     if (address.length < ADDRESS_MIN_LENGTH) {
+      this.updateAddressHint(address, { showForEmpty: true })
       this.showValidation(uiText.CREATE.VALIDATION.ADDRESS)
       return
     }
+
+    if (!validation.hasMeaningfulAddress(address)) {
+      this.updateAddressHint(address, { showForEmpty: true })
+      this.showValidation(uiText.CREATE.VALIDATION.ADDRESS_MEANINGFUL)
+      return
+    }
+
+    this.updateAddressHint(address)
 
     if (!university && !isUniversityPrivate) {
       this.showValidation(uiText.CREATE.VALIDATION.UNIVERSITY)
@@ -829,14 +1092,23 @@ Page({
       storage.safeSetStorage(LAST_PUBLISH_AT_STORAGE_KEY, Date.now())
     }
 
-    this.resetForm()
+    const finishSubmitFlow = () => {
+      this.resetForm()
 
-    setTimeout(() => {
-      this.setData({ submitting: false })
-      wx.navigateTo({
-        url: `/pages/listing/listing?id=${listing.id}`
-      })
-    }, 280)
+      setTimeout(() => {
+        this.setData({ submitting: false })
+        wx.navigateTo({
+          url: `/pages/listing/listing?id=${listing.id}`
+        })
+      }, 280)
+    }
+
+    if (!isEdit) {
+      this.offerPromotionAfterPublish(listing, finishSubmitFlow)
+      return
+    }
+
+    finishSubmitFlow()
   },
 
   showValidation(title) {
@@ -854,6 +1126,8 @@ Page({
 
     this.setData({
       draftChecked: false,
+      createSheetOpen: false,
+      addressHintVisible: false,
       categoryIndex: 0,
       subcategoryOptions,
       subcategoryIndex: 0,

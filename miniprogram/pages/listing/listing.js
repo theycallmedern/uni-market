@@ -1,5 +1,7 @@
 const market = require('../../data/market')
+const profileStore = require('../../utils/profile')
 const savedStore = require('../../utils/saved')
+const storage = require('../../utils/storage')
 const reportsStore = require('../../utils/reports')
 const adminStore = require('../../utils/admin')
 const visibilityStore = require('../../utils/visibility')
@@ -14,13 +16,55 @@ const REPORT_REASONS = [
   'Inappropriate content',
   'Other'
 ]
+const INITIAL_THEME = storage.getThemeData()
+
+function formatListingPublishedAt(value) {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  try {
+    const formatted = new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date)
+
+    return `Published on ${formatted}`
+  } catch (error) {
+    return `Published on ${String(value).slice(0, 10)}`
+  }
+}
+
+function formatSellerTrustLabel(soldCount, listingsCount) {
+  const safeSoldCount = Number(soldCount || 0)
+  const safeListingsCount = Number(listingsCount || 0)
+
+  if (safeSoldCount > 0) {
+    return `Sold ${safeSoldCount} item${safeSoldCount === 1 ? '' : 's'} on UniMarket`
+  }
+
+  if (safeListingsCount >= 3) {
+    return 'Active seller on UniMarket'
+  }
+
+  return 'New to UniMarket'
+}
 
 Page({
   data: {
+    themeMode: INITIAL_THEME.themeMode,
+    themeClass: INITIAL_THEME.themeClass,
+    isDarkTheme: INITIAL_THEME.isDarkTheme,
     navTitle: 'Listing',
     id: '',
     listing: null,
     isSaved: false,
+    isOwnListing: false,
+    showOwnerAnalytics: false,
+    ownerListingAnalytics: null,
     currentImage: 1,
     viewerVisible: false,
     viewerImages: [],
@@ -34,9 +78,15 @@ Page({
     notFound: false,
     hiddenNotice: '',
     soldNotice: '',
+    sellerMemberLabel: '',
+    listingPublishedLabel: '',
+    sellerTrustLabel: '',
+    sellerStatusLabel: 'New seller',
+    sellerStatusClass: 'seller-rating__value--new',
     conditionChipClass: '',
     hiddenByUser: false,
     blockedSeller: false,
+    viewTrackedId: '',
     reviewSummary: {
       average: 0,
       averageLabel: 'New',
@@ -46,6 +96,7 @@ Page({
   },
 
   onLoad(query) {
+    this.refreshTheme()
     const id = String(query.id || '')
     this.setData({
       id,
@@ -56,7 +107,12 @@ Page({
   },
 
   onShow() {
+    this.refreshTheme()
     this.refreshListing()
+  },
+
+  refreshTheme() {
+    this.setData(storage.getThemeData())
   },
 
   refreshListing() {
@@ -76,10 +132,18 @@ Page({
       this.setData({
         navTitle: blockedSeller ? 'Seller hidden' : 'Listing hidden',
         listing: null,
+        isOwnListing: false,
+        showOwnerAnalytics: false,
+        ownerListingAnalytics: null,
         blockedByModeration: false,
         notFound: false,
         hiddenNotice: '',
         soldNotice: '',
+        sellerMemberLabel: '',
+        listingPublishedLabel: '',
+        sellerTrustLabel: '',
+        sellerStatusLabel: 'New seller',
+        sellerStatusClass: 'seller-rating__value--new',
         conditionChipClass: '',
         hiddenByUser,
         blockedSeller,
@@ -88,7 +152,8 @@ Page({
           averageLabel: 'New',
           count: 0,
           countLabel: '0 reviews'
-        }
+        },
+        viewTrackedId: ''
       })
       return
     }
@@ -101,10 +166,18 @@ Page({
       this.setData({
         navTitle: 'Listing unavailable',
         listing: null,
+        isOwnListing: false,
+        showOwnerAnalytics: false,
+        ownerListingAnalytics: null,
         blockedByModeration: false,
         notFound: true,
         hiddenNotice: '',
         soldNotice: '',
+        sellerMemberLabel: '',
+        listingPublishedLabel: '',
+        sellerTrustLabel: '',
+        sellerStatusLabel: 'New seller',
+        sellerStatusClass: 'seller-rating__value--new',
         conditionChipClass: '',
         hiddenByUser: false,
         blockedSeller: false,
@@ -113,7 +186,8 @@ Page({
           averageLabel: 'New',
           count: 0,
           countLabel: '0 reviews'
-        }
+        },
+        viewTrackedId: ''
       })
       return
     }
@@ -129,10 +203,18 @@ Page({
       this.setData({
         navTitle: 'Listing unavailable',
         listing: null,
+        isOwnListing: false,
+        showOwnerAnalytics: false,
+        ownerListingAnalytics: null,
         blockedByModeration: true,
         notFound: false,
         hiddenNotice: '',
         soldNotice: '',
+        sellerMemberLabel: '',
+        listingPublishedLabel: '',
+        sellerTrustLabel: '',
+        sellerStatusLabel: 'New seller',
+        sellerStatusClass: 'seller-rating__value--new',
         conditionChipClass: '',
         hiddenByUser: false,
         blockedSeller: false,
@@ -141,7 +223,8 @@ Page({
           averageLabel: 'New',
           count: 0,
           countLabel: '0 reviews'
-        }
+        },
+        viewTrackedId: ''
       })
       return
     }
@@ -150,10 +233,45 @@ Page({
       title: listing.title || 'Listing'
     })
 
+    const sellerKey = market.getSellerKey(listing)
+    const ownSellerProfile = market.getOwnSellerProfile()
+    const isOwnListing = Boolean(ownSellerProfile.sellerKey && ownSellerProfile.sellerKey === sellerKey)
+    const sellerListingsCount = market.getListingsBySellerKey(sellerKey, {
+      includeResolved: true,
+      includeHiddenByUser: true,
+      includeSold: true
+    }).length
+    const sellerStatusLabel = listing.isSellerPro
+      ? 'Pro seller'
+      : sellerListingsCount >= 3
+        ? 'Seller'
+        : 'New seller'
+    const sellerStatusClass = listing.isSellerPro
+      ? 'seller-rating__value--pro'
+      : sellerListingsCount >= 3
+        ? 'seller-rating__value--seller'
+        : 'seller-rating__value--new'
+    const sellerSoldCount = market.getListingsBySellerKey(sellerKey, {
+      includeResolved: true,
+      includeHiddenByUser: true,
+      includeSold: true
+    }).filter((item) => Boolean(item && item.isSold && item.soldOnUniMarket)).length
+    const sellerMemberLabel = profileStore.formatMemberSince(
+      listing && listing.seller ? listing.seller.joinedAt || '' : ''
+    )
+    const listingPublishedLabel = formatListingPublishedAt(listing.createdAt)
+    const sellerTrustLabel = formatSellerTrustLabel(sellerSoldCount, sellerListingsCount)
+    const ownerListingAnalytics = isOwnListing && listing.isSellerPro
+      ? market.getListingAnalytics(listing.id)
+      : null
+
     this.setData({
       navTitle: listing.title || 'Listing',
       listing,
       isSaved: savedStore.isListingSaved(id),
+      isOwnListing,
+      showOwnerAnalytics: Boolean(ownerListingAnalytics),
+      ownerListingAnalytics,
       sellerInitial: listing.seller && listing.seller.name ? listing.seller.name.slice(0, 1) : 'U',
       currentImage: 1,
       hasReported: reportsStore.hasReportedListing(id),
@@ -162,6 +280,11 @@ Page({
       hiddenByUser: false,
       blockedSeller: false,
       reviewSummary: reviewsStore.getSellerReviewSummary(market.getSellerKey(listing)),
+      sellerMemberLabel,
+      listingPublishedLabel,
+      sellerTrustLabel,
+      sellerStatusLabel,
+      sellerStatusClass,
       conditionChipClass: this.getConditionChipClass(listing.condition),
       hiddenNotice: listing.isHiddenByModeration
         ? listing.isCustom
@@ -174,6 +297,18 @@ Page({
           : 'This item was sold outside UniMarket.'
         : ''
     })
+
+    const trackedId = String(this.data.viewTrackedId || '')
+    const listingId = String(listing.id || '')
+    if (listingId && trackedId !== listingId) {
+      this.setData({
+        viewTrackedId: listingId
+      })
+
+      if (!isOwnListing) {
+        market.recordListingView(listingId)
+      }
+    }
   },
 
   getConditionChipClass(condition) {
@@ -241,9 +376,15 @@ Page({
     if (!this.data.listing) return
 
     const result = savedStore.toggleSavedListing(this.data.id)
-    this.setData({
+    const nextState = {
       isSaved: result.isSaved
-    })
+    }
+
+    if (this.data.showOwnerAnalytics) {
+      nextState.ownerListingAnalytics = market.getListingAnalytics(this.data.id)
+    }
+
+    this.setData(nextState)
     this.playSaveFeedback(result.isSaved)
   },
 

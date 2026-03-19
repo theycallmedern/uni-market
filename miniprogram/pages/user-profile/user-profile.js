@@ -4,6 +4,7 @@ const profileStore = require('../../utils/profile')
 const reportsStore = require('../../utils/reports')
 const visibilityStore = require('../../utils/visibility')
 const reviewsStore = require('../../utils/reviews')
+const storage = require('../../utils/storage')
 const feedback = require('../../utils/ui-feedback')
 const uiText = require('../../constants/messages')
 
@@ -30,6 +31,12 @@ const EMPTY_REVIEW_SUMMARY = {
   countLabel: '0 reviews',
   recentReviews: []
 }
+const INITIAL_THEME = storage.getThemeData()
+
+function formatMemberSinceChip(joinedAt) {
+  const fullLabel = profileStore.formatMemberSince(joinedAt)
+  return fullLabel ? fullLabel.replace('On UniMarket since ', 'Since ') : ''
+}
 
 function buildUnavailableState({ navTitle, blockedSeller = false, notFound = false } = {}) {
   return {
@@ -39,13 +46,14 @@ function buildUnavailableState({ navTitle, blockedSeller = false, notFound = fal
     listings: [],
     soldCount: 0,
     avatarInitial: 'U',
-    memberSinceLabel: '',
+    memberSinceChipLabel: '',
     isEditingProfile: false,
     reviewSummary: { ...EMPTY_REVIEW_SUMMARY },
     canLeaveReview: false,
     hasReviewedCurrentListing: false,
     hasReported: false,
     isUniversityPublic: false,
+    trackedProfileViewKey: '',
     notFound,
     blockedSeller
   }
@@ -53,6 +61,9 @@ function buildUnavailableState({ navTitle, blockedSeller = false, notFound = fal
 
 Page({
   data: {
+    themeMode: INITIAL_THEME.themeMode,
+    themeClass: INITIAL_THEME.themeClass,
+    isDarkTheme: INITIAL_THEME.isDarkTheme,
     navTitle: 'Seller profile',
     isOwnProfile: false,
     isEditingProfile: false,
@@ -61,10 +72,11 @@ Page({
     listings: [],
     soldCount: 0,
     avatarInitial: 'U',
-    memberSinceLabel: '',
+    memberSinceChipLabel: '',
     profileDraft: profileStore.getProfile(),
     universityOptions: universitiesStore.HANGZHOU_UNIVERSITIES,
     universityIndex: universitiesStore.getUniversityIndex(profileStore.getProfile().campus, universitiesStore.HANGZHOU_UNIVERSITIES),
+    universitySheetOpen: false,
     reviewSummary: { ...EMPTY_REVIEW_SUMMARY },
     canLeaveReview: false,
     hasReviewedCurrentListing: false,
@@ -74,6 +86,7 @@ Page({
     viewerImages: [],
     viewerIndex: 0,
     isUniversityPublic: false,
+    trackedProfileViewKey: '',
     notFound: false,
     blockedSeller: false
   },
@@ -88,9 +101,15 @@ Page({
   },
 
   onShow() {
-    if (this.data.listingId || this.data.isOwnProfile) {
-      this.refreshPage()
-    }
+    this.refreshTheme(() => {
+      if (this.data.listingId || this.data.isOwnProfile) {
+        this.refreshPage()
+      }
+    })
+  },
+
+  refreshTheme(callback) {
+    this.setData(storage.getThemeData(), callback)
   },
 
   refreshPage() {
@@ -112,12 +131,13 @@ Page({
       listings: sellerProfile.listings || [],
       soldCount: Number(sellerProfile.soldCount || 0),
       avatarInitial: profileStore.getProfileInitial(profile),
-      memberSinceLabel: profileStore.formatMemberSince(sellerProfile.joinedAt),
+      memberSinceChipLabel: formatMemberSinceChip(sellerProfile.joinedAt),
       reviewSummary,
       canLeaveReview: false,
       hasReviewedCurrentListing: false,
       hasReported: false,
       isUniversityPublic: !universitiesStore.isUniversityPrivateValue(sellerProfile.campus || ''),
+      trackedProfileViewKey: '',
       notFound: false,
       blockedSeller: false,
       universityIndex: universitiesStore.getUniversityIndex(profile.campus, this.data.universityOptions)
@@ -166,7 +186,7 @@ Page({
       listings: sellerProfile.listings || [],
       soldCount: Number(sellerProfile.soldCount || 0),
       avatarInitial: String(sellerProfile.name || 'U').slice(0, 1).toUpperCase(),
-      memberSinceLabel: profileStore.formatMemberSince(sellerProfile.joinedAt),
+      memberSinceChipLabel: formatMemberSinceChip(sellerProfile.joinedAt),
       reviewSummary: reviewsStore.getSellerReviewSummary(sellerProfile.sellerKey),
       canLeaveReview: reviewsStore.canReviewListing(this.data.listingId),
       hasReviewedCurrentListing: reviewsStore.hasReviewedListing(this.data.listingId),
@@ -174,6 +194,16 @@ Page({
       isUniversityPublic: !universitiesStore.isUniversityPrivateValue(sellerProfile.campus || ''),
       notFound: false,
       blockedSeller: false
+    }, () => {
+      const trackedProfileViewKey = String(this.data.trackedProfileViewKey || '')
+      const sellerKey = String(sellerProfile.sellerKey || '')
+
+      if (sellerKey && trackedProfileViewKey !== sellerKey) {
+        market.recordSellerProfileView(sellerKey)
+        this.setData({
+          trackedProfileViewKey: sellerKey
+        })
+      }
     })
   },
 
@@ -269,14 +299,16 @@ Page({
     this.setData({
       isEditingProfile: true,
       profileDraft: { ...profile },
-      universityIndex: universitiesStore.getUniversityIndex(profile.campus, this.data.universityOptions)
+      universityIndex: universitiesStore.getUniversityIndex(profile.campus, this.data.universityOptions),
+      universitySheetOpen: false
     })
   },
 
   cancelEditProfile() {
     this.setData({
       isEditingProfile: false,
-      profileDraft: { ...profileStore.getProfile() }
+      profileDraft: { ...profileStore.getProfile() },
+      universitySheetOpen: false
     })
   },
 
@@ -286,25 +318,56 @@ Page({
     let value = rawValue
 
     if (field === 'name') {
-      value = profileStore.sanitizeProfileName(rawValue)
+      return
     } else if (field === 'wechat') {
       value = profileStore.sanitizeWechatId(rawValue)
     } else if (field === 'bio') {
       value = profileStore.sanitizeProfileBio(rawValue)
     }
 
+    const nextDraft = {
+      ...(this.data.profileDraft || {})
+    }
+    nextDraft[field] = value
+
+    if (field === 'wechat') {
+      const normalizedDraft = profileStore.normalizeProfile(nextDraft)
+      nextDraft.name = normalizedDraft.name
+    }
+
     this.setData({
-      [`profileDraft.${field}`]: value
+      profileDraft: nextDraft
     })
   },
 
+  openUniversitySheet() {
+    this.setData({
+      universitySheetOpen: true
+    })
+  },
+
+  closeUniversitySheet() {
+    this.setData({
+      universitySheetOpen: false
+    })
+  },
+
+  stopUniversitySheetTap() {},
+
   onUniversityChange(e) {
-    const universityIndex = Number(e.detail.value)
+    const universityIndex = Number(
+      e && e.detail && typeof e.detail.value !== 'undefined'
+        ? e.detail.value
+        : e && e.currentTarget && e.currentTarget.dataset
+          ? e.currentTarget.dataset.index
+          : 0
+    )
     const universityOptions = this.data.universityOptions || []
     const campus = universityOptions[universityIndex] || universityOptions[0] || ''
 
     this.setData({
       universityIndex,
+      universitySheetOpen: false,
       'profileDraft.campus': campus
     })
   },
@@ -371,17 +434,13 @@ Page({
   },
 
   saveProfile() {
+    const previousProfile = profileStore.getProfile()
     const universityOptions = this.data.universityOptions || []
     const selectedCampus = universityOptions[this.data.universityIndex] || universityOptions[0] || ''
     const normalizedProfile = profileStore.normalizeProfile({
       ...(this.data.profileDraft || {}),
       campus: selectedCampus
     })
-
-    if (normalizedProfile.name.length < 2) {
-      feedback.showNeutralToast(uiText.USER_PROFILE.NAME_MIN)
-      return
-    }
 
     if (!normalizedProfile.campus) {
       feedback.showNeutralToast(uiText.USER_PROFILE.UNIVERSITY_REQUIRED)
@@ -393,9 +452,12 @@ Page({
       return
     }
 
-    profileStore.saveProfile(normalizedProfile)
+    const savedProfile = profileStore.saveProfile(normalizedProfile)
+    market.syncCurrentProfileIntoListings(previousProfile, savedProfile)
+    market.preserveCurrentProfileSellerPro(previousProfile, savedProfile)
     this.setData({
-      isEditingProfile: false
+      isEditingProfile: false,
+      universitySheetOpen: false
     })
     this.refreshOwnProfile()
 

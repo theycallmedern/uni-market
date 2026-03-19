@@ -1,4 +1,4 @@
-function syncTabBar(page, selected) {
+function syncTabBar(page, selected, extraData = {}) {
   if (!page || typeof page.getTabBar !== 'function') {
     return
   }
@@ -8,7 +8,10 @@ function syncTabBar(page, selected) {
     return
   }
 
-  tabBar.setData({ selected })
+  tabBar.setData({
+    selected,
+    themeMode: extraData.themeMode || 'light'
+  })
 }
 
 module.exports = {

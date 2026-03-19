@@ -1,5 +1,5 @@
-<view class="page-shell create-page">
-  <app-header title="{{navTitle}}"></app-header>
+<view class="page-shell create-page {{themeClass}}">
+  <app-header title="{{navTitle}}" theme="{{themeMode}}"></app-header>
   <scroll-view
     class="create-scroll"
     scroll-y
@@ -19,7 +19,7 @@
       <view class="form-card">
         <view class="card-head">
           <text class="card-title">Photos</text>
-          <text class="card-hint">Up to 5 · first is cover</text>
+          <text class="card-hint">Up to {{photoLimit}} · first is cover</text>
         </view>
         <text class="card-subhint">Tap a photo to preview. Use arrows to reorder.</text>
 
@@ -76,6 +76,8 @@
           <input
             class="field-input"
             placeholder="Room near campus, iPhone 14, bike..."
+            placeholder-style="{{isDarkTheme ? 'color: #8e99a3;' : ''}}"
+            style="{{isDarkTheme ? 'color: #f2f5f7;' : ''}}"
             value="{{form.title}}"
             maxlength="70"
             data-field="title"
@@ -89,6 +91,8 @@
             <input
               class="field-input"
               placeholder="2800"
+              placeholder-style="{{isDarkTheme ? 'color: #8e99a3;' : ''}}"
+              style="{{isDarkTheme ? 'color: #f2f5f7;' : ''}}"
               value="{{form.price}}"
               type="number"
               maxlength="6"
@@ -110,32 +114,32 @@
           <input
             class="field-input"
             placeholder="Xixi Campus, Yuhangtang Rd 866, Building 3"
+            placeholder-style="{{isDarkTheme ? 'color: #8e99a3;' : ''}}"
+            style="{{isDarkTheme ? 'color: #f2f5f7;' : ''}}"
             value="{{form.address}}"
             maxlength="120"
             data-field="address"
             bindinput="onFieldInput"
+            bindblur="onAddressBlur"
           />
+          <text wx:if="{{addressHintVisible}}" class="field-helper">{{addressHintText}}</text>
         </view>
 
         <view class="field-row">
           <view class="field field-half">
             <text class="field-label">Category</text>
-            <picker mode="selector" range="{{categories}}" range-key="name" value="{{categoryIndex}}" bindchange="onCategoryChange">
-              <view class="picker-field">
-                <text>{{categories[categoryIndex].name}}</text>
-                <text class="picker-arrow">⌄</text>
-              </view>
-            </picker>
+            <view class="picker-field" data-field="category" bindtap="openCreateSheet">
+              <text>{{categories[categoryIndex].name}}</text>
+              <text class="picker-arrow">⌄</text>
+            </view>
           </view>
 
           <view class="field field-half">
             <text class="field-label">Subcategory</text>
-            <picker mode="selector" range="{{subcategoryOptions}}" value="{{subcategoryIndex}}" bindchange="onSubcategoryChange">
-              <view class="picker-field">
-                <text>{{subcategoryOptions[subcategoryIndex]}}</text>
-                <text class="picker-arrow">⌄</text>
-              </view>
-            </picker>
+            <view class="picker-field" data-field="subcategory" bindtap="openCreateSheet">
+              <text>{{subcategoryOptions[subcategoryIndex]}}</text>
+              <text class="picker-arrow">⌄</text>
+            </view>
           </view>
         </view>
 
@@ -144,6 +148,8 @@
           <input
             class="field-input"
             placeholder="Type your own subcategory"
+            placeholder-style="{{isDarkTheme ? 'color: #8e99a3;' : ''}}"
+            style="{{isDarkTheme ? 'color: #f2f5f7;' : ''}}"
             value="{{customSubcategory}}"
             maxlength="40"
             bindinput="onCustomSubcategoryInput"
@@ -152,12 +158,10 @@
 
         <view wx:if="{{requiresCondition}}" class="field">
           <text class="field-label">Condition</text>
-          <picker mode="selector" range="{{conditionOptions}}" value="{{conditionIndex}}" bindchange="onConditionChange">
-            <view class="picker-field">
-              <text>{{conditionOptions[conditionIndex]}}</text>
-              <text class="picker-arrow">⌄</text>
-            </view>
-          </picker>
+          <view class="picker-field" data-field="condition" bindtap="openCreateSheet">
+            <text>{{conditionOptions[conditionIndex]}}</text>
+            <text class="picker-arrow">⌄</text>
+          </view>
         </view>
       </view>
 
@@ -169,12 +173,10 @@
 
         <view class="field">
           <text class="field-label">University</text>
-          <picker mode="selector" range="{{universityOptions}}" value="{{universityIndex}}" bindchange="onUniversityChange">
-            <view class="picker-field">
-              <text>{{universityOptions[universityIndex]}}</text>
-              <text class="picker-arrow">⌄</text>
-            </view>
-          </picker>
+          <view class="picker-field" data-field="university" bindtap="openCreateSheet">
+            <text>{{universityOptions[universityIndex]}}</text>
+            <text class="picker-arrow">⌄</text>
+          </view>
         </view>
 
         <view class="field">
@@ -182,6 +184,8 @@
           <input
             class="field-input"
             placeholder="wechatid (6-20 chars)"
+            placeholder-style="{{isDarkTheme ? 'color: #8e99a3;' : ''}}"
+            style="{{isDarkTheme ? 'color: #f2f5f7;' : ''}}"
             value="{{form.wechat}}"
             maxlength="20"
             data-field="wechat"
@@ -199,6 +203,8 @@
         <textarea
           class="description-input"
           placeholder="Describe the item, service, or room in a way another student can trust quickly."
+          placeholder-style="{{isDarkTheme ? 'color: #8e99a3;' : ''}}"
+          style="{{isDarkTheme ? 'color: #f2f5f7;' : ''}}"
           value="{{form.description}}"
           data-field="description"
           bindinput="onFieldInput"
@@ -208,6 +214,28 @@
 
       <view class="publish-inline">
         <button class="publish-button" loading="{{submitting}}" bindtap="submitListing">{{submitLabel}}</button>
+      </view>
+
+      <view wx:if="{{createSheetOpen}}" class="create-sheet-overlay" bindtap="closeCreateSheet">
+        <view class="create-sheet" catchtap="stopCreateSheetTap">
+          <view class="create-sheet__handle"></view>
+          <view class="create-sheet__head">
+            <text class="create-sheet__title">{{createSheetTitle}}</text>
+            <text class="create-sheet__close" bindtap="closeCreateSheet">Cancel</text>
+          </view>
+          <scroll-view class="create-sheet__scroll" scroll-y enhanced show-scrollbar="{{false}}">
+            <view
+              wx:for="{{createSheetOptions}}"
+              wx:key="index"
+              class="create-sheet__option {{createSheetValue === index ? 'create-sheet__option--active' : ''}}"
+              data-index="{{index}}"
+              bindtap="onCreateSheetOptionTap"
+            >
+              <text class="create-sheet__option-label">{{item}}</text>
+              <text wx:if="{{createSheetValue === index}}" class="create-sheet__option-check">✓</text>
+            </view>
+          </scroll-view>
+        </view>
       </view>
     </view>
   </scroll-view>

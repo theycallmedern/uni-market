@@ -1,0 +1,27 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="120" y1="60" x2="1160" y2="660" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F1317"/>
+      <stop offset="1" stop-color="#171D22"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="296" y1="192" x2="982" y2="528" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5B6DFB"/>
+      <stop offset="1" stop-color="#7ED957"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" rx="32" fill="url(#bg)"/>
+  <rect x="120" y="108" width="1040" height="504" rx="28" fill="#11161A" stroke="#263039" stroke-width="2"/>
+  <rect x="172" y="158" width="936" height="64" rx="20" fill="#1A2127"/>
+  <rect x="172" y="264" width="292" height="236" rx="24" fill="#171E23" stroke="#2A353E" stroke-width="2"/>
+  <rect x="494" y="264" width="292" height="236" rx="24" fill="#171E23" stroke="#2A353E" stroke-width="2"/>
+  <rect x="816" y="264" width="292" height="236" rx="24" fill="#171E23" stroke="#2A353E" stroke-width="2"/>
+  <rect x="172" y="544" width="936" height="20" rx="10" fill="#1A2127"/>
+  <circle cx="230" cy="190" r="12" fill="#7ED957"/>
+  <circle cx="270" cy="190" r="12" fill="#5B6DFB"/>
+  <circle cx="310" cy="190" r="12" fill="#FF7A59"/>
+  <rect x="478" y="318" width="324" height="84" rx="42" fill="url(#accent)" opacity="0.16"/>
+  <path d="M615 330L705 382L615 434V330Z" fill="#F3F7FA"/>
+  <text x="640" y="92" text-anchor="middle" fill="#F3F7FA" font-family="Arial, sans-serif" font-size="20" letter-spacing="3">UNIMARKET DEMO</text>
+  <text x="640" y="468" text-anchor="middle" fill="#F3F7FA" font-family="Arial, sans-serif" font-size="48" font-weight="700">Demo GIF Coming Soon</text>
+  <text x="640" y="514" text-anchor="middle" fill="#98A4AE" font-family="Arial, sans-serif" font-size="24">Use this slot for a short publish-to-listing walkthrough capture.</text>
+</svg>

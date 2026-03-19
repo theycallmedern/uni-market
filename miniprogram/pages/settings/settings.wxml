@@ -1,0 +1,112 @@
+<view class="page-shell page-shell--scroll {{themeClass}}">
+  <app-header title="Settings" showBack="{{true}}" theme="{{themeMode}}"></app-header>
+  <scroll-view
+    class="page-scroll"
+    scroll-y
+    enhanced
+    bounces="{{false}}"
+    show-scrollbar="{{false}}"
+  >
+    <view class="settings-page page-scroll__content">
+      <view class="settings-hero">
+        <text class="settings-hero__eyebrow">Settings</text>
+        <text class="settings-hero__title">Manage theme and admin access in one clean place</text>
+        <text class="settings-hero__copy">Start with a real dark mode foundation here, then we can roll it out across the rest of the app.</text>
+      </view>
+
+      <view class="settings-section">
+        <view class="settings-section__head">
+          <text class="settings-section__title">Appearance</text>
+          <text class="settings-section__subtitle">Choose how Profile and Settings should look right now.</text>
+        </view>
+
+        <view class="settings-actions">
+          <view class="settings-theme-note">
+            <view class="settings-theme-note__head">
+              <view class="settings-theme-note__label-wrap">
+                <view class="settings-theme-note__dot"></view>
+                <text class="settings-theme-note__label">Current theme</text>
+              </view>
+              <view class="settings-theme-note__status settings-action__meta {{isDarkTheme ? 'settings-action__meta--purple' : 'settings-action__meta--green'}}">
+                <text class="settings-action__meta-label">{{isDarkTheme ? 'Dark' : 'Light'}}</text>
+              </view>
+            </view>
+            <text class="settings-theme-note__copy">Saved on this device and already applied to Profile, Settings, the header, and the profile tab bar.</text>
+          </view>
+
+          <view class="settings-action {{!isDarkTheme ? 'settings-action--selected' : ''}}" bindtap="setLightTheme">
+            <view class="settings-action__row">
+              <text class="settings-action__title">Light mode</text>
+              <view class="settings-action__meta {{!isDarkTheme ? 'settings-action__meta--green' : ''}}">
+                <text class="settings-action__meta-label">{{!isDarkTheme ? 'Current' : 'Switch'}}</text>
+              </view>
+            </view>
+            <text class="settings-action__copy">Keep the bright neutral palette that the app already uses today.</text>
+          </view>
+
+          <view class="settings-action {{isDarkTheme ? 'settings-action--selected settings-action--selected-dark' : ''}}" bindtap="setDarkTheme">
+            <view class="settings-action__row">
+              <text class="settings-action__title">Dark mode</text>
+              <view class="settings-action__meta {{isDarkTheme ? 'settings-action__meta--purple' : ''}}">
+                <text class="settings-action__meta-label">{{isDarkTheme ? 'Current' : 'Switch'}}</text>
+              </view>
+            </view>
+            <text class="settings-action__copy">Use deeper surfaces and lighter text for a lower-glare interface at night.</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="settings-section">
+        <view class="settings-section__head">
+          <text class="settings-section__title">Admin</text>
+          <text class="settings-section__subtitle">{{isAdmin ? 'Admin mode is active on this device.' : 'Admin mode is currently locked on this device.'}}</text>
+        </view>
+
+        <view class="settings-actions">
+          <view class="settings-action">
+            <view class="settings-action__row">
+              <text class="settings-action__title">Admin access</text>
+              <view class="settings-action__meta {{isAdmin ? 'settings-action__meta--green' : ''}}">
+                <text class="settings-action__meta-label">{{isAdmin ? 'Active' : 'Locked'}}</text>
+              </view>
+            </view>
+            <text class="settings-action__copy">Use admin mode to open the moderation panel and manage marketplace reports and Seller Pro requests.</text>
+          </view>
+
+          <block wx:if="{{isAdmin}}">
+            <view class="settings-action" bindtap="goToModeration">
+              <view class="settings-action__row">
+                <text class="settings-action__title">Open admin panel</text>
+                <view class="settings-action__meta">
+                  <text class="settings-action__meta-label">Open</text>
+                </view>
+              </view>
+              <text class="settings-action__copy">Go to moderation tools for reports, listings, and Seller Pro requests.</text>
+            </view>
+            <view class="settings-action settings-action--danger" bindtap="disableAdmin">
+              <view class="settings-action__row">
+                <text class="settings-action__title">Exit admin</text>
+                <view class="settings-action__meta settings-action__meta--danger">
+                  <text class="settings-action__meta-label">Disable</text>
+                </view>
+              </view>
+              <text class="settings-action__copy">Turn off admin mode on this device and hide moderation access.</text>
+            </view>
+          </block>
+
+          <block wx:else>
+            <view class="settings-action" bindtap="openAdminGate">
+              <view class="settings-action__row">
+                <text class="settings-action__title">Unlock admin access</text>
+                <view class="settings-action__meta">
+                  <text class="settings-action__meta-label">Enter</text>
+                </view>
+              </view>
+              <text class="settings-action__copy">Enter the admin code to unlock moderation tools on this device.</text>
+            </view>
+          </block>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

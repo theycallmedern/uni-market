@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'savedListingIds'
+const listingStats = require('./listing-stats')
 
 function getSavedListingIds() {
   return wx.getStorageSync(STORAGE_KEY) || []
@@ -21,6 +22,7 @@ function toggleSavedListing(id) {
     : current.concat(normalizedId)
 
   setSavedListingIds(next)
+  listingStats.updateSaveState(normalizedId, !exists)
 
   return {
     isSaved: !exists,

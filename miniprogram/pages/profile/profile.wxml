@@ -1,5 +1,5 @@
-<view class="page-shell page-shell--scroll">
-  <app-header title="Profile"></app-header>
+<view class="page-shell page-shell--scroll {{themeClass}}">
+  <app-header title="Profile" theme="{{themeMode}}"></app-header>
   <scroll-view
     class="page-scroll"
     scroll-y
@@ -16,7 +16,13 @@
           </view>
           <view class="account-copy">
             <text class="account-eyebrow">Account hub</text>
-            <text class="account-name">{{profile.name}}</text>
+            <view class="account-name-row">
+              <text class="account-name">{{profile.name}}</text>
+              <view wx:if="{{isSellerPro}}" class="account-pro-badge">
+                <text class="account-pro-badge__icon">✦</text>
+                <text class="account-pro-badge__text">Pro active</text>
+              </view>
+            </view>
           </view>
         </view>
 
@@ -49,17 +55,35 @@
       <text class="account-section__subtitle">Open the exact version buyers see, then edit it from there</text>
     </view>
 
-    <view class="account-actions">
-      <view class="account-action account-action--dark" bindtap="openOwnPublicProfile">
-        <text class="account-action__title">Open my public profile</text>
-        <text class="account-action__copy">Preview your profile exactly as other students see it and edit it there.</text>
+      <view class="account-actions">
+        <view class="account-action account-action--dark" bindtap="openOwnPublicProfile">
+          <text class="account-action__title">Open my public profile</text>
+          <text class="account-action__copy">Preview your profile exactly as other students see it and edit it there.</text>
+        </view>
+
+        <view class="account-action" bindtap="goToListings">
+          <text class="account-action__title">Open my listings</text>
+          <text class="account-action__copy">Check what is currently live under your seller profile.</text>
+        </view>
+
+        <view class="account-action" bindtap="openSettings">
+          <view class="account-action__row">
+            <text class="account-action__title">Settings</text>
+            <text class="account-action__meta">Open</text>
+          </view>
+          <text class="account-action__copy">Admin access and extra account controls live on a separate page.</text>
+        </view>
+
+        <view class="account-action-pro-shell" bindtap="openSellerProOffer">
+          <view class="account-action account-action--pro">
+            <text class="account-action__title">✦ Upgrade to Seller Pro</text>
+            <text class="account-action__copy">Your profile stands out more, gets better reach, and looks more trusted to buyers.</text>
+            <text class="account-action__copy">Use advanced stats to see what performs best and publish smarter listings over time.</text>
+            <text class="account-action__copy">79 RMB / month · 10 photos · custom badge · priority support.</text>
+          </view>
+        </view>
       </view>
 
-      <view class="account-action" bindtap="goToListings">
-        <text class="account-action__title">Open my listings</text>
-        <text class="account-action__copy">Check what is currently live under your seller profile.</text>
-      </view>
-    </view>
   </view>
 
   <view class="account-section">
@@ -69,6 +93,7 @@
     </view>
 
     <view class="account-info-card">
+      <view class="account-info-card__glow"></view>
       <view class="account-info-card__brand">
         <view class="account-info-card__logo-wrap">
           <image class="account-info-card__logo" src="../../assets/brand/unimarket-logo.png" mode="aspectFit" />
@@ -77,28 +102,19 @@
           <text class="account-info-card__brand-name">UniMarket</text>
           <text class="account-info-card__brand-note">Hangzhou student marketplace</text>
         </view>
+        <view class="account-info-card__status">Student-first</view>
       </view>
-      <text class="account-info-card__title">Student-first marketplace</text>
-      <text class="account-info-card__copy">UniMarket is focused on student housing, resale items, transport, and lightweight services inside a familiar WeChat flow.</text>
-    </view>
 
-    <view class="account-tags">
-      <text class="account-tag">WeChat Mini Program</text>
-      <text class="account-tag">Hangzhou MVP</text>
-      <text class="account-tag">Local-first demo data</text>
+      <text class="account-info-card__title">Built for student housing, resales, transport, and quick local help</text>
+      <text class="account-info-card__copy">UniMarket keeps the flow simple inside WeChat so students can browse faster, post quicker, and connect with more trust inside one familiar campus marketplace.</text>
+
+      <view class="account-info-card__highlights">
+        <text class="account-info-card__highlight account-info-card__highlight--mint">WeChat Mini Program</text>
+        <text class="account-info-card__highlight account-info-card__highlight--sky">Hangzhou MVP</text>
+        <text class="account-info-card__highlight account-info-card__highlight--sand">Local-first demo data</text>
+      </view>
     </view>
   </view>
-
-      <view class="account-admin">
-        <text class="account-admin__label">Admin</text>
-        <block wx:if="{{isAdmin}}">
-          <button class="account-admin__button account-admin__button--alert" bindtap="goToModeration">Open moderation</button>
-          <button class="account-admin__button account-admin__button--ghost" bindtap="disableAdmin">Exit admin</button>
-        </block>
-        <block wx:else>
-          <button class="account-admin__button account-admin__button--primary" bindtap="openAdminGate">Admin access</button>
-        </block>
-      </view>
     </view>
   </scroll-view>
 </view>

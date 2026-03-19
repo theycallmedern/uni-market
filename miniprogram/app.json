@@ -7,6 +7,7 @@
     "pages/create/create",
     "pages/messages/messages",
     "pages/profile/profile",
+    "pages/settings/settings",
     "pages/moderation/moderation",
     "pages/listing/listing",
     "pages/user-profile/user-profile"
@@ -21,7 +22,8 @@
   },
   "usingComponents": {
     "app-header": "/components/app-header/index",
-    "photo-viewer": "/components/photo-viewer/index"
+    "photo-viewer": "/components/photo-viewer/index",
+    "selector-sheet": "/components/selector-sheet/index"
   },
   "tabBar": {
     "color": "#a8a8a8",
