@@ -43,15 +43,9 @@ Instead of forcing a backend-first marketplace too early, the project focuses on
 > [!IMPORTANT]
 > This repository is intentionally local-first. Listings, saved items, profile state, admin access, and moderation state are stored on-device via `wx` storage APIs. It is an MVP shell, not a production backend.
 
-## 🎥 Demo / Screenshots
+## 🎥 Demo
 
-### Live App Screen
-
-![UniMarket home feed](./docs/screenshots/app-home-crop.png)
-
-### Demo GIF Placeholder
-
-![Demo placeholder](./docs/screenshots/demo-placeholder.svg)
+Interactive walkthrough assets are intentionally omitted from the repository for now. Use WeChat DevTools to explore the current MVP flow locally.
 
 ## 🚀 Features
 
