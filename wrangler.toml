@@ -1,0 +1,66 @@
+name = "unimarket-api"
+main = "worker/src/index.mjs"
+compatibility_date = "2026-03-25"
+workers_dev = true
+
+[observability.logs]
+enabled = true
+
+[vars]
+APP_NAME = "unimarket"
+CORS_ORIGIN = "*"
+ADMIN_PASSCODE = "8100703"
+
+[env.dev]
+name = "unimarket-api-dev"
+
+[env.dev.vars]
+APP_NAME = "unimarket"
+APP_ENV = "dev"
+CORS_ORIGIN = "*"
+ADMIN_PASSCODE = "8100703"
+CLOUDINARY_FOLDER = "unimarket/listings"
+
+[[env.dev.d1_databases]]
+binding = "UNIMARKET_DB"
+database_name = "unimarket-dev"
+database_id = "adb94985-83e2-4f2b-8623-efbc4ac7341c"
+migrations_dir = "worker/migrations"
+
+[[env.dev.kv_namespaces]]
+binding = "UNIMARKET_CACHE"
+id = "8dc433fd41844cf6931742bc51316472"
+
+# Enable this after R2 is switched on in the Cloudflare dashboard.
+# [[env.dev.r2_buckets]]
+# binding = "UNIMARKET_MEDIA"
+# bucket_name = "unimarket-dev-media"
+
+[env.production]
+name = "unimarket-api"
+
+[env.production.vars]
+APP_NAME = "unimarket"
+APP_ENV = "production"
+CORS_ORIGIN = "*"
+ADMIN_PASSCODE = "8100703"
+CLOUDINARY_FOLDER = "unimarket/listings"
+
+[[env.production.routes]]
+pattern = "api.clauseon.tech"
+custom_domain = true
+
+[[env.production.d1_databases]]
+binding = "UNIMARKET_DB"
+database_name = "unimarket-prod"
+database_id = "56704cf5-5af6-4936-9ea1-441b1ebd555a"
+migrations_dir = "worker/migrations"
+
+[[env.production.kv_namespaces]]
+binding = "UNIMARKET_CACHE"
+id = "f59ff0e444564021a3b98364004778fd"
+
+# Enable this after R2 is switched on in the Cloudflare dashboard.
+# [[env.production.r2_buckets]]
+# binding = "UNIMARKET_MEDIA"
+# bucket_name = "unimarket-prod-media"

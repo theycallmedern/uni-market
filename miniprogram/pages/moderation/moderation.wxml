@@ -12,9 +12,9 @@
         <view class="moderation-hero__copy">
           <text class="moderation-hero__title">Moderation</text>
           <text class="moderation-hero__meta">
-            {{summary.pending}} report pending · {{pendingPromotionCount}} promotion pending
+            {{summary.pending}} report pending · {{pendingPromotionCount}} promotion pending · {{pendingSellerProCount}} Seller Pro pending
           </text>
-          <text class="moderation-hero__note">Review reports and promotion requests, then approve or reject.</text>
+          <text class="moderation-hero__note">Review reports, promotion requests, and Seller Pro requests, then approve or reject.</text>
         </view>
       </view>
 
@@ -55,9 +55,33 @@
         </block>
       </view>
 
-      <view wx:if="{{isAdmin && !activeReports.length && !archivedReports.length && !promotionRequests.length && !sellerProSubscriptions.length}}" class="moderation-empty">
+      <view wx:if="{{isAdmin && sellerProRequests.length}}" class="moderation-list">
+        <text class="moderation-section-title">Seller Pro requests</text>
+        <block wx:for="{{sellerProRequests}}" wx:key="id">
+          <view class="report-card">
+            <view class="report-card__head">
+              <view class="report-card__head-copy">
+                <text class="report-card__title">{{item.nickname || item.wechat || 'Seller Pro request'}}</text>
+                <text class="report-card__type">Seller Pro</text>
+              </view>
+              <text class="report-status report-status--pending">Pending</text>
+            </view>
+
+            <text wx:if="{{item.wechat}}" class="report-card__meta">WeChat: {{item.wechat}}</text>
+            <text wx:if="{{item.sellerKey}}" class="report-card__meta">Seller key: {{item.sellerKey}}</text>
+            <text class="report-card__time">{{item.createdLabel}}</text>
+
+            <view class="report-card__actions">
+              <button class="report-action report-action--approve" data-id="{{item.id}}" bindtap="approveSellerProRequest">Approve</button>
+              <button class="report-action report-action--reject" data-id="{{item.id}}" bindtap="rejectSellerProRequest">Reject</button>
+            </view>
+          </view>
+        </block>
+      </view>
+
+      <view wx:if="{{isAdmin && !activeReports.length && !archivedReports.length && !promotionRequests.length && !sellerProRequests.length && !sellerProSubscriptions.length}}" class="moderation-empty">
         <text class="moderation-empty__title">No reports yet</text>
-        <text class="moderation-empty__copy">Reports and promotion requests will appear here.</text>
+        <text class="moderation-empty__copy">Reports, promotion requests, and Seller Pro requests will appear here.</text>
       </view>
 
       <view wx:if="{{isAdmin && promotionRequests.length}}" class="moderation-list">
@@ -152,3 +176,5 @@
     </view>
   </scroll-view>
 </view>
+<feedback-modal id="feedback-modal" themeMode="{{themeMode}}"></feedback-modal>
+<feedback-action-sheet id="feedback-action-sheet" themeMode="{{themeMode}}"></feedback-action-sheet>

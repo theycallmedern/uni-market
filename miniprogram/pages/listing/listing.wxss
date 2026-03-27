@@ -36,6 +36,10 @@
   background: #2f7d32;
 }
 
+.listing-status-badge--archived {
+  background: #516170;
+}
+
 .listing-status-card--sold .listing-status-copy {
   color: #2f6c31;
 }
@@ -457,6 +461,11 @@
   color: #6a46b3;
 }
 
+.seller-rating__value--founder {
+  background: linear-gradient(135deg, #efe5ff, #d9c4ff);
+  color: #5f3a9a;
+}
+
 .seller-rating__count {
   font-size: 22rpx;
   color: #7b7b7b;
@@ -853,19 +862,37 @@
 }
 
 .listing-empty-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  width: 100%;
   margin-top: 20rpx;
   height: 92rpx;
   border-radius: 28rpx;
-  background: #ffffff;
-  color: #2d2d2d;
-  border: 1rpx solid rgba(17, 17, 17, 0.08);
+  padding: 0 28rpx;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #11161b, #1d232a);
+  color: #f8fbff;
+  border: 1rpx solid rgba(17, 17, 17, 0.02);
   font-size: 28rpx;
-  line-height: 92rpx;
+  line-height: 1;
   font-weight: 700;
+  box-shadow: 0 18rpx 34rpx rgba(17, 17, 17, 0.12);
 }
 
 .listing-empty-button::after {
   border: 0;
+}
+
+.listing-empty-button__icon {
+  font-size: 30rpx;
+  line-height: 1;
+  opacity: 0.92;
+}
+
+.listing-empty-button__label {
+  line-height: 1;
 }
 
 @keyframes feedback-pop {
@@ -887,12 +914,18 @@
 .theme-dark .seller-card,
 .theme-dark .listing-empty-card,
 .theme-dark .action-button--ghost,
-.theme-dark .action-button--primary,
-.theme-dark .listing-empty-button {
+.theme-dark .action-button--primary {
   background: #171b1f;
   color: #f2f5f7;
   border-color: rgba(255, 255, 255, 0.05);
   box-shadow: 0 16rpx 30rpx rgba(0, 0, 0, 0.22);
+}
+
+.theme-dark .listing-empty-button {
+  background: linear-gradient(135deg, #f4f7fb, #dde7f1);
+  color: #12181d;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 18rpx 34rpx rgba(0, 0, 0, 0.26);
 }
 
 .theme-dark .gallery-swiper {
@@ -1002,6 +1035,11 @@
   color: #d2c6f2;
 }
 
+.theme-dark .seller-rating__value--founder {
+  background: rgba(80, 56, 138, 0.34);
+  color: #d9cbff;
+}
+
 .theme-dark .listing-address-card__action {
   background: #20262b;
   color: #bed2f0;
@@ -1083,6 +1121,39 @@
   background: #171b1f;
   color: #f2f5f7;
   box-shadow: 0 10rpx 22rpx rgba(0, 0, 0, 0.22);
+}
+
+.theme-dark .listing-menu-row__icon {
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.03),
+    0 8rpx 18rpx rgba(0, 0, 0, 0.16);
+}
+
+.theme-dark .listing-menu-row__icon--share {
+  background: linear-gradient(180deg, rgba(126, 217, 87, 0.16), rgba(89, 145, 74, 0.12));
+  color: #b7df9e;
+}
+
+.theme-dark .listing-menu-row__icon--copy {
+  background: linear-gradient(180deg, rgba(123, 149, 182, 0.16), rgba(77, 95, 121, 0.14));
+  color: #c4d3e6;
+}
+
+.theme-dark .listing-menu-row__icon--wechat {
+  background: linear-gradient(180deg, rgba(7, 193, 96, 0.16), rgba(6, 133, 68, 0.12));
+  color: #9de0b0;
+}
+
+.theme-dark .listing-menu-row__icon--hide {
+  background: linear-gradient(180deg, rgba(197, 170, 109, 0.16), rgba(122, 100, 57, 0.12));
+  color: #e6d0a0;
+}
+
+.theme-dark .listing-menu-row__icon--report,
+.theme-dark .listing-menu-row__icon--block {
+  background: linear-gradient(180deg, rgba(255, 120, 120, 0.18), rgba(139, 47, 54, 0.16));
+  color: #ffb8be;
 }
 
 .theme-dark .listing-menu-row--danger {

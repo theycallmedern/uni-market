@@ -1,54 +1,242 @@
-const market = require('../../data/market')
+const api = require('../../services/api')
+const listingsRuntime = require('../../services/api/runtime-listings')
+const accountApi = require('../../services/api/runtime-account')
+const sellersRuntime = require('../../services/api/runtime-sellers')
 const universitiesStore = require('../../utils/universities')
 const profileStore = require('../../utils/profile')
-const reportsStore = require('../../utils/reports')
-const visibilityStore = require('../../utils/visibility')
-const reviewsStore = require('../../utils/reviews')
+const reportsStore = require('../../services/api/reports')
+const visibilityStore = require('../../services/api/visibility')
+const reviewsStore = require('../../services/api/reviews')
 const storage = require('../../utils/storage')
+const localeStore = require('../../utils/locale')
 const feedback = require('../../utils/ui-feedback')
 const uiText = require('../../constants/messages')
-
-const PROFILE_REPORT_REASONS = [
-  'Scam or fraud',
-  'Fake identity',
-  'Inappropriate behavior',
-  'Spam',
-  'Other'
-]
-
-const REVIEW_RATING_OPTIONS = [
-  { label: '5 stars - Excellent', value: 5 },
-  { label: '4 stars - Good', value: 4 },
-  { label: '3 stars - Okay', value: 3 },
-  { label: '2 stars - Poor', value: 2 },
-  { label: '1 star - Bad', value: 1 }
-]
-
-const EMPTY_REVIEW_SUMMARY = {
-  average: 0,
-  averageLabel: 'New',
-  count: 0,
-  countLabel: '0 reviews',
-  recentReviews: []
-}
+const copyStore = require('../../constants/copy')
 const INITIAL_THEME = storage.getThemeData()
+const INITIAL_LOCALE = localeStore.getLocale()
+const sellersApi = api.sellers
+const FOUNDER_PROFILE_KEYS = new Set([
+  'seller-mn45iqst-8ug7z6',
+  'miskathaa'
+])
+const FOUNDER_INSTAGRAM_HANDLE = 'miskathaa'
+const FOUNDER_STARTED_AT = '2026-03-16'
 
-function formatMemberSinceChip(joinedAt) {
-  const fullLabel = profileStore.formatMemberSince(joinedAt)
-  return fullLabel ? fullLabel.replace('On UniMarket since ', 'Since ') : ''
+function getProfileReportReasons(locale) {
+  if (locale === 'zh') {
+    return ['诈骗或欺诈', '虚假身份', '不当行为', '垃圾信息', '其他']
+  }
+
+  if (locale === 'ru') {
+    return ['Мошенничество', 'Поддельная личность', 'Неприемлемое поведение', 'Спам', 'Другое']
+  }
+
+  return ['Scam or fraud', 'Fake identity', 'Inappropriate behavior', 'Spam', 'Other']
 }
 
-function buildUnavailableState({ navTitle, blockedSeller = false, notFound = false } = {}) {
+function getOtherReasonLabel(locale) {
+  if (locale === 'zh') {
+    return '其他'
+  }
+
+  if (locale === 'ru') {
+    return 'Другое'
+  }
+
+  return 'Other'
+}
+
+function getReviewRatingOptions(locale) {
+  if (locale === 'zh') {
+    return [
+      { label: '5 星 - 非常好', value: 5 },
+      { label: '4 星 - 不错', value: 4 },
+      { label: '3 星 - 一般', value: 3 },
+      { label: '2 星 - 较差', value: 2 },
+      { label: '1 星 - 很差', value: 1 }
+    ]
+  }
+
+  if (locale === 'ru') {
+    return [
+      { label: '5 звёзд - Отлично', value: 5 },
+      { label: '4 звезды - Хорошо', value: 4 },
+      { label: '3 звезды - Нормально', value: 3 },
+      { label: '2 звезды - Плохо', value: 2 },
+      { label: '1 звезда - Очень плохо', value: 1 }
+    ]
+  }
+
+  return [
+    { label: '5 stars - Excellent', value: 5 },
+    { label: '4 stars - Good', value: 4 },
+    { label: '3 stars - Okay', value: 3 },
+    { label: '2 stars - Poor', value: 2 },
+    { label: '1 star - Bad', value: 1 }
+  ]
+}
+
+function getBlockConfirmText(locale) {
+  if (locale === 'zh') {
+    return '屏蔽'
+  }
+
+  if (locale === 'ru') {
+    return 'Заблокировать'
+  }
+
+  return 'Block'
+}
+
+function getShareProfileTitle(sellerName, locale) {
+  if (sellerName) {
+    if (locale === 'zh') {
+      return `${sellerName} 的 UniMarket 主页`
+    }
+
+    if (locale === 'ru') {
+      return `${sellerName} в UniMarket`
+    }
+
+    return `${sellerName} on UniMarket`
+  }
+
+  if (locale === 'zh') {
+    return 'UniMarket 主页'
+  }
+
+  if (locale === 'ru') {
+    return 'Профиль UniMarket'
+  }
+
+  return 'UniMarket profile'
+}
+
+function createEmptyReviewSummary(locale) {
+  return {
+    average: 0,
+    averageLabel: copyStore.getReviewAverageLabel(0, 0, locale),
+    count: 0,
+    countLabel: copyStore.getReviewCountLabel(0, locale),
+    recentReviews: []
+  }
+}
+
+function formatReviewDate(value) {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date)
+  } catch (error) {
+    return String(value || '').slice(0, 10)
+  }
+}
+
+function localizeReviewSummary(summary, locale) {
+  const safeSummary = summary || createEmptyReviewSummary(locale)
+
+  return {
+    ...safeSummary,
+    averageLabel: copyStore.getReviewAverageLabel(safeSummary.average, safeSummary.count, locale),
+    countLabel: copyStore.getReviewCountLabel(safeSummary.count, locale),
+    recentReviews: Array.isArray(safeSummary.recentReviews)
+      ? safeSummary.recentReviews.map((review) => ({
+          ...review,
+          dateLabel: review.dateLabel || formatReviewDate(review.createdAt)
+        }))
+      : []
+  }
+}
+
+function localizeSeller(seller, locale) {
+  if (!seller) {
+    return null
+  }
+
+  const founderBadge = isFounderProfile(seller) ? 'Founder, UniMarket' : ''
+
+  return {
+    ...seller,
+    joinedAt: founderBadge ? FOUNDER_STARTED_AT : (seller.joinedAt || ''),
+    displayBadge: copyStore.translateBadge(seller.badge, locale),
+    displayCity: copyStore.translateCity(seller.city, locale),
+    founderBadge,
+    displayFounderBadge: founderBadge ? copyStore.translateBadge(founderBadge, locale) : '',
+    founderInstagram: founderBadge ? FOUNDER_INSTAGRAM_HANDLE : '',
+    founderInstagramLabel: founderBadge ? `@${FOUNDER_INSTAGRAM_HANDLE}` : ''
+  }
+}
+
+function isFounderProfile(seller) {
+  const sellerId = String(seller && seller.id ? seller.id : '').trim().toLowerCase()
+  const sellerKey = String(seller && seller.sellerKey ? seller.sellerKey : '').trim().toLowerCase()
+  const sellerWechat = String(seller && seller.wechat ? seller.wechat : '').trim().toLowerCase()
+
+  return FOUNDER_PROFILE_KEYS.has(sellerId)
+    || FOUNDER_PROFILE_KEYS.has(sellerKey)
+    || FOUNDER_PROFILE_KEYS.has(sellerWechat)
+}
+
+function localizeListings(listings = [], locale) {
+  const copy = copyStore.getPageCopy('userProfile', locale)
+
+  return listings.map((listing) => ({
+    ...listing,
+    displayLocation: copyStore.translateCity(listing.location, locale),
+    displayPromotedBadge: copy.promotedBadge
+  }))
+}
+
+function buildOwnSellerProfileFromBackend(profile, listings = [], isSellerPro = false, analytics = null) {
+  const safeProfile = profile || profileStore.getProfile()
+  const safeListings = Array.isArray(listings) ? listings : []
+  const activeListings = safeListings.filter((listing) => listing && !listing.isSold)
+  const soldCount = safeListings.filter((listing) => Boolean(listing && listing.isSold && listing.soldOnUniMarket)).length
+  const sellerKey = String(safeProfile.id || safeProfile.wechat || safeProfile.name || '').trim().toLowerCase()
+
+  return {
+    sellerKey,
+    id: safeProfile.id || '',
+    name: safeProfile.name || 'You',
+    badge: isSellerPro ? 'Seller Pro' : 'Verified student',
+    avatarUrl: safeProfile.avatarUrl || '',
+    campus: safeProfile.campus || '',
+    city: safeProfile.city || 'Hangzhou',
+    bio: safeProfile.bio || '',
+    joinedAt: safeProfile.joinedAt || '',
+    wechat: safeProfile.wechat || '',
+    isSellerPro: Boolean(isSellerPro),
+    soldCount,
+    listings: activeListings,
+    analytics
+  }
+}
+
+function getCurrentReviewerKey() {
+  return profileStore.getProfileIdentityKey(profileStore.getProfile())
+}
+
+function buildUnavailableState(locale, { navTitle, blockedSeller = false, notFound = false } = {}) {
   return {
     navTitle,
     isOwnProfile: false,
     seller: null,
     listings: [],
+    listingsSectionTitle: '',
+    activeListingsSubtitle: copyStore.getActiveListingsSubtitle(0, locale),
     soldCount: 0,
     avatarInitial: 'U',
     memberSinceChipLabel: '',
     isEditingProfile: false,
-    reviewSummary: { ...EMPTY_REVIEW_SUMMARY },
+    reviewSummary: createEmptyReviewSummary(locale),
     canLeaveReview: false,
     hasReviewedCurrentListing: false,
     hasReported: false,
@@ -61,23 +249,28 @@ function buildUnavailableState({ navTitle, blockedSeller = false, notFound = fal
 
 Page({
   data: {
+    locale: INITIAL_LOCALE,
+    copy: copyStore.getPageCopy('userProfile', INITIAL_LOCALE),
     themeMode: INITIAL_THEME.themeMode,
     themeClass: INITIAL_THEME.themeClass,
     isDarkTheme: INITIAL_THEME.isDarkTheme,
-    navTitle: 'Seller profile',
+    navTitle: copyStore.getPageCopy('userProfile', INITIAL_LOCALE).navSellerProfile,
     isOwnProfile: false,
     isEditingProfile: false,
     listingId: '',
     seller: null,
     listings: [],
+    listingsSectionTitle: '',
+    activeListingsSubtitle: copyStore.getActiveListingsSubtitle(0, INITIAL_LOCALE),
     soldCount: 0,
     avatarInitial: 'U',
     memberSinceChipLabel: '',
     profileDraft: profileStore.getProfile(),
-    universityOptions: universitiesStore.HANGZHOU_UNIVERSITIES,
+    universityValues: universitiesStore.HANGZHOU_UNIVERSITIES,
+    universityOptions: copyStore.getUniversityOptionLabels(universitiesStore.HANGZHOU_UNIVERSITIES, INITIAL_LOCALE),
     universityIndex: universitiesStore.getUniversityIndex(profileStore.getProfile().campus, universitiesStore.HANGZHOU_UNIVERSITIES),
     universitySheetOpen: false,
-    reviewSummary: { ...EMPTY_REVIEW_SUMMARY },
+    reviewSummary: createEmptyReviewSummary(INITIAL_LOCALE),
     canLeaveReview: false,
     hasReviewedCurrentListing: false,
     hasReported: false,
@@ -101,15 +294,27 @@ Page({
   },
 
   onShow() {
-    this.refreshTheme(() => {
-      if (this.data.listingId || this.data.isOwnProfile) {
-        this.refreshPage()
-      }
+    this.refreshLocale(() => {
+      this.refreshTheme(() => {
+        if (this.data.listingId || this.data.isOwnProfile) {
+          this.refreshPage()
+        }
+      })
     })
   },
 
   refreshTheme(callback) {
     this.setData(storage.getThemeData(), callback)
+  },
+
+  refreshLocale(callback) {
+    const locale = localeStore.getLocale()
+
+    this.setData({
+      locale,
+      copy: copyStore.getPageCopy('userProfile', locale),
+      universityOptions: copyStore.getUniversityOptionLabels(this.data.universityValues || universitiesStore.HANGZHOU_UNIVERSITIES, locale)
+    }, callback)
   },
 
   refreshPage() {
@@ -121,26 +326,68 @@ Page({
     this.refreshSellerProfile()
   },
 
-  refreshOwnProfile() {
-    const sellerProfile = market.getOwnSellerProfile()
-    const reviewSummary = reviewsStore.getSellerReviewSummary(sellerProfile.sellerKey)
-    const profile = profileStore.getProfile()
+  async refreshOwnProfile() {
+    const locale = this.data.locale
+    let profile = profileStore.getProfile()
+    let me = null
+    let myListings = []
+
+    try {
+      me = await accountApi.getMe()
+    } catch (error) {
+      me = null
+    }
+
+    try {
+      myListings = await listingsRuntime.getMy()
+    } catch (error) {
+      myListings = sellersRuntime.enabled ? [] : sellersApi.getOwnProfile().listings || []
+    }
+
+    if (me && me.profile) {
+      profile = profileStore.saveProfile(me.profile)
+    }
+
+    let sellerProfile = buildOwnSellerProfileFromBackend(
+      profile,
+      myListings,
+      Boolean(me && me.isSellerPro),
+      me && me.analytics ? me.analytics : null
+    )
+
+    if (!sellerProfile || !sellerProfile.sellerKey) {
+      sellerProfile = sellersRuntime.getOwnProfile()
+    }
+
+    const localizedSellerProfile = localizeSeller(sellerProfile, locale)
+    const currentProfile = profileStore.getProfile()
+    const reviewSummary = localizeReviewSummary(
+      await reviewsStore.getSummary({
+        sellerUserId: localizedSellerProfile && localizedSellerProfile.id ? localizedSellerProfile.id : '',
+        sellerKey: localizedSellerProfile.sellerKey,
+        reviewerUserId: currentProfile && currentProfile.id ? currentProfile.id : ''
+      }),
+      locale
+    )
+    const localizedListings = localizeListings(sellerProfile.listings || [], locale)
     const nextState = {
-      navTitle: 'My profile',
-      seller: sellerProfile,
-      listings: sellerProfile.listings || [],
-      soldCount: Number(sellerProfile.soldCount || 0),
+      navTitle: this.data.copy.navMyProfile,
+      seller: localizedSellerProfile,
+      listings: localizedListings,
+      listingsSectionTitle: copyStore.getListingsSectionTitle(true, localizedSellerProfile.name, locale),
+      activeListingsSubtitle: copyStore.getActiveListingsSubtitle(localizedListings.length, locale),
+      soldCount: Number(localizedSellerProfile.soldCount || 0),
       avatarInitial: profileStore.getProfileInitial(profile),
-      memberSinceChipLabel: formatMemberSinceChip(sellerProfile.joinedAt),
+      memberSinceChipLabel: copyStore.getMemberSinceChipLabel(localizedSellerProfile.joinedAt, locale),
       reviewSummary,
       canLeaveReview: false,
       hasReviewedCurrentListing: false,
       hasReported: false,
-      isUniversityPublic: !universitiesStore.isUniversityPrivateValue(sellerProfile.campus || ''),
+      isUniversityPublic: !universitiesStore.isUniversityPrivateValue(localizedSellerProfile.campus || ''),
       trackedProfileViewKey: '',
       notFound: false,
       blockedSeller: false,
-      universityIndex: universitiesStore.getUniversityIndex(profile.campus, this.data.universityOptions)
+      universityIndex: universitiesStore.getUniversityIndex(profile.campus, this.data.universityValues)
     }
 
     if (!this.data.isEditingProfile) {
@@ -150,10 +397,17 @@ Page({
     this.setData(nextState)
   },
 
-  refreshSellerProfile() {
-    const sellerProfile = market.getSellerProfileByListingId(this.data.listingId)
-    const rawSellerProfile = market.getSellerProfileByListingId(this.data.listingId, { includeHiddenByUser: true })
-    const ownSellerProfile = market.getOwnSellerProfile()
+  async refreshSellerProfile() {
+    if (visibilityStore.enabled) {
+      await visibilityStore.syncPreferences()
+    }
+    const sellerProfile = sellersRuntime.enabled
+      ? await sellersRuntime.getProfileByListingId(this.data.listingId)
+      : sellersApi.getProfileByListingId(this.data.listingId)
+    const rawSellerProfile = sellersRuntime.enabled
+      ? sellerProfile
+      : sellersApi.getProfileByListingId(this.data.listingId, { includeHiddenByUser: true })
+    const ownSellerProfile = sellersRuntime.getOwnProfile()
 
     if (sellerProfile && ownSellerProfile.sellerKey && sellerProfile.sellerKey === ownSellerProfile.sellerKey) {
       this.setData({
@@ -164,42 +418,58 @@ Page({
     }
 
     if (!sellerProfile && rawSellerProfile && visibilityStore.isSellerBlocked(rawSellerProfile.sellerKey)) {
-      this.setData(buildUnavailableState({
-        navTitle: 'Seller hidden',
+      this.setData(buildUnavailableState(this.data.locale, {
+        navTitle: this.data.copy.navSellerHidden,
         blockedSeller: true
       }))
       return
     }
 
     if (!sellerProfile) {
-      this.setData(buildUnavailableState({
-        navTitle: 'Profile unavailable',
+      this.setData(buildUnavailableState(this.data.locale, {
+        navTitle: this.data.copy.navProfileUnavailable,
         notFound: true
       }))
       return
     }
 
+    const locale = this.data.locale
+    const localizedSellerProfile = localizeSeller(sellerProfile, locale)
+    const localizedListings = localizeListings(localizedSellerProfile.listings || [], locale)
+    const profile = profileStore.getProfile()
+    const reviewSummarySource = await reviewsStore.getSummary({
+      sellerUserId: localizedSellerProfile && localizedSellerProfile.id ? localizedSellerProfile.id : '',
+      sellerKey: localizedSellerProfile.sellerKey,
+      listingId: this.data.listingId,
+      reviewerUserId: profile && profile.id ? profile.id : '',
+      reviewerKey: getCurrentReviewerKey()
+    })
+    const reviewSummary = localizeReviewSummary(reviewSummarySource, locale)
+    const hasReviewedCurrentListing = Boolean(reviewSummarySource && reviewSummarySource.hasReviewedCurrentListing)
+
     this.setData({
-      navTitle: sellerProfile.name || 'Seller profile',
+      navTitle: localizedSellerProfile.name || this.data.copy.navSellerProfile,
       isOwnProfile: false,
-      seller: sellerProfile,
-      listings: sellerProfile.listings || [],
-      soldCount: Number(sellerProfile.soldCount || 0),
-      avatarInitial: String(sellerProfile.name || 'U').slice(0, 1).toUpperCase(),
-      memberSinceChipLabel: formatMemberSinceChip(sellerProfile.joinedAt),
-      reviewSummary: reviewsStore.getSellerReviewSummary(sellerProfile.sellerKey),
+      seller: localizedSellerProfile,
+      listings: localizedListings,
+      listingsSectionTitle: copyStore.getListingsSectionTitle(false, localizedSellerProfile.name, locale),
+      activeListingsSubtitle: copyStore.getActiveListingsSubtitle(localizedListings.length, locale),
+      soldCount: Number(localizedSellerProfile.soldCount || 0),
+      avatarInitial: String(localizedSellerProfile.name || 'U').slice(0, 1).toUpperCase(),
+      memberSinceChipLabel: copyStore.getMemberSinceChipLabel(localizedSellerProfile.joinedAt, locale),
+      reviewSummary,
       canLeaveReview: reviewsStore.canReviewListing(this.data.listingId),
-      hasReviewedCurrentListing: reviewsStore.hasReviewedListing(this.data.listingId),
-      hasReported: reportsStore.hasReportedProfile(sellerProfile.sellerKey),
-      isUniversityPublic: !universitiesStore.isUniversityPrivateValue(sellerProfile.campus || ''),
+      hasReviewedCurrentListing,
+      hasReported: reportsStore.hasReportedProfile(localizedSellerProfile.sellerKey),
+      isUniversityPublic: !universitiesStore.isUniversityPrivateValue(localizedSellerProfile.campus || ''),
       notFound: false,
       blockedSeller: false
     }, () => {
       const trackedProfileViewKey = String(this.data.trackedProfileViewKey || '')
-      const sellerKey = String(sellerProfile.sellerKey || '')
+      const sellerKey = String(localizedSellerProfile.sellerKey || '')
 
       if (sellerKey && trackedProfileViewKey !== sellerKey) {
-        market.recordSellerProfileView(sellerKey)
+        sellersRuntime.recordProfileView(sellerKey)
         this.setData({
           trackedProfileViewKey: sellerKey
         })
@@ -272,6 +542,22 @@ Page({
     })
   },
 
+  copyFounderInstagram() {
+    const seller = this.data.seller || {}
+    const founderInstagram = String(seller.founderInstagram || '').trim()
+
+    if (!founderInstagram) {
+      return
+    }
+
+    wx.setClipboardData({
+      data: founderInstagram,
+      success: () => {
+        feedback.showSuccessToast(uiText.USER_PROFILE.INSTAGRAM_COPIED)
+      }
+    })
+  },
+
   copyProfileLink() {
     this.closeMenu()
 
@@ -299,7 +585,7 @@ Page({
     this.setData({
       isEditingProfile: true,
       profileDraft: { ...profile },
-      universityIndex: universitiesStore.getUniversityIndex(profile.campus, this.data.universityOptions),
+      universityIndex: universitiesStore.getUniversityIndex(profile.campus, this.data.universityValues),
       universitySheetOpen: false
     })
   },
@@ -319,21 +605,14 @@ Page({
 
     if (field === 'name') {
       return
-    } else if (field === 'wechat') {
-      value = profileStore.sanitizeWechatId(rawValue)
     } else if (field === 'bio') {
-      value = profileStore.sanitizeProfileBio(rawValue)
+      value = profileStore.sanitizeProfileBioDraft(rawValue)
     }
 
     const nextDraft = {
       ...(this.data.profileDraft || {})
     }
     nextDraft[field] = value
-
-    if (field === 'wechat') {
-      const normalizedDraft = profileStore.normalizeProfile(nextDraft)
-      nextDraft.name = normalizedDraft.name
-    }
 
     this.setData({
       profileDraft: nextDraft
@@ -362,8 +641,8 @@ Page({
           ? e.currentTarget.dataset.index
           : 0
     )
-    const universityOptions = this.data.universityOptions || []
-    const campus = universityOptions[universityIndex] || universityOptions[0] || ''
+    const universityValues = this.data.universityValues || []
+    const campus = universityValues[universityIndex] || universityValues[0] || ''
 
     this.setData({
       universityIndex,
@@ -433,10 +712,10 @@ Page({
     })
   },
 
-  saveProfile() {
+  async saveProfile() {
     const previousProfile = profileStore.getProfile()
-    const universityOptions = this.data.universityOptions || []
-    const selectedCampus = universityOptions[this.data.universityIndex] || universityOptions[0] || ''
+    const universityValues = this.data.universityValues || []
+    const selectedCampus = universityValues[this.data.universityIndex] || universityValues[0] || ''
     const normalizedProfile = profileStore.normalizeProfile({
       ...(this.data.profileDraft || {}),
       campus: selectedCampus
@@ -447,14 +726,14 @@ Page({
       return
     }
 
-    if (!profileStore.isValidWechatId(normalizedProfile.wechat)) {
-      feedback.showNeutralToast(uiText.USER_PROFILE.wechatInvalid(profileStore.WECHAT_MIN_LENGTH, profileStore.WECHAT_MAX_LENGTH))
-      return
-    }
-
     const savedProfile = profileStore.saveProfile(normalizedProfile)
-    market.syncCurrentProfileIntoListings(previousProfile, savedProfile)
-    market.preserveCurrentProfileSellerPro(previousProfile, savedProfile)
+    try {
+      await accountApi.updateMyProfile(savedProfile)
+    } catch (error) {
+      sellersApi.syncCurrentProfileIntoListings(previousProfile, savedProfile)
+      sellersApi.preserveCurrentProfileSellerPro(previousProfile, savedProfile)
+      sellersApi.preserveCurrentProfileIdentityData(previousProfile, savedProfile)
+    }
     this.setData({
       isEditingProfile: false,
       universitySheetOpen: false
@@ -481,10 +760,12 @@ Page({
       return
     }
 
-    wx.showActionSheet({
-      itemList: REVIEW_RATING_OPTIONS.map((item) => item.label),
+    const reviewRatingOptions = getReviewRatingOptions(this.data.locale)
+
+    feedback.showActionSheet({
+      itemList: reviewRatingOptions.map((item) => item.label),
       success: (res) => {
-        const choice = REVIEW_RATING_OPTIONS[res.tapIndex]
+        const choice = reviewRatingOptions[res.tapIndex]
 
         if (!choice) {
           return
@@ -501,22 +782,26 @@ Page({
             }
 
             const reviewer = profileStore.getProfile()
-            const review = reviewsStore.createReview({
+
+            reviewsStore.submitReview({
+              sellerUserId: seller.id,
               sellerKey: seller.sellerKey,
               listingId: this.data.listingId,
               rating: choice.value,
               comment: modalRes.content || '',
-              reviewerName: reviewer.name || 'UniMarket user'
-            })
+              reviewerKey: profileStore.getProfileIdentityKey(reviewer),
+              reviewerName: reviewer.name || this.data.copy.reviewerFallback
+            }).then((review) => {
+              if (!review || review.alreadyExists) {
+                feedback.showNeutralToast(uiText.USER_PROFILE.REVIEW_ALREADY_EXISTS)
+                return
+              }
 
-            if (!review) {
+              this.refreshSellerProfile()
+              feedback.showSuccessToast(uiText.USER_PROFILE.REVIEW_POSTED)
+            }).catch(() => {
               feedback.showNeutralToast(uiText.USER_PROFILE.REVIEW_ALREADY_EXISTS)
-              return
-            }
-
-            this.refreshSellerProfile()
-
-            feedback.showSuccessToast(uiText.USER_PROFILE.REVIEW_POSTED)
+            })
           }
         })
       }
@@ -539,7 +824,7 @@ Page({
     feedback.showModal({
       title: uiText.USER_PROFILE.BLOCK_TITLE,
       content: uiText.USER_PROFILE.blockContent(seller.name),
-      confirmText: 'Block',
+      confirmText: getBlockConfirmText(this.data.locale),
       confirmColor: '#ba2d2d',
       success: (res) => {
         if (!res.confirm) return
@@ -593,13 +878,13 @@ Page({
       return
     }
 
-    wx.showActionSheet({
-      itemList: PROFILE_REPORT_REASONS,
+    feedback.showActionSheet({
+      itemList: getProfileReportReasons(this.data.locale),
       success: (res) => {
-        const reason = PROFILE_REPORT_REASONS[res.tapIndex]
+        const reason = getProfileReportReasons(this.data.locale)[res.tapIndex]
         if (!reason) return
 
-        if (reason === 'Other') {
+        if (reason === getOtherReasonLabel(this.data.locale)) {
           feedback.showModal({
             title: uiText.USER_PROFILE.REPORT_PROFILE_TITLE,
             editable: true,
@@ -621,20 +906,30 @@ Page({
 
   submitProfileReport(reason, note) {
     const seller = this.data.seller || {}
-
-    reportsStore.createProfileReport({
+    const payload = {
+      targetType: 'profile',
+      profileUserId: seller.id || seller.sellerKey,
       profileKey: seller.sellerKey,
       profileName: seller.name || '',
       sourceListingId: this.data.listingId,
       reason,
       note
-    })
+    }
 
-    this.setData({
-      hasReported: true
-    })
+    reportsStore.submitProfileReport(payload).then((result) => {
+      if (!result) {
+        feedback.showNeutralToast(uiText.USER_PROFILE.REPORT_SENT)
+        return
+      }
 
-    feedback.showSuccessToast(uiText.USER_PROFILE.REPORT_SENT)
+      this.setData({
+        hasReported: true
+      })
+
+      feedback.showSuccessToast(uiText.USER_PROFILE.REPORT_SENT)
+    }).catch(() => {
+      feedback.showNeutralToast(uiText.USER_PROFILE.REPORT_SENT)
+    })
   },
 
   onShareAppMessage() {
@@ -646,7 +941,7 @@ Page({
       : `/pages/user-profile/user-profile?listingId=${this.data.listingId}`
 
     return {
-      title: seller.name ? `${seller.name} on UniMarket` : 'UniMarket profile',
+      title: getShareProfileTitle(seller.name, this.data.locale),
       path,
       imageUrl: coverListing.image || ''
     }

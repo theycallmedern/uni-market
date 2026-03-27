@@ -103,7 +103,36 @@ function getProfileStats(sellerKey) {
   return normalizeEntry(statsMap[profileKey] || {})
 }
 
+function remapProfileKey(previousKeys = [], nextKey = '') {
+  const normalizedNextKey = toProfileKey(nextKey)
+  const aliases = Array.from(new Set((Array.isArray(previousKeys) ? previousKeys : [])
+    .map((value) => toProfileKey(value))
+    .filter(Boolean)))
+
+  if (!normalizedNextKey || !aliases.length) {
+    return false
+  }
+
+  const statsMap = getStatsMap()
+  const merged = aliases.reduce((acc, key) => {
+    const entry = normalizeEntry(statsMap[key] || {})
+    acc.views += Number(entry.views || 0)
+    acc.recentViewEvents = acc.recentViewEvents.concat(entry.recentViewEvents || [])
+
+    if (key !== normalizedNextKey) {
+      delete statsMap[key]
+    }
+
+    return acc
+  }, normalizeEntry(statsMap[normalizedNextKey] || {}))
+
+  statsMap[normalizedNextKey] = normalizeEntry(merged)
+  saveStatsMap(statsMap)
+  return true
+}
+
 module.exports = {
   incrementViews,
-  getProfileStats
+  getProfileStats,
+  remapProfileKey
 }

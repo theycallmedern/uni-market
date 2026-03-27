@@ -285,7 +285,6 @@
 
 .manager-open,
 .manager-sold,
-.manager-promote,
 .manager-edit,
 .manager-delete {
   display: flex;
@@ -295,6 +294,38 @@
   height: 76rpx;
   padding: 0;
   border-radius: 24rpx;
+  font-size: 26rpx;
+  line-height: 1;
+  font-weight: 700;
+  text-align: center;
+}
+
+.manager-promote-shell {
+  display: flex;
+  flex: 1 1 calc(50% - 6rpx);
+  padding: 2rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, #ff6b6b, #ffd166, #7ed957, #4dabf7, #c77dff, #ff6b6b);
+  box-shadow:
+    0 10rpx 22rpx rgba(17, 17, 17, 0.06),
+    0 0 20rpx rgba(124, 77, 255, 0.12);
+}
+
+.manager-promote-shell--pending {
+  box-shadow:
+    0 10rpx 22rpx rgba(17, 17, 17, 0.06),
+    0 0 24rpx rgba(255, 209, 102, 0.16);
+}
+
+.manager-promote {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 72rpx;
+  padding: 0;
+  border-radius: 22rpx;
   font-size: 26rpx;
   line-height: 1;
   font-weight: 700;
@@ -325,6 +356,11 @@
   border: 1rpx solid rgba(17, 17, 17, 0.08);
 }
 
+.manager-promote--request {
+  background: #ffffff;
+  border: 0;
+}
+
 .manager-sold--active {
   background: #eef8ef;
   color: #2f7d32;
@@ -338,9 +374,9 @@
 }
 
 .manager-promote--pending {
-  background: #f8f4e9;
+  background: #fffaf0;
   color: #8a6a1f;
-  border-color: rgba(138, 106, 31, 0.2);
+  border-color: transparent;
 }
 
 .manager-promote--admin {
@@ -363,9 +399,9 @@
 }
 
 .manager-promote--pending[disabled] {
-  background: #f8f4e9;
+  background: #fffaf0;
   color: #8a6a1f;
-  border-color: rgba(138, 106, 31, 0.2);
+  border-color: transparent;
 }
 
 .manager-promote--admin[disabled] {
@@ -447,10 +483,29 @@
 .theme-dark .manager-card__inner,
 .theme-dark .manager-open,
 .theme-dark .manager-sold,
-.theme-dark .manager-promote,
 .theme-dark .manager-edit,
 .theme-dark .manager-empty,
 .theme-dark .manager-empty__button {
+  background: #171b1f;
+  color: #f2f5f7;
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 16rpx 30rpx rgba(0, 0, 0, 0.22);
+}
+
+.theme-dark .manager-promote-shell {
+  background: linear-gradient(135deg, #ff7f7f, #ffd972, #8ae56b, #63b7ff, #d38cff, #ff7f7f);
+  box-shadow:
+    0 14rpx 28rpx rgba(0, 0, 0, 0.24),
+    0 0 28rpx rgba(124, 77, 255, 0.22);
+}
+
+.theme-dark .manager-promote-shell--pending {
+  box-shadow:
+    0 14rpx 28rpx rgba(0, 0, 0, 0.24),
+    0 0 30rpx rgba(255, 209, 102, 0.24);
+}
+
+.theme-dark .manager-promote {
   background: #171b1f;
   color: #f2f5f7;
   border-color: rgba(255, 255, 255, 0.05);
@@ -489,9 +544,9 @@
 }
 
 .theme-dark .manager-promote--pending {
-  background: rgba(92, 74, 28, 0.32);
+  background: #1b1913;
   color: #e5d3a5;
-  border-color: rgba(180, 145, 70, 0.18);
+  border-color: transparent;
 }
 
 .theme-dark .manager-promote--admin {
@@ -514,9 +569,9 @@
 }
 
 .theme-dark .manager-promote--pending[disabled] {
-  background: rgba(92, 74, 28, 0.32);
+  background: #1b1913;
   color: #e5d3a5;
-  border-color: rgba(180, 145, 70, 0.18);
+  border-color: transparent;
 }
 
 .theme-dark .manager-promote--admin[disabled] {

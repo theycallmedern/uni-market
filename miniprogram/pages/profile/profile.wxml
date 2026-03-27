@@ -1,5 +1,5 @@
 <view class="page-shell page-shell--scroll {{themeClass}}">
-  <app-header title="Profile" theme="{{themeMode}}"></app-header>
+  <app-header title="{{copy.headerTitle}}" theme="{{themeMode}}"></app-header>
   <scroll-view
     class="page-scroll"
     scroll-y
@@ -15,21 +15,21 @@
             <text wx:else>{{avatarInitial}}</text>
           </view>
           <view class="account-copy">
-            <text class="account-eyebrow">Account hub</text>
+            <text class="account-eyebrow">{{copy.heroEyebrow}}</text>
             <view class="account-name-row">
               <text class="account-name">{{profile.name}}</text>
               <view wx:if="{{isSellerPro}}" class="account-pro-badge">
                 <text class="account-pro-badge__icon">✦</text>
-                <text class="account-pro-badge__text">Pro active</text>
+                <text class="account-pro-badge__text">{{copy.proActive}}</text>
               </view>
             </view>
           </view>
         </view>
 
         <view class="account-hero__body">
-          <text class="account-note">Open your public profile to preview exactly what buyers see, then edit it there.</text>
+          <text class="account-note">{{copy.heroNote}}</text>
           <view class="account-preview-pill" bindtap="openOwnPublicProfile">
-            <text class="account-preview-hint">Tap avatar to open your public profile</text>
+            <text class="account-preview-hint">{{copy.previewHint}}</text>
           </view>
         </view>
       </view>
@@ -37,49 +37,62 @@
   <view class="account-stats">
     <view class="account-stat">
       <text class="account-stat__value">{{myListingsCount}}</text>
-      <text class="account-stat__label">Listings</text>
+      <text class="account-stat__label">{{copy.statsListings}}</text>
     </view>
     <view class="account-stat">
       <text class="account-stat__value">{{savedCount}}</text>
-      <text class="account-stat__label">Saved</text>
+      <text class="account-stat__label">{{copy.statsSaved}}</text>
     </view>
     <view class="account-stat">
       <text class="account-stat__value">{{soldCount}}</text>
-      <text class="account-stat__label">Sold</text>
+      <text class="account-stat__label">{{copy.statsSold}}</text>
     </view>
   </view>
 
   <view class="account-section">
     <view class="account-section__head">
-      <text class="account-section__title">Public profile</text>
-      <text class="account-section__subtitle">Open the exact version buyers see, then edit it from there</text>
+      <text class="account-section__title">{{copy.publicProfileTitle}}</text>
+      <text class="account-section__subtitle">{{copy.publicProfileSubtitle}}</text>
     </view>
 
       <view class="account-actions">
         <view class="account-action account-action--dark" bindtap="openOwnPublicProfile">
-          <text class="account-action__title">Open my public profile</text>
-          <text class="account-action__copy">Preview your profile exactly as other students see it and edit it there.</text>
+          <text class="account-action__title">{{copy.openPublicProfileTitle}}</text>
+          <text class="account-action__copy">{{copy.openPublicProfileCopy}}</text>
         </view>
 
         <view class="account-action" bindtap="goToListings">
-          <text class="account-action__title">Open my listings</text>
-          <text class="account-action__copy">Check what is currently live under your seller profile.</text>
+          <text class="account-action__title">{{copy.openListingsTitle}}</text>
+          <text class="account-action__copy">{{copy.openListingsCopy}}</text>
         </view>
 
         <view class="account-action" bindtap="openSettings">
           <view class="account-action__row">
-            <text class="account-action__title">Settings</text>
-            <text class="account-action__meta">Open</text>
+            <text class="account-action__title">{{copy.settingsTitle}}</text>
+            <text class="account-action__meta">{{commonCopy.open}}</text>
           </view>
-          <text class="account-action__copy">Admin access and extra account controls live on a separate page.</text>
+          <text class="account-action__copy">{{copy.settingsCopy}}</text>
         </view>
 
         <view class="account-action-pro-shell" bindtap="openSellerProOffer">
           <view class="account-action account-action--pro">
-            <text class="account-action__title">✦ Upgrade to Seller Pro</text>
-            <text class="account-action__copy">Your profile stands out more, gets better reach, and looks more trusted to buyers.</text>
-            <text class="account-action__copy">Use advanced stats to see what performs best and publish smarter listings over time.</text>
-            <text class="account-action__copy">79 RMB / month · 10 photos · custom badge · priority support.</text>
+            <text class="account-action__title">{{copy.sellerProTitle}}</text>
+            <text class="account-action__copy account-action__copy--lead">{{copy.sellerProLead}}</text>
+            <view class="account-action__benefits">
+              <view class="account-action__benefit">
+                <text class="account-action__benefit-dot">•</text>
+                <text class="account-action__benefit-copy">{{copy.sellerProBenefitOne}}</text>
+              </view>
+              <view class="account-action__benefit">
+                <text class="account-action__benefit-dot">•</text>
+                <text class="account-action__benefit-copy">{{copy.sellerProBenefitTwo}}</text>
+              </view>
+              <view class="account-action__benefit">
+                <text class="account-action__benefit-dot">•</text>
+                <text class="account-action__benefit-copy">{{copy.sellerProBenefitThree}}</text>
+              </view>
+            </view>
+            <text class="account-action__offer">{{copy.sellerProOffer}}</text>
           </view>
         </view>
       </view>
@@ -88,8 +101,8 @@
 
   <view class="account-section">
     <view class="account-section__head">
-      <text class="account-section__title">About UniMarket</text>
-      <text class="account-section__subtitle">What this MVP is optimized for right now</text>
+      <text class="account-section__title">{{copy.aboutTitle}}</text>
+      <text class="account-section__subtitle">{{copy.aboutSubtitle}}</text>
     </view>
 
     <view class="account-info-card">
@@ -100,21 +113,22 @@
         </view>
         <view class="account-info-card__brand-copy">
           <text class="account-info-card__brand-name">UniMarket</text>
-          <text class="account-info-card__brand-note">Hangzhou student marketplace</text>
+          <text class="account-info-card__brand-note">{{copy.brandNote}}</text>
         </view>
-        <view class="account-info-card__status">Student-first</view>
+        <view class="account-info-card__status">{{copy.brandStatus}}</view>
       </view>
 
-      <text class="account-info-card__title">Built for student housing, resales, transport, and quick local help</text>
-      <text class="account-info-card__copy">UniMarket keeps the flow simple inside WeChat so students can browse faster, post quicker, and connect with more trust inside one familiar campus marketplace.</text>
+      <text class="account-info-card__title">{{copy.aboutCardTitle}}</text>
+      <text class="account-info-card__copy">{{copy.aboutCardCopy}}</text>
 
       <view class="account-info-card__highlights">
-        <text class="account-info-card__highlight account-info-card__highlight--mint">WeChat Mini Program</text>
-        <text class="account-info-card__highlight account-info-card__highlight--sky">Hangzhou MVP</text>
-        <text class="account-info-card__highlight account-info-card__highlight--sand">Local-first demo data</text>
+        <text class="account-info-card__highlight account-info-card__highlight--mint">{{copy.highlightOne}}</text>
+        <text class="account-info-card__highlight account-info-card__highlight--sky">{{copy.highlightTwo}}</text>
+        <text class="account-info-card__highlight account-info-card__highlight--sand">{{copy.highlightThree}}</text>
       </view>
     </view>
   </view>
     </view>
   </scroll-view>
 </view>
+<feedback-modal id="feedback-modal" themeMode="{{themeMode}}"></feedback-modal>

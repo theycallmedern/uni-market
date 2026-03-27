@@ -1,34 +1,23 @@
-const market = require('../../data/market')
-const savedStore = require('../../utils/saved')
+const savedStore = require('../../services/api/saved')
+const listingsApi = require('../../services/api/runtime-listings')
+const accountApi = require('../../services/api/runtime-account')
 const profileStore = require('../../utils/profile')
 const storage = require('../../utils/storage')
+const localeStore = require('../../utils/locale')
 const tabbarStore = require('../../utils/tabbar')
 const feedback = require('../../utils/ui-feedback')
 const uiText = require('../../constants/messages')
+const copyStore = require('../../constants/copy')
 
-const THEME_STORAGE_KEY = 'uiThemeMode'
-const LIGHT_THEME = 'light'
-const DARK_THEME = 'dark'
 const INITIAL_PROFILE = profileStore.getProfile()
-
-function normalizeThemeMode(value) {
-  return value === DARK_THEME ? DARK_THEME : LIGHT_THEME
-}
-
-function getThemeData() {
-  const themeMode = normalizeThemeMode(storage.safeGetStorage(THEME_STORAGE_KEY, LIGHT_THEME))
-
-  return {
-    themeMode,
-    themeClass: themeMode === DARK_THEME ? 'theme-dark' : 'theme-light',
-    isDarkTheme: themeMode === DARK_THEME
-  }
-}
-
-const INITIAL_THEME = getThemeData()
+const INITIAL_THEME = storage.getThemeData()
+const INITIAL_LOCALE = localeStore.getLocale()
 
 Page({
   data: {
+    locale: INITIAL_LOCALE,
+    copy: copyStore.getPageCopy('profile', INITIAL_LOCALE),
+    commonCopy: copyStore.getCommonCopy(INITIAL_LOCALE),
     profile: { ...INITIAL_PROFILE },
     avatarInitial: profileStore.getProfileInitial(INITIAL_PROFILE),
     myListingsCount: 0,
@@ -41,25 +30,59 @@ Page({
   },
 
   onShow() {
-    this.refreshTheme(() => {
-      tabbarStore.syncTabBar(this, 4, {
-        themeMode: this.data.themeMode
+    this.refreshLocale(() => {
+      this.refreshTheme(() => {
+        tabbarStore.syncTabBar(this, 4, {
+          themeMode: this.data.themeMode,
+          locale: this.data.locale
+        })
       })
+      this.refreshProfile()
     })
-    this.refreshProfile()
   },
 
   refreshTheme(callback) {
-    this.setData(getThemeData(), callback)
+    this.setData(storage.getThemeData(), callback)
   },
 
-  refreshProfile() {
+  refreshLocale(callback) {
+    const locale = localeStore.getLocale()
+
+    this.setData({
+      locale,
+      copy: copyStore.getPageCopy('profile', locale),
+      commonCopy: copyStore.getCommonCopy(locale)
+    }, callback)
+  },
+
+  async refreshProfile() {
+    if (savedStore.enabled) {
+      await savedStore.hydrateSavedListingIds()
+    }
     const savedCount = savedStore.getSavedListingIds().length
-    const profile = profileStore.getProfile()
-    const myListings = market.getMyListings()
-    const ownSellerProfile = market.getOwnSellerProfile()
-    const activeCount = myListings.filter((listing) => !listing.isSold).length
-    const soldCount = myListings.filter((listing) => Boolean(listing && listing.isSold && listing.soldOnUniMarket)).length
+    let profile = profileStore.getProfile()
+
+    let myListings = []
+    try {
+      myListings = await listingsApi.getMy()
+    } catch (error) {
+      myListings = listingsApi.getMy()
+    }
+
+    let me = null
+    try {
+      me = await accountApi.getMe()
+    } catch (error) {
+      me = null
+    }
+
+    if (me && me.profile) {
+      profile = profileStore.saveProfile(me.profile)
+    }
+
+    const safeListings = Array.isArray(myListings) ? myListings : []
+    const activeCount = safeListings.filter((listing) => !listing.isSold).length
+    const soldCount = safeListings.filter((listing) => Boolean(listing && listing.isSold && listing.soldOnUniMarket)).length
 
     this.setData({
       profile,
@@ -67,7 +90,7 @@ Page({
       myListingsCount: activeCount,
       soldCount,
       savedCount,
-      isSellerPro: Boolean(ownSellerProfile && ownSellerProfile.isSellerPro)
+      isSellerPro: Boolean(me && me.isSellerPro)
     })
   },
 
@@ -90,7 +113,7 @@ Page({
   },
 
   openSellerProOffer() {
-    const priceLabel = '79 RMB / month'
+    const priceLabel = this.data.copy.sellerProPriceLabel
     const supportWechat = uiText.CREATE && uiText.CREATE.PROMOTION_CONTACT_WECHAT
       ? uiText.CREATE.PROMOTION_CONTACT_WECHAT
       : 'miskathaa'
@@ -98,12 +121,25 @@ Page({
     feedback.showModal({
       title: uiText.PROFILE.SELLER_PRO_TITLE,
       content: uiText.PROFILE.sellerProOfferContent(priceLabel),
-      confirmText: 'Connect',
-      cancelText: 'Later',
-      success: (res) => {
+      confirmText: this.data.commonCopy.connect,
+      cancelText: this.data.commonCopy.later,
+      success: async (res) => {
         if (!res.confirm) {
           return
         }
+
+        try {
+          const result = await accountApi.requestSellerPro()
+          const status = result && result.status ? String(result.status) : 'pending'
+          const alreadyExists = Boolean(result && result.alreadyExists)
+
+          if (alreadyExists || status === 'active') {
+            feedback.showSuccessToast(uiText.PROFILE.SELLER_PRO_ALREADY_REQUESTED)
+            this.refreshProfile()
+          } else if (result) {
+            feedback.showSuccessToast(uiText.PROFILE.SELLER_PRO_REQUEST_SENT)
+          }
+        } catch (error) {}
 
         wx.setClipboardData({
           data: supportWechat,

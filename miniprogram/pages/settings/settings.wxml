@@ -1,5 +1,5 @@
 <view class="page-shell page-shell--scroll {{themeClass}}">
-  <app-header title="Settings" showBack="{{true}}" theme="{{themeMode}}"></app-header>
+  <app-header title="{{copy.headerTitle}}" showBack="{{true}}" theme="{{themeMode}}"></app-header>
   <scroll-view
     class="page-scroll"
     scroll-y
@@ -9,15 +9,15 @@
   >
     <view class="settings-page page-scroll__content">
       <view class="settings-hero">
-        <text class="settings-hero__eyebrow">Settings</text>
-        <text class="settings-hero__title">Manage theme and admin access in one clean place</text>
-        <text class="settings-hero__copy">Start with a real dark mode foundation here, then we can roll it out across the rest of the app.</text>
+        <text class="settings-hero__eyebrow">{{copy.heroEyebrow}}</text>
+        <text class="settings-hero__title">{{copy.heroTitle}}</text>
+        <text class="settings-hero__copy">{{copy.heroCopy}}</text>
       </view>
 
       <view class="settings-section">
         <view class="settings-section__head">
-          <text class="settings-section__title">Appearance</text>
-          <text class="settings-section__subtitle">Choose how Profile and Settings should look right now.</text>
+          <text class="settings-section__title">{{copy.languageSectionTitle}}</text>
+          <text class="settings-section__subtitle">{{copy.languageSectionSubtitle}}</text>
         </view>
 
         <view class="settings-actions">
@@ -25,84 +25,118 @@
             <view class="settings-theme-note__head">
               <view class="settings-theme-note__label-wrap">
                 <view class="settings-theme-note__dot"></view>
-                <text class="settings-theme-note__label">Current theme</text>
+                <text class="settings-theme-note__label">{{copy.currentLanguageLabel}}</text>
               </view>
-              <view class="settings-theme-note__status settings-action__meta {{isDarkTheme ? 'settings-action__meta--purple' : 'settings-action__meta--green'}}">
-                <text class="settings-action__meta-label">{{isDarkTheme ? 'Dark' : 'Light'}}</text>
+              <view class="settings-theme-note__status settings-action__meta settings-action__meta--green">
+                <text class="settings-action__meta-label">{{currentLanguageOption.title}}</text>
               </view>
             </view>
-            <text class="settings-theme-note__copy">Saved on this device and already applied to Profile, Settings, the header, and the profile tab bar.</text>
+            <text class="settings-theme-note__copy">{{copy.languageSavedCopy}}</text>
+          </view>
+
+          <block wx:for="{{languageOptions}}" wx:key="code">
+            <view class="settings-action {{locale === item.code ? 'settings-action--selected' : ''}}" data-locale="{{item.code}}" bindtap="setLocale">
+              <view class="settings-action__row">
+                <text class="settings-action__title">{{item.title}}</text>
+                <view class="settings-action__meta {{locale === item.code ? 'settings-action__meta--green' : ''}}">
+                  <text class="settings-action__meta-label">{{locale === item.code ? commonCopy.current : commonCopy.switch}}</text>
+                </view>
+              </view>
+              <text class="settings-action__copy">{{item.description}}</text>
+            </view>
+          </block>
+        </view>
+      </view>
+
+      <view class="settings-section">
+        <view class="settings-section__head">
+          <text class="settings-section__title">{{copy.appearanceSectionTitle}}</text>
+          <text class="settings-section__subtitle">{{copy.appearanceSectionSubtitle}}</text>
+        </view>
+
+        <view class="settings-actions">
+          <view class="settings-theme-note">
+            <view class="settings-theme-note__head">
+              <view class="settings-theme-note__label-wrap">
+                <view class="settings-theme-note__dot"></view>
+                <text class="settings-theme-note__label">{{copy.currentThemeLabel}}</text>
+              </view>
+              <view class="settings-theme-note__status settings-action__meta {{isDarkTheme ? 'settings-action__meta--purple' : 'settings-action__meta--green'}}">
+                <text class="settings-action__meta-label">{{isDarkTheme ? copy.themeDark : copy.themeLight}}</text>
+              </view>
+            </view>
+            <text class="settings-theme-note__copy">{{copy.currentThemeCopy}}</text>
           </view>
 
           <view class="settings-action {{!isDarkTheme ? 'settings-action--selected' : ''}}" bindtap="setLightTheme">
             <view class="settings-action__row">
-              <text class="settings-action__title">Light mode</text>
+              <text class="settings-action__title">{{copy.lightThemeTitle}}</text>
               <view class="settings-action__meta {{!isDarkTheme ? 'settings-action__meta--green' : ''}}">
-                <text class="settings-action__meta-label">{{!isDarkTheme ? 'Current' : 'Switch'}}</text>
+                <text class="settings-action__meta-label">{{!isDarkTheme ? commonCopy.current : commonCopy.switch}}</text>
               </view>
             </view>
-            <text class="settings-action__copy">Keep the bright neutral palette that the app already uses today.</text>
+            <text class="settings-action__copy">{{copy.lightThemeCopy}}</text>
           </view>
 
           <view class="settings-action {{isDarkTheme ? 'settings-action--selected settings-action--selected-dark' : ''}}" bindtap="setDarkTheme">
             <view class="settings-action__row">
-              <text class="settings-action__title">Dark mode</text>
+              <text class="settings-action__title">{{copy.darkThemeTitle}}</text>
               <view class="settings-action__meta {{isDarkTheme ? 'settings-action__meta--purple' : ''}}">
-                <text class="settings-action__meta-label">{{isDarkTheme ? 'Current' : 'Switch'}}</text>
+                <text class="settings-action__meta-label">{{isDarkTheme ? commonCopy.current : commonCopy.switch}}</text>
               </view>
             </view>
-            <text class="settings-action__copy">Use deeper surfaces and lighter text for a lower-glare interface at night.</text>
+            <text class="settings-action__copy">{{copy.darkThemeCopy}}</text>
           </view>
         </view>
       </view>
 
       <view class="settings-section">
         <view class="settings-section__head">
-          <text class="settings-section__title">Admin</text>
-          <text class="settings-section__subtitle">{{isAdmin ? 'Admin mode is active on this device.' : 'Admin mode is currently locked on this device.'}}</text>
+          <text class="settings-section__title">{{copy.adminSectionTitle}}</text>
+          <text class="settings-section__subtitle">{{isAdmin ? copy.adminActiveSubtitle : copy.adminLockedSubtitle}}</text>
         </view>
 
         <view class="settings-actions">
           <view class="settings-action">
             <view class="settings-action__row">
-              <text class="settings-action__title">Admin access</text>
+              <text class="settings-action__title">{{copy.adminAccessTitle}}</text>
               <view class="settings-action__meta {{isAdmin ? 'settings-action__meta--green' : ''}}">
-                <text class="settings-action__meta-label">{{isAdmin ? 'Active' : 'Locked'}}</text>
+                <text class="settings-action__meta-label">{{isAdmin ? commonCopy.active : commonCopy.locked}}</text>
               </view>
             </view>
-            <text class="settings-action__copy">Use admin mode to open the moderation panel and manage marketplace reports and Seller Pro requests.</text>
+            <text class="settings-action__copy">{{copy.adminAccessCopy}}</text>
           </view>
 
           <block wx:if="{{isAdmin}}">
             <view class="settings-action" bindtap="goToModeration">
               <view class="settings-action__row">
-                <text class="settings-action__title">Open admin panel</text>
+                <text class="settings-action__title">{{copy.adminOpenTitle}}</text>
                 <view class="settings-action__meta">
-                  <text class="settings-action__meta-label">Open</text>
+                  <text class="settings-action__meta-label">{{commonCopy.open}}</text>
                 </view>
               </view>
-              <text class="settings-action__copy">Go to moderation tools for reports, listings, and Seller Pro requests.</text>
+              <text class="settings-action__copy">{{copy.adminOpenCopy}}</text>
             </view>
             <view class="settings-action settings-action--danger" bindtap="disableAdmin">
               <view class="settings-action__row">
-                <text class="settings-action__title">Exit admin</text>
+                <text class="settings-action__title">{{copy.adminExitTitle}}</text>
                 <view class="settings-action__meta settings-action__meta--danger">
-                  <text class="settings-action__meta-label">Disable</text>
+                  <text class="settings-action__meta-label">{{copy.adminExitMeta}}</text>
                 </view>
               </view>
-              <text class="settings-action__copy">Turn off admin mode on this device and hide moderation access.</text>
+              <text class="settings-action__copy">{{copy.adminExitCopy}}</text>
             </view>
           </block>
 
           <block wx:else>
             <view class="settings-action" bindtap="openAdminGate">
               <view class="settings-action__row">
-                <text class="settings-action__title">Unlock admin access</text>
+                <text class="settings-action__title">{{copy.adminUnlockTitle}}</text>
                 <view class="settings-action__meta">
-                  <text class="settings-action__meta-label">Enter</text>
+                  <text class="settings-action__meta-label">{{commonCopy.enter}}</text>
                 </view>
               </view>
-              <text class="settings-action__copy">Enter the admin code to unlock moderation tools on this device.</text>
+              <text class="settings-action__copy">{{copy.adminUnlockCopy}}</text>
             </view>
           </block>
         </view>
@@ -110,3 +144,4 @@
     </view>
   </scroll-view>
 </view>
+<feedback-modal id="feedback-modal" themeMode="{{themeMode}}"></feedback-modal>

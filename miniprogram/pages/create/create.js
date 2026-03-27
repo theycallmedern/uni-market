@@ -1,11 +1,16 @@
-const market = require('../../data/market')
+const mediaServices = require('../../services/media/index')
+const api = require('../../services/api')
+const listingsApi = require('../../services/api/runtime-listings')
+const accountApi = require('../../services/api/runtime-account')
 const profileStore = require('../../utils/profile')
 const universitiesStore = require('../../utils/universities')
 const tabbarStore = require('../../utils/tabbar')
 const storage = require('../../utils/storage')
+const localeStore = require('../../utils/locale')
 const validation = require('../../utils/validation')
 const feedback = require('../../utils/ui-feedback')
 const uiText = require('../../constants/messages')
+const copyStore = require('../../constants/copy')
 const OTHER_SUBCATEGORY_OPTION = 'Other (type your own)'
 const MAX_CUSTOM_SUBCATEGORY_LENGTH = 40
 const FIXED_CITY = 'Hangzhou'
@@ -24,6 +29,9 @@ const DESCRIPTION_MAX_LENGTH = 600
 const PUBLISH_RATE_LIMIT_MS = 15000
 const LAST_PUBLISH_AT_STORAGE_KEY = 'marketCreateLastPublishAtMs'
 const INITIAL_THEME = storage.getThemeData()
+const INITIAL_LOCALE = localeStore.getLocale()
+const catalogApi = api.catalog
+const mediaUploader = mediaServices.uploader
 
 function normalizeSubcategory(value) {
   return String(value || '').replace(/\s+/g, ' ').trim()
@@ -49,19 +57,35 @@ function getDuplicateSignature({ title = '', price = '', image = '' } = {}) {
   ].join('::')
 }
 
+function canPublishToBackend() {
+  return Boolean(listingsApi.writesEnabled && mediaUploader.isReady())
+}
+
+function canUseBackendWrites() {
+  return Boolean(listingsApi.writesEnabled)
+}
+
+function isBackendMediaReady() {
+  return Boolean(mediaUploader.isReady())
+}
+
 Page({
   data: {
+    locale: INITIAL_LOCALE,
+    copy: copyStore.getPageCopy('create', INITIAL_LOCALE),
     themeMode: INITIAL_THEME.themeMode,
     themeClass: INITIAL_THEME.themeClass,
     isDarkTheme: INITIAL_THEME.isDarkTheme,
-    navTitle: 'New Listing',
+    navTitle: copyStore.getCreateModeState('create', INITIAL_LOCALE).navTitle,
     categories: [],
-    universityOptions: UNIVERSITY_OPTIONS,
+    universityOptions: copyStore.getUniversityOptionLabels(UNIVERSITY_OPTIONS, INITIAL_LOCALE),
     universityIndex: 0,
     categoryIndex: 0,
+    subcategoryValues: [],
     subcategoryOptions: [],
     subcategoryIndex: 0,
-    conditionOptions: CONDITION_OPTIONS,
+    conditionValues: CONDITION_OPTIONS,
+    conditionOptions: copyStore.getTranslatedConditionOptions(CONDITION_OPTIONS, INITIAL_LOCALE),
     conditionIndex: 0,
     createSheetOpen: false,
     createSheetField: '',
@@ -73,13 +97,20 @@ Page({
     customSubcategory: '',
     mode: 'create',
     editingId: '',
-    heroTitle: 'Post a new listing',
-    heroCopy: 'Share something useful with students around Hangzhou and publish it straight into the MVP.',
-    heroChip: 'Live preview flow',
-    submitLabel: 'Publish listing',
-    photoLimit: market.getCurrentSellerPhotoLimit(),
+    heroTitle: copyStore.getCreateModeState('create', INITIAL_LOCALE).heroTitle,
+    heroCopy: copyStore.getCreateModeState('create', INITIAL_LOCALE).heroCopy,
+    heroChip: copyStore.getCreateModeState('create', INITIAL_LOCALE).heroChip,
+    submitLabel: copyStore.getCreateModeState('create', INITIAL_LOCALE).submitLabel,
+    cityLabel: copyStore.translateCity(FIXED_CITY, INITIAL_LOCALE),
+    createScrollTop: 0,
+    photoLimit: listingsApi.getCurrentPhotoLimit(),
+    photoHintText: copyStore.getCreatePhotoHint(listingsApi.getCurrentPhotoLimit(), INITIAL_LOCALE),
     submitting: false,
     draftChecked: false,
+    titleHintVisible: false,
+    titleHintText: '',
+    descriptionHintVisible: false,
+    descriptionHintText: '',
     addressHintVisible: false,
     addressHintText: uiText.CREATE.ADDRESS_HINT,
     form: {
@@ -98,19 +129,22 @@ Page({
   },
 
   onLoad() {
-    const categories = market.getPublishCategories()
+    const categories = copyStore.mapCategories(catalogApi.getPublishCategories(), this.data.locale)
     const initialCategory = categories[0] || { id: 'housing' }
-    const subcategoryOptions = this.getSubcategoryOptions(initialCategory.id)
-    const defaultSubcategory = subcategoryOptions[0] || ''
+    const subcategoryValues = this.getSubcategoryValues(initialCategory.id)
+    const subcategoryOptions = copyStore.getTranslatedSubcategoryOptions(subcategoryValues, this.data.locale)
+    const defaultSubcategory = subcategoryValues[0] || ''
     const isCustomSubcategory = defaultSubcategory === OTHER_SUBCATEGORY_OPTION
     const requiresCondition = this.requiresCondition(initialCategory.id)
     const profileDefaults = this.getProfileDefaults()
     const universityIndex = universitiesStore.getUniversityIndex(profileDefaults.university, UNIVERSITY_OPTIONS)
-    const photoLimit = market.getCurrentSellerPhotoLimit()
+    const photoLimit = listingsApi.getCurrentPhotoLimit()
 
     this.setData({
       categories,
       photoLimit,
+      photoHintText: copyStore.getCreatePhotoHint(photoLimit, this.data.locale),
+      subcategoryValues,
       subcategoryOptions,
       categoryIndex: 0,
       universityIndex,
@@ -127,47 +161,55 @@ Page({
     })
 
     this.applyPageMode('create')
+    this.refreshPhotoLimit()
   },
 
   onShow() {
-    this.refreshTheme(() => {
-      tabbarStore.syncTabBar(this, 2, {
-        themeMode: this.data.themeMode
+    this.refreshLocale(() => {
+      this.refreshTheme(() => {
+        tabbarStore.syncTabBar(this, 2, {
+          themeMode: this.data.themeMode,
+          locale: this.data.locale
+        })
       })
-    })
-    this.setData({
-      photoLimit: market.getCurrentSellerPhotoLimit()
-    })
-    const queuedMode = market.consumeCreateMode()
+      this.setData({
+        photoHintText: copyStore.getCreatePhotoHint(this.data.photoLimit, this.data.locale)
+      })
+      this.refreshPhotoLimit()
+      this.syncProfileWechat()
+      const queuedMode = listingsApi.consumeCreateMode()
 
-    if (!queuedMode) {
-      if (this.data.mode === 'create' && !this.data.draftChecked) {
-        this.tryRestoreDraft()
+      if (!queuedMode) {
+        if (this.data.mode === 'create' && !this.data.draftChecked) {
+          this.queueDraftRestorePrompt()
+        }
+        return
       }
-      return
-    }
 
-    if (queuedMode.type === 'edit' && queuedMode.id) {
-      this.loadListingForEdit(queuedMode.id)
-      return
-    }
+      if (queuedMode.type === 'edit' && queuedMode.id) {
+        this.loadListingForEdit(queuedMode.id)
+        return
+      }
 
-    this.resetForm()
-    this.tryRestoreDraft()
+      this.resetForm()
+      this.queueDraftRestorePrompt()
+    })
   },
 
   onHide() {
+    this.clearDraftPromptTimer()
     this.flushDraftSave()
   },
 
   onUnload() {
+    this.clearDraftPromptTimer()
     this.flushDraftSave()
   },
 
   onTabItemTap() {
     if (this.data.mode === 'edit') {
       this.resetForm()
-      this.tryRestoreDraft()
+      this.queueDraftRestorePrompt()
     }
   },
 
@@ -175,8 +217,51 @@ Page({
     this.setData(storage.getThemeData(), callback)
   },
 
-  getSubcategoryOptions(categoryId) {
-    const category = market.categoryConfigs[categoryId]
+  refreshLocale(callback) {
+    const locale = localeStore.getLocale()
+    const categories = copyStore.mapCategories(catalogApi.getPublishCategories(), locale)
+    const activeCategoryId = this.data.form && this.data.form.categoryId
+      ? this.data.form.categoryId
+      : ((categories[0] && categories[0].id) || 'housing')
+    const subcategoryValues = this.data.subcategoryValues && this.data.subcategoryValues.length
+      ? this.data.subcategoryValues
+      : this.getSubcategoryValues(activeCategoryId)
+    const modeState = copyStore.getCreateModeState(this.data.mode, locale)
+
+    this.setData({
+      locale,
+      copy: copyStore.getPageCopy('create', locale),
+      categories,
+      universityOptions: copyStore.getUniversityOptionLabels(UNIVERSITY_OPTIONS, locale),
+      subcategoryValues,
+      subcategoryOptions: copyStore.getTranslatedSubcategoryOptions(subcategoryValues, locale),
+      conditionOptions: copyStore.getTranslatedConditionOptions(CONDITION_OPTIONS, locale),
+      cityLabel: copyStore.translateCity(FIXED_CITY, locale),
+      photoHintText: copyStore.getCreatePhotoHint(this.data.photoLimit, locale),
+      navTitle: modeState.navTitle,
+      heroTitle: modeState.heroTitle,
+      heroCopy: modeState.heroCopy,
+      heroChip: modeState.heroChip,
+      submitLabel: modeState.submitLabel
+    }, callback)
+  },
+
+  async refreshPhotoLimit() {
+    let photoLimit = listingsApi.getCurrentPhotoLimit()
+
+    try {
+      const me = await accountApi.getMe()
+      photoLimit = Number(me && me.photoLimit) || photoLimit
+    } catch (error) {}
+
+    this.setData({
+      photoLimit,
+      photoHintText: copyStore.getCreatePhotoHint(photoLimit, this.data.locale)
+    })
+  },
+
+  getSubcategoryValues(categoryId) {
+    const category = catalogApi.categoryConfigs[categoryId]
     const baseOptions = category && category.subcategories && category.subcategories.length
       ? category.subcategories
       : ['General']
@@ -212,11 +297,54 @@ Page({
     }
   },
 
+  syncProfileWechat(callback) {
+    const profileDefaults = this.getProfileDefaults()
+    const wechat = validation.sanitizeWeChatId(profileDefaults.wechat)
+
+    if ((this.data.form && this.data.form.wechat) === wechat) {
+      if (typeof callback === 'function') {
+        callback()
+      }
+      return
+    }
+
+    this.setData({
+      'form.wechat': wechat
+    }, callback)
+  },
+
+  getFieldLanguageValidationMessage(field, value) {
+    const normalized = String(value || '')
+
+    if (!normalized.trim() || validation.isSupportedListingText(normalized)) {
+      return ''
+    }
+
+    if (field === 'title') {
+      return uiText.CREATE.VALIDATION.TITLE_LANGUAGE
+    }
+
+    if (field === 'address') {
+      return uiText.CREATE.VALIDATION.ADDRESS_LANGUAGE
+    }
+
+    if (field === 'description') {
+      return uiText.CREATE.VALIDATION.DESCRIPTION_LANGUAGE
+    }
+
+    return ''
+  },
+
   getAddressValidationMessage(address) {
     const normalized = validation.sanitizeAddress(address, ADDRESS_MAX_LENGTH)
+    const languageMessage = this.getFieldLanguageValidationMessage('address', normalized)
 
     if (!normalized) {
       return ''
+    }
+
+    if (languageMessage) {
+      return languageMessage
     }
 
     if (normalized.length < ADDRESS_MIN_LENGTH) {
@@ -234,15 +362,45 @@ Page({
     const { showForEmpty = false } = options
     const normalized = validation.sanitizeAddress(address, ADDRESS_MAX_LENGTH)
     const validationMessage = this.getAddressValidationMessage(normalized)
+    const nextHintText = validationMessage || uiText.CREATE.ADDRESS_HINT
     const shouldShow = Boolean(validationMessage && (showForEmpty || normalized))
 
-    if (this.data.addressHintVisible === shouldShow) {
+    if (this.data.addressHintVisible === shouldShow && this.data.addressHintText === nextHintText) {
       return
     }
 
     this.setData({
-      addressHintVisible: shouldShow
+      addressHintVisible: shouldShow,
+      addressHintText: nextHintText
     })
+  },
+
+  updateLanguageHint(field, value) {
+    const message = this.getFieldLanguageValidationMessage(field, value)
+    const shouldShow = Boolean(message)
+
+    if (field === 'title') {
+      if (this.data.titleHintVisible === shouldShow && this.data.titleHintText === message) {
+        return
+      }
+
+      this.setData({
+        titleHintVisible: shouldShow,
+        titleHintText: message
+      })
+      return
+    }
+
+    if (field === 'description') {
+      if (this.data.descriptionHintVisible === shouldShow && this.data.descriptionHintText === message) {
+        return
+      }
+
+      this.setData({
+        descriptionHintVisible: shouldShow,
+        descriptionHintText: message
+      })
+    }
   },
 
   getCreateDraft() {
@@ -277,6 +435,7 @@ Page({
     }
 
     const currentForm = this.data.form || {}
+    const profileDefaults = this.getProfileDefaults()
     const photoLimit = Number(this.data.photoLimit) || 5
     const draftForm = {
       title: String(currentForm.title || ''),
@@ -284,7 +443,7 @@ Page({
       location: FIXED_CITY,
       address: validation.sanitizeAddress(currentForm.address || '', ADDRESS_MAX_LENGTH),
       university: String(currentForm.university || ''),
-      wechat: String(currentForm.wechat || ''),
+      wechat: validation.sanitizeWeChatId(profileDefaults.wechat),
       description: String(currentForm.description || ''),
       categoryId: String(currentForm.categoryId || ''),
       subcategory: String(currentForm.subcategory || ''),
@@ -336,6 +495,32 @@ Page({
     storage.safeRemoveStorage(DRAFT_STORAGE_KEY)
   },
 
+  clearDraftPromptTimer() {
+    if (this.draftPromptTimer) {
+      clearTimeout(this.draftPromptTimer)
+      this.draftPromptTimer = null
+    }
+  },
+
+  queueDraftRestorePrompt() {
+    this.clearDraftPromptTimer()
+
+    this.draftPromptTimer = setTimeout(() => {
+      this.draftPromptTimer = null
+      this.tryRestoreDraft()
+    }, 80)
+  },
+
+  scrollCreateToTop() {
+    this.setData({
+      createScrollTop: 1
+    }, () => {
+      this.setData({
+        createScrollTop: 0
+      })
+    })
+  },
+
   restoreDraftForm(draft) {
     if (!draft || !draft.form) {
       return
@@ -348,12 +533,13 @@ Page({
       ? draftForm.categoryId
       : (categories[0] && categories[0].id ? categories[0].id : 'housing')
     const categoryIndex = Math.max(categories.findIndex((category) => category.id === categoryId), 0)
-    const subcategoryOptions = this.getSubcategoryOptions(categoryId)
+    const subcategoryValues = this.getSubcategoryValues(categoryId)
+    const subcategoryOptions = copyStore.getTranslatedSubcategoryOptions(subcategoryValues, this.data.locale)
     const normalizedSubcategory = normalizeSubcategory(draftForm.subcategory)
-    const listedSubcategoryIndex = subcategoryOptions.indexOf(normalizedSubcategory)
+    const listedSubcategoryIndex = subcategoryValues.indexOf(normalizedSubcategory)
     const isCustomSubcategory = Boolean(normalizedSubcategory) && listedSubcategoryIndex === -1
     const subcategoryIndex = isCustomSubcategory
-      ? this.getOtherSubcategoryIndex(subcategoryOptions)
+      ? this.getOtherSubcategoryIndex(subcategoryValues)
       : Math.max(listedSubcategoryIndex, 0)
     const requiresCondition = this.requiresCondition(categoryId)
     const conditionIndex = this.getConditionIndex(draftForm.condition)
@@ -365,9 +551,14 @@ Page({
     this.setData({
       draftChecked: true,
       createSheetOpen: false,
+      titleHintVisible: false,
+      titleHintText: '',
+      descriptionHintVisible: false,
+      descriptionHintText: '',
       addressHintVisible: false,
       categoryIndex,
       universityIndex,
+      subcategoryValues,
       subcategoryOptions,
       subcategoryIndex,
       conditionIndex,
@@ -380,20 +571,37 @@ Page({
         location: FIXED_CITY,
         address: validation.sanitizeAddress(draftForm.address || '', ADDRESS_MAX_LENGTH),
         university: UNIVERSITY_OPTIONS[universityIndex] || UNIVERSITY_OPTIONS[0] || '',
-        wechat: String(draftForm.wechat || profileDefaults.wechat || ''),
+        wechat: validation.sanitizeWeChatId(profileDefaults.wechat),
         description: String(draftForm.description || ''),
         categoryId,
         subcategory: isCustomSubcategory
           ? normalizedSubcategory.slice(0, MAX_CUSTOM_SUBCATEGORY_LENGTH)
-          : (subcategoryOptions[subcategoryIndex] || ''),
+          : (subcategoryValues[subcategoryIndex] || ''),
         condition: requiresCondition ? (CONDITION_OPTIONS[conditionIndex] || DEFAULT_CONDITION) : '',
         images
       }
+    }, () => {
+      this.updateLanguageHint('title', String(draftForm.title || ''))
+      this.updateLanguageHint('description', String(draftForm.description || ''))
+      this.updateAddressHint(validation.sanitizeAddress(draftForm.address || '', ADDRESS_MAX_LENGTH))
     })
+  },
+
+  openDraftInCreateFlow(draft) {
+    this.resetForm()
+    this.restoreDraftForm(draft)
+    this.scrollCreateToTop()
   },
 
   tryRestoreDraft() {
     if (this.data.mode !== 'create') {
+      return
+    }
+
+    const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : []
+    const currentPage = pages && pages.length ? pages[pages.length - 1] : null
+    if (!currentPage || currentPage.route !== 'pages/create/create') {
+      this.queueDraftRestorePrompt()
       return
     }
 
@@ -410,11 +618,11 @@ Page({
     feedback.showModal({
       title: uiText.CREATE.RESTORE_DRAFT_TITLE,
       content: uiText.CREATE.restoreDraftContent(draftSavedAt),
-      confirmText: 'Restore',
-      cancelText: 'Discard',
+      confirmText: this.data.copy.restore,
+      cancelText: this.data.copy.discard,
       success: (res) => {
         if (res.confirm) {
-          this.restoreDraftForm(draft)
+          this.openDraftInCreateFlow(draft)
           feedback.showSuccessToast(uiText.CREATE.DRAFT_RESTORED)
           return
         }
@@ -447,8 +655,9 @@ Page({
       return
     }
 
-    const subcategoryOptions = this.getSubcategoryOptions(category.id)
-    const defaultSubcategory = subcategoryOptions[0] || ''
+    const subcategoryValues = this.getSubcategoryValues(category.id)
+    const subcategoryOptions = copyStore.getTranslatedSubcategoryOptions(subcategoryValues, this.data.locale)
+    const defaultSubcategory = subcategoryValues[0] || ''
     const requiresCondition = this.requiresCondition(category.id)
     const currentCondition = normalizeCondition(this.data.form.condition)
     const conditionIndex = this.getConditionIndex(currentCondition)
@@ -459,6 +668,7 @@ Page({
     this.setData({
       createSheetOpen: false,
       categoryIndex,
+      subcategoryValues,
       subcategoryOptions,
       subcategoryIndex: 0,
       conditionIndex,
@@ -488,7 +698,7 @@ Page({
 
   onSubcategoryChange(e) {
     const subcategoryIndex = Number(e.detail.value)
-    const pickedSubcategory = this.data.subcategoryOptions[subcategoryIndex] || ''
+    const pickedSubcategory = this.data.subcategoryValues[subcategoryIndex] || ''
     const isCustomSubcategory = pickedSubcategory === OTHER_SUBCATEGORY_OPTION
     const normalizedCustomSubcategory = normalizeSubcategory(this.data.customSubcategory).slice(0, MAX_CUSTOM_SUBCATEGORY_LENGTH)
 
@@ -521,19 +731,19 @@ Page({
     let value = 0
 
     if (field === 'category') {
-      title = 'Category'
+      title = this.data.copy.categoryLabel
       options = (this.data.categories || []).map((item) => item.name)
       value = Number(this.data.categoryIndex) || 0
     } else if (field === 'subcategory') {
-      title = 'Subcategory'
+      title = this.data.copy.subcategoryLabel
       options = this.data.subcategoryOptions || []
       value = Number(this.data.subcategoryIndex) || 0
     } else if (field === 'condition') {
-      title = 'Condition'
+      title = this.data.copy.conditionLabel
       options = this.data.conditionOptions || []
       value = Number(this.data.conditionIndex) || 0
     } else if (field === 'university') {
-      title = 'University'
+      title = this.data.copy.universityLabel
       options = this.data.universityOptions || []
       value = Number(this.data.universityIndex) || 0
     }
@@ -601,7 +811,7 @@ Page({
     } else if (field === 'title') {
       value = validation.sanitizeSingleLine(rawValue, TITLE_MAX_LENGTH)
     } else if (field === 'address') {
-      value = validation.sanitizeAddress(rawValue, ADDRESS_MAX_LENGTH)
+      value = validation.sanitizeAddressDraft(rawValue, ADDRESS_MAX_LENGTH)
     } else if (field === 'wechat') {
       value = validation.sanitizeWeChatId(rawValue)
     } else if (field === 'description') {
@@ -613,6 +823,9 @@ Page({
     this.setData({
       [`form.${field}`]: value
     }, () => {
+      if (field === 'title' || field === 'description') {
+        this.updateLanguageHint(field, value)
+      }
       if (field === 'address') {
         this.updateAddressHint(value)
       }
@@ -620,24 +833,55 @@ Page({
     })
   },
 
+  onTextFieldBlur(e) {
+    const { field } = e.currentTarget.dataset
+    let value = ''
+
+    if (field === 'title') {
+      value = validation.sanitizeSingleLine(e.detail && e.detail.value, TITLE_MAX_LENGTH)
+    } else if (field === 'description') {
+      value = validation.sanitizeMultiline(e.detail && e.detail.value, DESCRIPTION_MAX_LENGTH)
+    } else {
+      return
+    }
+
+    this.setData({
+      [`form.${field}`]: value
+    }, () => {
+      this.updateLanguageHint(field, value)
+      this.scheduleDraftSave()
+    })
+  },
+
   onAddressBlur(e) {
     const normalized = validation.sanitizeAddress(e.detail && e.detail.value, ADDRESS_MAX_LENGTH)
+    const languageMessage = this.getFieldLanguageValidationMessage('address', normalized)
 
     if (normalized !== this.data.form.address) {
       this.setData({
         'form.address': normalized
       }, () => {
         this.updateAddressHint(normalized)
+        if (languageMessage) {
+          this.showValidation(languageMessage)
+        }
         this.scheduleDraftSave()
       })
       return
     }
 
     this.updateAddressHint(normalized)
+    if (languageMessage) {
+      this.showValidation(languageMessage)
+    }
   },
 
-  pickPromotionPlan(onPicked) {
-    const plans = market.getPromotionPlans()
+  async getPromotionPlans() {
+    return listingsApi.getPromotionPlans()
+  },
+
+  async pickPromotionPlan(onPicked) {
+    const plans = await this.getPromotionPlans()
     if (!plans.length) {
       if (typeof onPicked === 'function') {
         onPicked(null)
@@ -645,7 +889,7 @@ Page({
       return
     }
 
-    wx.showActionSheet({
+    feedback.showActionSheet({
       itemList: plans.map((plan) => `${plan.durationDays}d · ${plan.priceLabel}`),
       success: (res) => {
         const picked = plans[Number(res.tapIndex)] || null
@@ -677,7 +921,7 @@ Page({
           title: uiText.COMMON.WRITE_IN_WECHAT_TITLE,
           content: uiText.CREATE.promotionContactModalContent(wechatId, plan.label, plan.priceLabel),
           showCancel: false,
-          confirmText: 'OK',
+          confirmText: this.data.copy.ok,
           success: finalize
         })
       },
@@ -685,8 +929,8 @@ Page({
     })
   },
 
-  offerPromotionAfterPublish(listing, onDone) {
-    const plans = market.getPromotionPlans()
+  async offerPromotionAfterPublish(listing, onDone) {
+    const plans = await this.getPromotionPlans()
     const plansText = plans
       .map((plan) => `${plan.durationDays}d — ${plan.priceLabel}`)
       .join('\n')
@@ -694,8 +938,8 @@ Page({
     feedback.showModal({
       title: uiText.CREATE.PROMOTION_OFFER_TITLE,
       content: uiText.CREATE.promotionOfferContent(plansText),
-      confirmText: 'Yes',
-      cancelText: 'No',
+      confirmText: this.data.copy.yes,
+      cancelText: this.data.copy.no,
       success: (res) => {
         if (!res.confirm) {
           if (typeof onDone === 'function') {
@@ -704,7 +948,7 @@ Page({
           return
         }
 
-        this.pickPromotionPlan((plan) => {
+        this.pickPromotionPlan(async (plan) => {
           if (!plan) {
             if (typeof onDone === 'function') {
               onDone()
@@ -712,9 +956,10 @@ Page({
             return
           }
 
-          market.requestListingPromotion(listing.id, plan.id, {
+          await listingsApi.requestPromotion(listing.id, plan.id, {
             source: 'post_publish'
           })
+
           feedback.showSuccessToast(uiText.CREATE.PROMOTION_REQUEST_SENT)
           this.copyPromotionWechat(plan, onDone)
         })
@@ -722,32 +967,52 @@ Page({
     })
   },
 
+  async getExistingListingsForDuplicateCheck() {
+    if (canUseBackendWrites()) {
+      const profile = this.getProfileDefaults().profile || {}
+      const sellerKey = validation.sanitizeWeChatId(profile.wechat || '')
+
+      if (sellerKey) {
+        return listingsApi.getBySellerKey(sellerKey, {
+          includeResolved: true,
+          includeSold: true
+        })
+      }
+    }
+
+    return listingsApi.getMy()
+  },
+
   applyPageMode(mode, editingId = '') {
-    const isEdit = mode === 'edit'
-    const title = isEdit ? 'Edit Listing' : 'New Listing'
+    const modeState = copyStore.getCreateModeState(mode, this.data.locale)
 
     wx.setNavigationBarTitle({
-      title
+      title: modeState.navTitle
     })
 
     this.setData({
-      navTitle: title,
+      navTitle: modeState.navTitle,
       mode,
       editingId: String(editingId || ''),
-      heroTitle: isEdit ? 'Edit your listing' : 'Post a new listing',
-      heroCopy: isEdit
-        ? 'Update the title, price, category, and details so your listing stays clear and current in the marketplace.'
-        : 'Share something useful with students around Hangzhou and publish it straight into the MVP.',
-      heroChip: isEdit ? 'Edit mode' : 'Live preview flow',
-      submitLabel: isEdit ? 'Save changes' : 'Publish listing'
+      heroTitle: modeState.heroTitle,
+      heroCopy: modeState.heroCopy,
+      heroChip: modeState.heroChip,
+      submitLabel: modeState.submitLabel
     })
   },
 
-  loadListingForEdit(id) {
-    const listing = market.getListingById(id)
+  async loadListingForEdit(id) {
+    const listing = listingsApi.enabled
+      ? await listingsApi.getById(id, {
+        includeResolved: true,
+        includeSold: true,
+        includeHiddenByUser: true
+      })
+      : listingsApi.getById(id)
     const categories = this.data.categories || []
+    const profileDefaults = this.getProfileDefaults()
 
-    if (!listing || !listing.isCustom) {
+    if (!listing) {
       feedback.showNeutralToast(uiText.CREATE.LISTING_NOT_FOUND)
       this.resetForm()
       return
@@ -758,12 +1023,13 @@ Page({
       0
     )
     const universityIndex = universitiesStore.getUniversityIndex(listing.university, UNIVERSITY_OPTIONS)
-    const subcategoryOptions = this.getSubcategoryOptions(listing.categoryId)
+    const subcategoryValues = this.getSubcategoryValues(listing.categoryId)
+    const subcategoryOptions = copyStore.getTranslatedSubcategoryOptions(subcategoryValues, this.data.locale)
     const listingSubcategory = listing.subcategory || ''
-    const listedSubcategoryIndex = subcategoryOptions.indexOf(listingSubcategory)
+    const listedSubcategoryIndex = subcategoryValues.indexOf(listingSubcategory)
     const isCustomSubcategory = listedSubcategoryIndex === -1
     const subcategoryIndex = isCustomSubcategory
-      ? this.getOtherSubcategoryIndex(subcategoryOptions)
+      ? this.getOtherSubcategoryIndex(subcategoryValues)
       : Math.max(listedSubcategoryIndex, 0)
     const customSubcategory = isCustomSubcategory
       ? normalizeSubcategory(listingSubcategory).slice(0, MAX_CUSTOM_SUBCATEGORY_LENGTH)
@@ -773,9 +1039,14 @@ Page({
 
     this.setData({
       createSheetOpen: false,
+      titleHintVisible: false,
+      titleHintText: '',
+      descriptionHintVisible: false,
+      descriptionHintText: '',
       addressHintVisible: false,
       categoryIndex,
       universityIndex,
+      subcategoryValues,
       subcategoryOptions,
       subcategoryIndex,
       conditionIndex,
@@ -788,15 +1059,19 @@ Page({
         location: FIXED_CITY,
         address: validation.sanitizeAddress(listing.address || '', ADDRESS_MAX_LENGTH),
         university: UNIVERSITY_OPTIONS[universityIndex] || UNIVERSITY_OPTIONS[0] || '',
-        wechat: listing.seller && listing.seller.wechat ? listing.seller.wechat : '',
+        wechat: validation.sanitizeWeChatId(profileDefaults.wechat),
         description: listing.description || '',
         categoryId: listing.categoryId,
         subcategory: isCustomSubcategory
           ? customSubcategory
-          : listing.subcategory || subcategoryOptions[0] || '',
+          : listing.subcategory || subcategoryValues[0] || '',
         condition: requiresCondition ? (CONDITION_OPTIONS[conditionIndex] || DEFAULT_CONDITION) : '',
         images: listing.images || []
       }
+    }, () => {
+      this.updateLanguageHint('title', listing.title || '')
+      this.updateLanguageHint('description', listing.description || '')
+      this.updateAddressHint(validation.sanitizeAddress(listing.address || '', ADDRESS_MAX_LENGTH))
     })
 
     this.applyPageMode('edit', id)
@@ -809,7 +1084,7 @@ Page({
     const pickerCount = Math.min(remainingCount, 9)
 
     if (remainingCount <= 0) {
-      feedback.showNeutralToast(`Up to ${photoLimit} photos`)
+      feedback.showNeutralToast(copyStore.getCreatePhotoHint(photoLimit, this.data.locale))
       return
     }
 
@@ -894,12 +1169,13 @@ Page({
     })
   },
 
-  submitListing() {
+  async submitListing() {
     if (this.data.submitting) {
       return
     }
 
     const form = this.data.form
+    const profileDefaults = this.getProfileDefaults()
     const isEdit = this.data.mode === 'edit' && this.data.editingId
     const title = validation.sanitizeSingleLine(form.title, TITLE_MAX_LENGTH)
     const rawPrice = validation.extractPriceDigits(form.price)
@@ -909,7 +1185,7 @@ Page({
     const selectedUniversity = UNIVERSITY_OPTIONS[this.data.universityIndex] || UNIVERSITY_OPTIONS[0] || ''
     const isUniversityPrivate = universitiesStore.isUniversityPrivateValue(selectedUniversity)
     const university = isUniversityPrivate ? '' : selectedUniversity
-    const wechat = validation.sanitizeWeChatId(form.wechat)
+    const wechat = validation.sanitizeWeChatId(profileDefaults.wechat)
     const description = validation.sanitizeMultiline(form.description, DESCRIPTION_MAX_LENGTH)
     const categoryId = String(form.categoryId || '').trim()
     let subcategory = normalizeSubcategory(form.subcategory)
@@ -951,6 +1227,11 @@ Page({
       return
     }
 
+    if (this.getFieldLanguageValidationMessage('title', title)) {
+      this.showValidation(uiText.CREATE.VALIDATION.TITLE_LANGUAGE)
+      return
+    }
+
     if (!validation.hasMeaningfulText(title)) {
       this.showValidation(uiText.CREATE.VALIDATION.TITLE_MEANINGFUL)
       return
@@ -971,19 +1252,13 @@ Page({
       return
     }
 
-    if (address.length < ADDRESS_MIN_LENGTH) {
+    if (this.getFieldLanguageValidationMessage('address', address)) {
       this.updateAddressHint(address, { showForEmpty: true })
-      this.showValidation(uiText.CREATE.VALIDATION.ADDRESS)
+      this.showValidation(uiText.CREATE.VALIDATION.ADDRESS_LANGUAGE)
       return
     }
 
-    if (!validation.hasMeaningfulAddress(address)) {
-      this.updateAddressHint(address, { showForEmpty: true })
-      this.showValidation(uiText.CREATE.VALIDATION.ADDRESS_MEANINGFUL)
-      return
-    }
-
-    this.updateAddressHint(address)
+    this.updateAddressHint(address, { showForEmpty: true })
 
     if (!university && !isUniversityPrivate) {
       this.showValidation(uiText.CREATE.VALIDATION.UNIVERSITY)
@@ -997,6 +1272,11 @@ Page({
 
     if (!validation.isValidWeChatId(wechat)) {
       this.showValidation(uiText.CREATE.VALIDATION.wechatInvalid(validation.WECHAT_MIN_LENGTH, validation.WECHAT_MAX_LENGTH))
+      return
+    }
+
+    if (this.getFieldLanguageValidationMessage('description', description)) {
+      this.showValidation(uiText.CREATE.VALIDATION.DESCRIPTION_LANGUAGE)
       return
     }
 
@@ -1027,7 +1307,8 @@ Page({
         image: form.images[0] || ''
       })
 
-      const hasDuplicateActiveListing = market.getMyListings().some((listing) => {
+      const existingListings = await this.getExistingListingsForDuplicateCheck()
+      const hasDuplicateActiveListing = existingListings.some((listing) => {
         if (!listing || listing.isSold) {
           return false
         }
@@ -1049,7 +1330,26 @@ Page({
 
     this.setData({ submitting: true })
 
-    const profileDefaults = this.getProfileDefaults()
+    const shouldUseBackendPublish = canUseBackendWrites()
+    const backendMediaReady = isBackendMediaReady()
+    let preparedImages = form.images
+
+    if (shouldUseBackendPublish) {
+      if (!backendMediaReady) {
+        this.setData({ submitting: false })
+        this.showValidation(mediaUploader.getUnavailableReason() || uiText.CREATE.BACKEND_MEDIA_REQUIRED)
+        return
+      }
+
+      try {
+        preparedImages = await mediaUploader.prepareListingImages(form.images)
+      } catch (error) {
+        this.setData({ submitting: false })
+        this.showValidation(error && error.message ? error.message : uiText.CREATE.SAVE_FAILED)
+        return
+      }
+    }
+
     const payload = {
       title,
       price,
@@ -1060,9 +1360,12 @@ Page({
       subcategory,
       condition,
       description,
-      images: form.images,
-      image: form.images[0] || market.getFallbackImage(categoryId),
+      images: preparedImages,
+      image: preparedImages[0] || catalogApi.getFallbackImage(categoryId),
       seller: {
+        id: profileDefaults.profile && profileDefaults.profile.id
+          ? profileDefaults.profile.id
+          : wechat,
         name: profileDefaults.sellerName || 'You',
         badge: isEdit ? 'Updated listing' : 'New listing',
         wechat,
@@ -1075,9 +1378,19 @@ Page({
       }
     }
 
-    const listing = isEdit
-      ? market.updateListing(this.data.editingId, payload)
-      : market.createListing(payload)
+    let listing = null
+
+    try {
+      listing = shouldUseBackendPublish
+        ? isEdit
+          ? await listingsApi.update(this.data.editingId, payload)
+          : await listingsApi.create(payload)
+        : isEdit
+          ? listingsApi.update(this.data.editingId, payload)
+          : listingsApi.create(payload)
+    } catch (error) {
+      listing = null
+    }
 
     if (!listing) {
       this.setData({ submitting: false })
@@ -1118,8 +1431,9 @@ Page({
   resetForm() {
     const categories = this.data.categories
     const initialCategory = categories[0] || { id: 'housing' }
-    const subcategoryOptions = this.getSubcategoryOptions(initialCategory.id)
-    const defaultSubcategory = subcategoryOptions[0] || ''
+    const subcategoryValues = this.getSubcategoryValues(initialCategory.id)
+    const subcategoryOptions = copyStore.getTranslatedSubcategoryOptions(subcategoryValues, this.data.locale)
+    const defaultSubcategory = subcategoryValues[0] || ''
     const isCustomSubcategory = defaultSubcategory === OTHER_SUBCATEGORY_OPTION
     const requiresCondition = this.requiresCondition(initialCategory.id)
     const profileDefaults = this.getProfileDefaults()
@@ -1127,8 +1441,13 @@ Page({
     this.setData({
       draftChecked: false,
       createSheetOpen: false,
+      titleHintVisible: false,
+      titleHintText: '',
+      descriptionHintVisible: false,
+      descriptionHintText: '',
       addressHintVisible: false,
       categoryIndex: 0,
+      subcategoryValues,
       subcategoryOptions,
       subcategoryIndex: 0,
       conditionIndex: 0,

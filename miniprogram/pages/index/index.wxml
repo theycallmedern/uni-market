@@ -1,5 +1,5 @@
 <view class="page-shell page-shell--scroll {{themeClass}}">
-  <app-header title="UniMarket" theme="{{themeMode}}"></app-header>
+  <app-header title="{{copy.headerTitle}}" theme="{{themeMode}}"></app-header>
 
   <scroll-view
     class="page-scroll home-scroll"
@@ -11,11 +11,11 @@
     <view class="home-page page-scroll__content">
   <view class="hero">
     <view class="hero-copy">
-      <text class="hero-title">Find what student life needs.</text>
-      <text class="hero-subtitle">Browse housing, transport, services, and campus essentials in one place.</text>
+      <text class="hero-title">{{copy.heroTitle}}</text>
+      <text class="hero-subtitle">{{copy.heroSubtitle}}</text>
     </view>
 
-    <view class="hero-chip">Hangzhou</view>
+    <view class="hero-chip">{{copy.heroChip}}</view>
   </view>
 
   <view class="search-bar">
@@ -23,7 +23,7 @@
       <text class="search-icon">🔎</text>
       <input
         class="search-input"
-        placeholder="Search listings"
+        placeholder="{{copy.searchPlaceholder}}"
         value="{{search}}"
         bindinput="onSearchInput"
       />
@@ -53,8 +53,8 @@
 
   <view class="section-head">
     <view>
-      <text class="section-title">Latest Listings</text>
-      <text class="section-subtitle">Fresh posts from the student community</text>
+      <text class="section-title">{{copy.sectionTitle}}</text>
+      <text class="section-subtitle">{{copy.sectionSubtitle}}</text>
     </view>
     <text class="section-count">{{visibleListings.length}}</text>
   </view>
@@ -66,8 +66,8 @@
           <view class="listing-card__inner">
             <view class="listing-media">
               <image class="listing-image" src="{{item.image}}" mode="aspectFill" />
-              <view wx:if="{{item.isPromoted}}" class="listing-featured">✦ Promoted</view>
-              <view wx:if="{{item.isSellerPro && !item.isPromoted}}" class="listing-pro">Seller Pro</view>
+              <view wx:if="{{item.isPromoted}}" class="listing-featured">{{copy.promotedBadge}}</view>
+              <view wx:if="{{item.isSellerPro && !item.isPromoted}}" class="listing-pro">{{copy.sellerProBadge}}</view>
               <view
                 class="listing-like {{item.isSaved ? 'listing-like--saved' : ''}} {{pulseListingId === item.id ? 'listing-like--pulse' : ''}}"
                 data-id="{{item.id}}"
@@ -80,6 +80,7 @@
               <text class="listing-price">{{item.price}}</text>
               <text class="listing-title">{{item.title}}</text>
               <text class="listing-meta">{{item.location}}</text>
+              <text wx:if="{{item.address}}" class="listing-address">{{item.address}}</text>
               <text wx:if="{{item.university}}" class="listing-campus">{{item.university}}</text>
             </view>
           </view>
@@ -88,8 +89,8 @@
     </block>
 
     <view wx:else class="empty-state">
-      <text class="empty-title">No results found</text>
-      <text class="empty-copy">Try another category or adjust your search.</text>
+      <text class="empty-title">{{copy.emptyTitle}}</text>
+      <text class="empty-copy">{{copy.emptyCopy}}</text>
     </view>
   </view>
 
@@ -103,13 +104,13 @@
       <view class="filter-sheet__handle"></view>
       <scroll-view class="filter-sheet__scroll" scroll-y enhanced show-scrollbar="{{false}}">
         <view class="filter-sheet__head">
-          <text class="filter-sheet__title">Quick filters</text>
-          <text class="filter-sheet__reset" bindtap="resetHomeFilters">Reset</text>
+          <text class="filter-sheet__title">{{copy.filterTitle}}</text>
+          <text class="filter-sheet__reset" bindtap="resetHomeFilters">{{copy.filterReset}}</text>
         </view>
 
         <view class="filter-field">
-          <text class="filter-field__label">Location</text>
-          <selector-sheet title="Location" options="{{locationOptions}}" value="{{locationIndex}}" theme-mode="{{themeMode}}" bindchange="onLocationChange">
+          <text class="filter-field__label">{{copy.locationLabel}}</text>
+          <selector-sheet title="{{copy.locationLabel}}" options="{{locationOptions}}" value="{{locationIndex}}" theme-mode="{{themeMode}}" bindchange="onLocationChange">
             <view class="filter-picker">
               <text>{{locationOptions[locationIndex]}}</text>
               <view class="filter-picker__arrow"></view>
@@ -118,8 +119,8 @@
         </view>
 
         <view class="filter-field">
-          <text class="filter-field__label">University</text>
-          <selector-sheet title="University" options="{{universityOptions}}" value="{{universityIndex}}" theme-mode="{{themeMode}}" bindchange="onUniversityChange">
+          <text class="filter-field__label">{{copy.universityLabel}}</text>
+          <selector-sheet title="{{copy.universityLabel}}" options="{{universityOptions}}" value="{{universityIndex}}" theme-mode="{{themeMode}}" bindchange="onUniversityChange">
             <view class="filter-picker">
               <text>{{universityOptions[universityIndex]}}</text>
               <view class="filter-picker__arrow"></view>
@@ -128,8 +129,8 @@
         </view>
 
         <view class="filter-field">
-          <text class="filter-field__label">Sort</text>
-          <selector-sheet title="Sort" options="{{sortOptions}}" value="{{sortIndex}}" theme-mode="{{themeMode}}" bindchange="onSortChange">
+          <text class="filter-field__label">{{copy.sortLabel}}</text>
+          <selector-sheet title="{{copy.sortLabel}}" options="{{sortOptions}}" value="{{sortIndex}}" theme-mode="{{themeMode}}" bindchange="onSortChange">
             <view class="filter-picker filter-picker--dark">
               <text>{{sortOptions[sortIndex]}}</text>
               <view class="filter-picker__arrow filter-picker__arrow--light"></view>
@@ -139,7 +140,7 @@
 
         <view class="filter-sheet__footer">
           <view class="filter-sheet__apply" bindtap="closeFilterPanel">
-            <text>Show {{visibleListings.length}} listings</text>
+            <text>{{applyFilterLabel}}</text>
           </view>
         </view>
       </scroll-view>

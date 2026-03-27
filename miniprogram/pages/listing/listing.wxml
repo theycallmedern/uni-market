@@ -8,9 +8,11 @@
     show-scrollbar="{{false}}"
   >
     <view class="listing-page page-scroll__content">
-      <view wx:if="{{hiddenNotice || soldNotice}}" class="listing-status-card {{soldNotice ? 'listing-status-card--sold' : ''}}">
-        <text class="listing-status-badge {{soldNotice ? 'listing-status-badge--sold' : ''}}">{{soldNotice ? 'Sold' : 'Hidden'}}</text>
-        <text class="listing-status-copy">{{soldNotice || hiddenNotice}}</text>
+      <view wx:if="{{hiddenNotice || soldNotice || archivedNotice}}" class="listing-status-card {{soldNotice ? 'listing-status-card--sold' : ''}}">
+        <text class="listing-status-badge {{soldNotice ? 'listing-status-badge--sold' : (archivedNotice ? 'listing-status-badge--archived' : '')}}">
+          {{soldNotice ? copy.soldBadge : (archivedNotice ? copy.archivedStatus : copy.hiddenBadge)}}
+        </text>
+        <text class="listing-status-copy">{{soldNotice || archivedNotice || hiddenNotice}}</text>
       </view>
 
   <view class="gallery-shell">
@@ -38,32 +40,32 @@
     <text class="listing-price">{{listing.price}}</text>
     <text class="listing-title">{{listing.title}}</text>
     <view class="listing-meta-row">
-      <text wx:if="{{listing.isPromoted}}" class="listing-chip listing-chip--promoted">✦ Promoted</text>
-      <text wx:if="{{listing.condition}}" class="listing-chip listing-chip--condition {{conditionChipClass}}">{{listing.condition}}</text>
-      <text class="listing-chip listing-chip--subcategory">{{listing.subcategory}}</text>
-      <text class="listing-chip listing-chip--location">{{listing.location}}</text>
+      <text wx:if="{{listing.isPromoted}}" class="listing-chip listing-chip--promoted">{{listing.displayPromotedBadge}}</text>
+      <text wx:if="{{listing.condition}}" class="listing-chip listing-chip--condition {{conditionChipClass}}">{{listing.displayCondition}}</text>
+      <text class="listing-chip listing-chip--subcategory">{{listing.displaySubcategory}}</text>
+      <text class="listing-chip listing-chip--location">{{listing.displayLocation}}</text>
     </view>
     <text class="listing-description">{{listing.description}}</text>
   </view>
 
   <view class="detail-grid">
     <view class="detail-card">
-      <text class="detail-label">Location</text>
-      <text class="detail-value">{{listing.location}}</text>
+      <text class="detail-label">{{copy.locationLabel}}</text>
+      <text class="detail-value">{{listing.displayLocation}}</text>
     </view>
 
     <view wx:if="{{listing.university}}" class="detail-card">
-      <text class="detail-label">University</text>
+      <text class="detail-label">{{copy.universityLabel}}</text>
       <text class="detail-value">{{listing.university}}</text>
     </view>
   </view>
 
   <view wx:if="{{listing.address}}" class="listing-address-card">
     <view class="listing-address-card__head">
-      <text class="listing-address-card__label">Address</text>
+      <text class="listing-address-card__label">{{copy.addressLabel}}</text>
       <view class="listing-address-card__action" bindtap="copyAddress">
         <text class="listing-address-card__action-icon">⎘</text>
-        <text>Copy address</text>
+        <text>{{copy.copyAddress}}</text>
       </view>
     </view>
     <text class="listing-address-card__text">{{listing.address}}</text>
@@ -71,19 +73,19 @@
 
   <view wx:if="{{showOwnerAnalytics && ownerListingAnalytics}}" class="listing-owner-analytics">
     <view class="listing-owner-analytics__head">
-      <text class="listing-owner-analytics__title">Seller Pro insights</text>
-      <text class="listing-owner-analytics__subtitle">Only you can see how this listing performs</text>
+      <text class="listing-owner-analytics__title">{{copy.analyticsTitle}}</text>
+      <text class="listing-owner-analytics__subtitle">{{copy.analyticsSubtitle}}</text>
     </view>
     <view class="listing-owner-analytics__grid">
       <view class="listing-owner-analytics__item">
         <text class="listing-owner-analytics__value">{{ownerListingAnalytics.views}}</text>
-        <text class="listing-owner-analytics__label">Views</text>
-        <text class="listing-owner-analytics__trend">+{{ownerListingAnalytics.recentViews}} this week</text>
+        <text class="listing-owner-analytics__label">{{copy.analyticsViews}}</text>
+        <text class="listing-owner-analytics__trend">+{{ownerListingAnalytics.recentViews}} {{copy.thisWeekSuffix}}</text>
       </view>
       <view class="listing-owner-analytics__item">
         <text class="listing-owner-analytics__value">{{ownerListingAnalytics.saves}}</text>
-        <text class="listing-owner-analytics__label">Saved</text>
-        <text class="listing-owner-analytics__trend">+{{ownerListingAnalytics.recentSaves}} this week</text>
+        <text class="listing-owner-analytics__label">{{copy.analyticsSaved}}</text>
+        <text class="listing-owner-analytics__trend">+{{ownerListingAnalytics.recentSaves}} {{copy.thisWeekSuffix}}</text>
       </view>
     </view>
   </view>
@@ -109,7 +111,7 @@
       <view class="seller-details">
         <view class="seller-rating">
           <text class="seller-rating__value {{sellerStatusClass}}">{{sellerStatusLabel}}</text>
-          <text class="seller-rating__count">{{reviewSummary.count ? reviewSummary.averageLabel + ' ★ · ' + reviewSummary.countLabel : 'No reviews yet'}}</text>
+          <text class="seller-rating__count">{{reviewSummary.count ? reviewSummary.averageLabel + ' ★ · ' + reviewSummary.countLabel : copy.noReviewsYet}}</text>
         </view>
         <text wx:if="{{sellerTrustLabel}}" class="seller-note">{{sellerTrustLabel}}</text>
         <text wx:if="{{listingPublishedLabel}}" class="seller-wechat">{{listingPublishedLabel}}</text>
@@ -121,7 +123,7 @@
   <view class="action-bar">
     <view class="action-button action-button--ghost {{isSaved ? 'action-button--ghost-saved' : ''}}" bindtap="toggleSave">
       <text class="action-button__icon">{{isSaved ? '♥' : '♡'}}</text>
-      <text>{{isSaved ? 'Saved' : 'Save'}}</text>
+      <text>{{isSaved ? copy.savedButton : copy.saveButton}}</text>
     </view>
 
     <view class="action-button action-button--primary {{listing.isSold ? 'action-button--disabled' : ''}}" bindtap="contactSeller">
@@ -143,7 +145,7 @@
             </view>
           </view>
         </view>
-        <text>{{listing.isSold ? 'Sold' : 'Write in WeChat'}}</text>
+        <text>{{listing.isSold ? copy.soldBadge : copy.writeInWechatButton}}</text>
       </view>
     </view>
   </view>
@@ -157,8 +159,8 @@
         <view class="listing-menu-sheet" catchtap="stopMenuTap">
           <view class="listing-menu-sheet__handle"></view>
           <view class="listing-menu-sheet__header">
-            <text class="listing-menu-sheet__title">Listing options</text>
-            <text class="listing-menu-sheet__subtitle">Share this listing or send a report to moderation.</text>
+            <text class="listing-menu-sheet__title">{{copy.listingOptionsTitle}}</text>
+            <text class="listing-menu-sheet__subtitle">{{copy.listingOptionsSubtitle}}</text>
           </view>
 
           <view class="listing-menu-group">
@@ -167,8 +169,8 @@
               <view class="listing-menu-row">
                 <view class="listing-menu-row__icon listing-menu-row__icon--share">↗</view>
                 <view class="listing-menu-row__copy">
-                  <text class="listing-menu-row__title">Share listing</text>
-                  <text class="listing-menu-row__meta">Send the link in WeChat</text>
+                  <text class="listing-menu-row__title">{{copy.shareListingTitle}}</text>
+                  <text class="listing-menu-row__meta">{{copy.shareListingMeta}}</text>
                 </view>
               </view>
             </view>
@@ -176,8 +178,8 @@
             <view class="listing-menu-row" bindtap="copyListingLink">
               <view class="listing-menu-row__icon listing-menu-row__icon--copy">⎘</view>
               <view class="listing-menu-row__copy">
-                <text class="listing-menu-row__title">Copy link</text>
-                <text class="listing-menu-row__meta">Copy the listing path to clipboard</text>
+                <text class="listing-menu-row__title">{{copy.copyLinkTitle}}</text>
+                <text class="listing-menu-row__meta">{{copy.copyLinkMeta}}</text>
               </view>
             </view>
 
@@ -202,24 +204,24 @@
                 </view>
               </view>
               <view class="listing-menu-row__copy">
-                <text class="listing-menu-row__title">Write in WeChat</text>
-                <text class="listing-menu-row__meta">Copy the seller ID and continue in WeChat search</text>
+                <text class="listing-menu-row__title">{{copy.writeInWechatTitle}}</text>
+                <text class="listing-menu-row__meta">{{copy.writeInWechatMeta}}</text>
               </view>
             </view>
 
             <view class="listing-menu-row" bindtap="hideListing">
               <view class="listing-menu-row__icon listing-menu-row__icon--hide">×</view>
               <view class="listing-menu-row__copy">
-                <text class="listing-menu-row__title">Hide listing</text>
-                <text class="listing-menu-row__meta">Remove it from your feed on this device</text>
+                <text class="listing-menu-row__title">{{copy.hideListingTitle}}</text>
+                <text class="listing-menu-row__meta">{{copy.hideListingMeta}}</text>
               </view>
             </view>
 
             <view class="listing-menu-row listing-menu-row--danger" bindtap="blockSeller">
               <view class="listing-menu-row__icon listing-menu-row__icon--block">−</view>
               <view class="listing-menu-row__copy">
-                <text class="listing-menu-row__title">Block user</text>
-                <text class="listing-menu-row__meta">Hide all listings from this seller on this device</text>
+                <text class="listing-menu-row__title">{{copy.blockUserTitle}}</text>
+                <text class="listing-menu-row__meta">{{copy.blockUserMeta}}</text>
               </view>
             </view>
           </view>
@@ -228,13 +230,13 @@
             <view class="listing-menu-row listing-menu-row--danger" bindtap="reportListing">
               <view class="listing-menu-row__icon listing-menu-row__icon--report">!</view>
               <view class="listing-menu-row__copy">
-                <text class="listing-menu-row__title">{{hasReported ? 'Report already sent' : 'Report listing'}}</text>
-                <text class="listing-menu-row__meta">{{hasReported ? 'Moderation already has your report' : 'Scams, wrong category, or prohibited items'}}</text>
+                <text class="listing-menu-row__title">{{hasReported ? copy.reportSentTitle : copy.reportListingTitle}}</text>
+                <text class="listing-menu-row__meta">{{hasReported ? copy.reportSentMeta : copy.reportListingMeta}}</text>
               </view>
             </view>
           </view>
 
-          <view class="listing-menu-cancel" bindtap="closeMenu">Cancel</view>
+          <view class="listing-menu-cancel" bindtap="closeMenu">{{copy.menuCancel}}</view>
         </view>
       </view>
 
@@ -253,9 +255,12 @@
   <app-header title="{{navTitle}}" showBack="{{true}}" theme="{{themeMode}}"></app-header>
   <view class="listing-empty-page">
     <view class="listing-empty-card">
-      <text class="listing-empty-title">Listing hidden</text>
-      <text class="listing-empty-copy">You hid this listing on this device, so it no longer appears in your marketplace feed.</text>
-      <button class="listing-empty-button" bindtap="goToHome">Back to listings</button>
+      <text class="listing-empty-title">{{copy.emptyHiddenTitle}}</text>
+      <text class="listing-empty-copy">{{copy.emptyHiddenCopy}}</text>
+      <button class="listing-empty-button" bindtap="goToHome">
+        <text class="listing-empty-button__icon">←</text>
+        <text class="listing-empty-button__label">{{copy.backToListings}}</text>
+      </button>
     </view>
   </view>
 </view>
@@ -264,9 +269,12 @@
   <app-header title="{{navTitle}}" showBack="{{true}}" theme="{{themeMode}}"></app-header>
   <view class="listing-empty-page">
     <view class="listing-empty-card">
-      <text class="listing-empty-title">Seller hidden</text>
-      <text class="listing-empty-copy">You blocked this seller on this device, so their listings are no longer visible here.</text>
-      <button class="listing-empty-button" bindtap="goToHome">Back to listings</button>
+      <text class="listing-empty-title">{{copy.emptySellerHiddenTitle}}</text>
+      <text class="listing-empty-copy">{{copy.emptySellerHiddenCopy}}</text>
+      <button class="listing-empty-button" bindtap="goToHome">
+        <text class="listing-empty-button__icon">←</text>
+        <text class="listing-empty-button__label">{{copy.backToListings}}</text>
+      </button>
     </view>
   </view>
 </view>
@@ -275,9 +283,12 @@
   <app-header title="{{navTitle}}" showBack="{{true}}" theme="{{themeMode}}"></app-header>
   <view class="listing-empty-page">
     <view class="listing-empty-card">
-      <text class="listing-empty-title">Listing unavailable</text>
-      <text class="listing-empty-copy">This listing was hidden after moderation review.</text>
-      <button class="listing-empty-button" bindtap="goToHome">Back to listings</button>
+      <text class="listing-empty-title">{{copy.emptyUnavailableTitle}}</text>
+      <text class="listing-empty-copy">{{copy.emptyUnavailableCopy}}</text>
+      <button class="listing-empty-button" bindtap="goToHome">
+        <text class="listing-empty-button__icon">←</text>
+        <text class="listing-empty-button__label">{{copy.backToListings}}</text>
+      </button>
     </view>
   </view>
 </view>
@@ -286,9 +297,14 @@
   <app-header title="{{navTitle}}" showBack="{{true}}" theme="{{themeMode}}"></app-header>
   <view class="listing-empty-page">
     <view class="listing-empty-card">
-      <text class="listing-empty-title">Listing not found</text>
-      <text class="listing-empty-copy">This listing is no longer available or the link is outdated.</text>
-      <button class="listing-empty-button" bindtap="goToHome">Back to listings</button>
+      <text class="listing-empty-title">{{copy.emptyNotFoundTitle}}</text>
+      <text class="listing-empty-copy">{{copy.emptyNotFoundCopy}}</text>
+      <button class="listing-empty-button" bindtap="goToHome">
+        <text class="listing-empty-button__icon">←</text>
+        <text class="listing-empty-button__label">{{copy.backToListings}}</text>
+      </button>
     </view>
   </view>
 </view>
+<feedback-modal id="feedback-modal" themeMode="{{themeMode}}"></feedback-modal>
+<feedback-action-sheet id="feedback-action-sheet" themeMode="{{themeMode}}"></feedback-action-sheet>

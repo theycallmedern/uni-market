@@ -3,6 +3,7 @@
   <scroll-view
     class="create-scroll"
     scroll-y
+    scroll-top="{{createScrollTop}}"
     enhanced
     bounces="{{false}}"
     show-scrollbar="{{false}}"
@@ -18,16 +19,16 @@
 
       <view class="form-card">
         <view class="card-head">
-          <text class="card-title">Photos</text>
-          <text class="card-hint">Up to {{photoLimit}} · first is cover</text>
+          <text class="card-title">{{copy.cardPhotos}}</text>
+          <text class="card-hint">{{photoHintText}}</text>
         </view>
-        <text class="card-subhint">Tap a photo to preview. Use arrows to reorder.</text>
+        <text class="card-subhint">{{copy.photoSubhint}}</text>
 
         <scroll-view class="photo-scroll" scroll-x enhanced show-scrollbar="{{false}}">
           <view class="photo-row">
             <view class="photo-add" bindtap="choosePhotos">
               <text class="photo-add__icon">+</text>
-              <text class="photo-add__text">Add photo</text>
+              <text class="photo-add__text">{{copy.addPhoto}}</text>
             </view>
 
             <block wx:for="{{form.images}}" wx:key="*this">
@@ -40,7 +41,7 @@
                   bindtap="previewPhoto"
                 />
                 <view class="photo-card__badge {{index === 0 ? 'photo-card__badge--cover' : ''}}">
-                  <text>{{index === 0 ? 'Cover' : index + 1}}</text>
+                  <text>{{index === 0 ? copy.cover : index + 1}}</text>
                 </view>
                 <view class="photo-card__remove" data-index="{{index}}" catchtap="removePhoto">
                   <text class="photo-card__remove-icon">×</text>
@@ -67,27 +68,29 @@
 
       <view class="form-card">
         <view class="card-head">
-          <text class="card-title">Basics</text>
-          <text class="card-hint">What are you offering?</text>
+          <text class="card-title">{{copy.cardBasics}}</text>
+          <text class="card-hint">{{copy.cardBasicsHint}}</text>
         </view>
 
         <view class="field">
-          <text class="field-label">Title</text>
+          <text class="field-label">{{copy.titleLabel}}</text>
           <input
             class="field-input"
-            placeholder="Room near campus, iPhone 14, bike..."
+            placeholder="{{copy.titlePlaceholder}}"
             placeholder-style="{{isDarkTheme ? 'color: #8e99a3;' : ''}}"
             style="{{isDarkTheme ? 'color: #f2f5f7;' : ''}}"
             value="{{form.title}}"
             maxlength="70"
             data-field="title"
             bindinput="onFieldInput"
+            bindblur="onTextFieldBlur"
           />
+          <text wx:if="{{titleHintVisible}}" class="field-helper">{{titleHintText}}</text>
         </view>
 
         <view class="field-row">
           <view class="field field-half">
-            <text class="field-label">Price</text>
+            <text class="field-label">{{copy.priceLabel}}</text>
             <input
               class="field-input"
               placeholder="2800"
@@ -102,18 +105,18 @@
           </view>
 
           <view class="field field-half">
-            <text class="field-label">Location</text>
+            <text class="field-label">{{copy.locationLabel}}</text>
             <view class="picker-field picker-field--locked">
-              <text class="picker-field__locked-value">Hangzhou</text>
+              <text class="picker-field__locked-value">{{cityLabel}}</text>
             </view>
           </view>
         </view>
 
         <view class="field">
-          <text class="field-label">Address</text>
+          <text class="field-label">{{copy.addressLabel}}</text>
           <input
             class="field-input"
-            placeholder="Xixi Campus, Yuhangtang Rd 866, Building 3"
+            placeholder="{{copy.addressPlaceholder}}"
             placeholder-style="{{isDarkTheme ? 'color: #8e99a3;' : ''}}"
             style="{{isDarkTheme ? 'color: #f2f5f7;' : ''}}"
             value="{{form.address}}"
@@ -127,7 +130,7 @@
 
         <view class="field-row">
           <view class="field field-half">
-            <text class="field-label">Category</text>
+            <text class="field-label">{{copy.categoryLabel}}</text>
             <view class="picker-field" data-field="category" bindtap="openCreateSheet">
               <text>{{categories[categoryIndex].name}}</text>
               <text class="picker-arrow">⌄</text>
@@ -135,7 +138,7 @@
           </view>
 
           <view class="field field-half">
-            <text class="field-label">Subcategory</text>
+            <text class="field-label">{{copy.subcategoryLabel}}</text>
             <view class="picker-field" data-field="subcategory" bindtap="openCreateSheet">
               <text>{{subcategoryOptions[subcategoryIndex]}}</text>
               <text class="picker-arrow">⌄</text>
@@ -144,10 +147,10 @@
         </view>
 
         <view wx:if="{{isCustomSubcategory}}" class="field">
-          <text class="field-label">Custom subcategory</text>
+          <text class="field-label">{{copy.customSubcategoryLabel}}</text>
           <input
             class="field-input"
-            placeholder="Type your own subcategory"
+            placeholder="{{copy.customSubcategoryPlaceholder}}"
             placeholder-style="{{isDarkTheme ? 'color: #8e99a3;' : ''}}"
             style="{{isDarkTheme ? 'color: #f2f5f7;' : ''}}"
             value="{{customSubcategory}}"
@@ -157,7 +160,7 @@
         </view>
 
         <view wx:if="{{requiresCondition}}" class="field">
-          <text class="field-label">Condition</text>
+          <text class="field-label">{{copy.conditionLabel}}</text>
           <view class="picker-field" data-field="condition" bindtap="openCreateSheet">
             <text>{{conditionOptions[conditionIndex]}}</text>
             <text class="picker-arrow">⌄</text>
@@ -167,49 +170,38 @@
 
       <view class="form-card">
         <view class="card-head">
-          <text class="card-title">Contact</text>
-          <text class="card-hint">How should buyers find you?</text>
+          <text class="card-title">{{copy.cardContact}}</text>
+          <text class="card-hint">{{copy.cardContactHint}}</text>
         </view>
 
         <view class="field">
-          <text class="field-label">University</text>
+          <text class="field-label">{{copy.universityLabel}}</text>
           <view class="picker-field" data-field="university" bindtap="openCreateSheet">
             <text>{{universityOptions[universityIndex]}}</text>
             <text class="picker-arrow">⌄</text>
           </view>
         </view>
 
-        <view class="field">
-          <text class="field-label">WeChat ID</text>
-          <input
-            class="field-input"
-            placeholder="wechatid (6-20 chars)"
-            placeholder-style="{{isDarkTheme ? 'color: #8e99a3;' : ''}}"
-            style="{{isDarkTheme ? 'color: #f2f5f7;' : ''}}"
-            value="{{form.wechat}}"
-            maxlength="20"
-            data-field="wechat"
-            bindinput="onFieldInput"
-          />
-        </view>
       </view>
 
       <view class="form-card">
         <view class="card-head">
-          <text class="card-title">Description</text>
-          <text class="card-hint">Add condition, timing, pickup notes, or extras</text>
+          <text class="card-title">{{copy.cardDescription}}</text>
+          <text class="card-hint">{{copy.cardDescriptionHint}}</text>
         </view>
 
         <textarea
           class="description-input"
-          placeholder="Describe the item, service, or room in a way another student can trust quickly."
+          placeholder="{{copy.descriptionPlaceholder}}"
           placeholder-style="{{isDarkTheme ? 'color: #8e99a3;' : ''}}"
           style="{{isDarkTheme ? 'color: #f2f5f7;' : ''}}"
           value="{{form.description}}"
           data-field="description"
           bindinput="onFieldInput"
+          bindblur="onTextFieldBlur"
           maxlength="600"
         />
+        <text wx:if="{{descriptionHintVisible}}" class="field-helper">{{descriptionHintText}}</text>
       </view>
 
       <view class="publish-inline">
@@ -221,7 +213,7 @@
           <view class="create-sheet__handle"></view>
           <view class="create-sheet__head">
             <text class="create-sheet__title">{{createSheetTitle}}</text>
-            <text class="create-sheet__close" bindtap="closeCreateSheet">Cancel</text>
+            <text class="create-sheet__close" bindtap="closeCreateSheet">{{copy.closeSheet}}</text>
           </view>
           <scroll-view class="create-sheet__scroll" scroll-y enhanced show-scrollbar="{{false}}">
             <view
@@ -240,3 +232,5 @@
     </view>
   </scroll-view>
 </view>
+<feedback-modal id="feedback-modal" themeMode="{{themeMode}}"></feedback-modal>
+<feedback-action-sheet id="feedback-action-sheet" themeMode="{{themeMode}}"></feedback-action-sheet>

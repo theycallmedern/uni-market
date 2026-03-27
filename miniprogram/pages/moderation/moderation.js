@@ -1,6 +1,6 @@
-const reportsStore = require('../../utils/reports')
-const market = require('../../data/market')
-const adminStore = require('../../utils/admin')
+const reportsStore = require('../../services/api/reports')
+const moderationApi = require('../../services/api/moderation')
+const adminStore = require('../../services/api/admin')
 const storage = require('../../utils/storage')
 const feedback = require('../../utils/ui-feedback')
 const uiText = require('../../constants/messages')
@@ -65,8 +65,12 @@ function normalizePromotionRequest(request) {
 }
 
 function normalizeSellerProSubscription(subscription) {
+  const status = subscription && subscription.status ? subscription.status : 'inactive'
+
   return {
     ...subscription,
+    status,
+    createdLabel: formatDate(subscription.createdAt),
     grantedLabel: formatDate(subscription.grantedAt),
     expiresLabel: formatDate(subscription.expiresAt)
   }
@@ -83,6 +87,7 @@ Page({
     archivedReports: [],
     reportsArchiveOpen: false,
     promotionRequests: [],
+    sellerProRequests: [],
     sellerProSubscriptions: [],
     summary: {
       pending: 0,
@@ -91,12 +96,13 @@ Page({
       dismissed: 0
     },
     pendingPromotionCount: 0,
+    pendingSellerProCount: 0,
     sellerProCount: 0
   },
 
-  onShow() {
+  async onShow() {
     this.refreshTheme()
-    const isAdmin = adminStore.isAdmin()
+    const isAdmin = await adminStore.getAdminState()
     this.setData({ isAdmin })
 
     if (!isAdmin) {
@@ -110,13 +116,15 @@ Page({
     this.setData(storage.getThemeData(), callback)
   },
 
-  refreshReports() {
-    const reports = reportsStore.getReports().map(normalizeReport)
+  async refreshReports() {
+    const reports = (await reportsStore.getModerationReports()).map(normalizeReport)
     const activeReports = reports.filter((report) => report.status === 'pending' || report.status === 'reviewing')
     const archivedReports = reports.filter((report) => report.status === 'resolved' || report.status === 'dismissed')
     const summary = buildSummary(reports)
-    const promotionRequests = market.getPromotionRequests({ status: 'pending' }).map(normalizePromotionRequest)
-    const sellerProSubscriptions = market.getSellerProSubscriptions().map(normalizeSellerProSubscription)
+    const promotionRequests = (await moderationApi.getPromotionRequests({ status: 'pending' })).map(normalizePromotionRequest)
+    const sellerProRequests = (await moderationApi.getSellerProSubscriptions({ status: 'pending' })).map(normalizeSellerProSubscription)
+    const sellerProSubscriptions = (await moderationApi.getSellerProSubscriptions({ status: 'active' })).map(normalizeSellerProSubscription)
+
     const sellerProCount = sellerProSubscriptions.length
 
     this.setData({
@@ -125,8 +133,10 @@ Page({
       archivedReports,
       summary,
       promotionRequests,
+      sellerProRequests,
       sellerProSubscriptions,
       pendingPromotionCount: promotionRequests.length,
+      pendingSellerProCount: sellerProRequests.length,
       sellerProCount
     })
   },
@@ -135,16 +145,16 @@ Page({
     const { id } = e.currentTarget.dataset
     const itemList = STATUS_OPTIONS.map((option) => option.label)
 
-    wx.showActionSheet({
+    feedback.showActionSheet({
       itemList,
       success: (res) => {
         const next = STATUS_OPTIONS[res.tapIndex]
         if (!next) return
 
-        reportsStore.updateReportStatus(id, next.value)
-        this.refreshReports()
-
-        feedback.showSuccessToast(uiText.MODERATION.STATUS_UPDATED)
+        reportsStore.updateModerationReportStatus(id, next.value).then(() => {
+          this.refreshReports()
+          feedback.showSuccessToast(uiText.MODERATION.STATUS_UPDATED)
+        })
       }
     })
   },
@@ -167,9 +177,9 @@ Page({
     })
   },
 
-  approvePromotionRequest(e) {
+  async approvePromotionRequest(e) {
     const { id } = e.currentTarget.dataset
-    const result = market.reviewPromotionRequest(id, 'approve')
+    const result = await moderationApi.reviewPromotionRequest(id, 'approve')
 
     if (!result) {
       feedback.showNeutralToast(uiText.LISTINGS_MANAGER.LISTING_NOT_FOUND)
@@ -180,9 +190,9 @@ Page({
     feedback.showSuccessToast(uiText.MODERATION.PROMOTION_APPROVED)
   },
 
-  rejectPromotionRequest(e) {
+  async rejectPromotionRequest(e) {
     const { id } = e.currentTarget.dataset
-    const result = market.reviewPromotionRequest(id, 'reject')
+    const result = await moderationApi.reviewPromotionRequest(id, 'reject')
 
     if (!result) {
       feedback.showNeutralToast(uiText.LISTINGS_MANAGER.LISTING_NOT_FOUND)
@@ -199,10 +209,10 @@ Page({
       editable: true,
       placeholderText: uiText.MODERATION.SELLER_PRO_PLACEHOLDER,
       confirmText: uiText.MODERATION.SELLER_PRO_CONFIRM,
-      success: (res) => {
+      success: async (res) => {
         if (!res.confirm) return
 
-        const result = market.grantSellerProByNickname(res.content || '', {
+        const result = await moderationApi.grantSellerProByNickname(res.content || '', {
           grantedBy: 'admin-panel'
         })
 
@@ -217,14 +227,40 @@ Page({
     })
   },
 
-  revokeSellerPro(e) {
+  async approveSellerProRequest(e) {
+    const { id } = e.currentTarget.dataset
+    const result = await moderationApi.reviewSellerProSubscription(id, 'approve')
+
+    if (!result) {
+      feedback.showNeutralToast(uiText.MODERATION.SELLER_PRO_NOT_FOUND)
+      return
+    }
+
+    this.refreshReports()
+    feedback.showSuccessToast(uiText.MODERATION.SELLER_PRO_APPROVED)
+  },
+
+  async rejectSellerProRequest(e) {
+    const { id } = e.currentTarget.dataset
+    const result = await moderationApi.reviewSellerProSubscription(id, 'reject')
+
+    if (!result) {
+      feedback.showNeutralToast(uiText.MODERATION.SELLER_PRO_NOT_FOUND)
+      return
+    }
+
+    this.refreshReports()
+    feedback.showSuccessToast(uiText.MODERATION.SELLER_PRO_REJECTED)
+  },
+
+  async revokeSellerPro(e) {
     const { id } = e.currentTarget.dataset
 
     if (!id) {
       return
     }
 
-    const result = market.revokeSellerProSubscription(id)
+    const result = await moderationApi.revokeSellerProSubscription(id)
 
     if (!result) {
       feedback.showNeutralToast(uiText.MODERATION.SELLER_PRO_NOT_FOUND)

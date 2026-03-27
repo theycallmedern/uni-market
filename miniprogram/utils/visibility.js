@@ -19,7 +19,7 @@ function getSellerKeyFromListing(listing) {
 
   const seller = listing.seller || {}
   return toLookupKey(
-    seller.wechat || `${seller.name || ''} ${listing.university || ''} ${listing.location || ''}`
+    seller.id || seller.wechat || `${seller.name || ''} ${listing.university || ''} ${listing.location || ''}`
   )
 }
 
@@ -29,6 +29,28 @@ function getHiddenListingIds() {
 
 function getBlockedSellerKeys() {
   return normalizeList(storage.safeGetStorage(BLOCKED_SELLER_KEYS_STORAGE_KEY, []))
+}
+
+function setHiddenListingIds(ids) {
+  const normalizedIds = normalizeList(ids)
+  storage.safeSetStorage(HIDDEN_LISTING_IDS_STORAGE_KEY, normalizedIds)
+  return normalizedIds
+}
+
+function setBlockedSellerKeys(keys) {
+  const normalizedKeys = normalizeList(keys).map((item) => toLookupKey(item))
+  storage.safeSetStorage(BLOCKED_SELLER_KEYS_STORAGE_KEY, normalizedKeys)
+  return normalizedKeys
+}
+
+function setVisibilityPreferences(preferences = {}) {
+  const hiddenListingIds = setHiddenListingIds(preferences.hiddenListingIds || [])
+  const blockedSellerKeys = setBlockedSellerKeys(preferences.blockedSellerKeys || [])
+
+  return {
+    hiddenListingIds,
+    blockedSellerKeys
+  }
 }
 
 function isListingHidden(listingId) {
@@ -42,8 +64,7 @@ function isSellerBlocked(sellerKey) {
 function hideListing(listingId) {
   const targetId = String(listingId)
   const nextIds = Array.from(new Set([...getHiddenListingIds(), targetId]))
-  storage.safeSetStorage(HIDDEN_LISTING_IDS_STORAGE_KEY, nextIds)
-  return nextIds
+  return setHiddenListingIds(nextIds)
 }
 
 function blockSeller(sellerKey) {
@@ -54,8 +75,7 @@ function blockSeller(sellerKey) {
   }
 
   const nextKeys = Array.from(new Set([...getBlockedSellerKeys(), normalizedKey]))
-  storage.safeSetStorage(BLOCKED_SELLER_KEYS_STORAGE_KEY, nextKeys)
-  return nextKeys
+  return setBlockedSellerKeys(nextKeys)
 }
 
 function isListingVisible(listing) {
@@ -70,14 +90,25 @@ function filterVisibleListings(listings) {
   return (Array.isArray(listings) ? listings : []).filter(isListingVisible)
 }
 
+function hydrateVisibilityPreferences() {
+  return {
+    hiddenListingIds: getHiddenListingIds(),
+    blockedSellerKeys: getBlockedSellerKeys()
+  }
+}
+
 module.exports = {
   getSellerKeyFromListing,
   getHiddenListingIds,
   getBlockedSellerKeys,
+  setHiddenListingIds,
+  setBlockedSellerKeys,
+  setVisibilityPreferences,
   isListingHidden,
   isSellerBlocked,
   hideListing,
   blockSeller,
   isListingVisible,
-  filterVisibleListings
+  filterVisibleListings,
+  hydrateVisibilityPreferences
 }

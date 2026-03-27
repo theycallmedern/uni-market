@@ -1,11 +1,16 @@
-const market = require('../../data/market')
+const api = require('../../services/api')
+const listingsRuntime = require('../../services/api/runtime-listings')
 const storage = require('../../utils/storage')
+const localeStore = require('../../utils/locale')
 const universitiesStore = require('../../utils/universities')
 const listingsUtils = require('../../utils/listings')
+const visibilityStore = require('../../services/api/visibility')
+const copyStore = require('../../constants/copy')
 
-const UNIVERSITY_OPTIONS = ['All universities', ...universitiesStore.getPublicUniversityOptions()]
-const SORT_OPTIONS = ['Newest', 'Price low to high', 'Price high to low']
 const INITIAL_THEME = storage.getThemeData()
+const INITIAL_LOCALE = localeStore.getLocale()
+const catalogApi = api.catalog
+const listingsApi = api.listings
 
 const PRICE_RANGE_CONFIGS = {
   housing: [
@@ -90,51 +95,61 @@ const QUICK_PRESETS = {
   ]
 }
 
-function buildPrimaryFilters(category) {
+function buildPrimaryFilters(category, locale) {
+  const allOption = copyStore.getPageCopy('categoryPage', locale).allOption
+  const universityOptions = copyStore.getUniversityFilterOptions(locale)
+  const subcategoryValues = category.subcategories || []
+  const subcategoryLabel = copyStore.getCategoryPrimaryFilterLabel(category.primaryFilters[0], locale)
+  const universityLabel = copyStore.getCategoryPrimaryFilterLabel(category.primaryFilters[1], locale)
+
   return [
     {
       key: 'subcategory',
-      label: category.primaryFilters[0],
-      optionLabels: ['All', ...category.subcategories],
+      label: subcategoryLabel,
+      optionValues: [''].concat(subcategoryValues),
+      optionLabels: [allOption].concat(subcategoryValues.map((item) => copyStore.translateSubcategory(item, locale))),
       selectedIndex: 0,
-      displayLabel: category.primaryFilters[0]
+      displayLabel: subcategoryLabel
     },
     {
       key: 'university',
-      label: category.primaryFilters[1],
-      optionLabels: UNIVERSITY_OPTIONS,
+      label: universityLabel,
+      optionValues: [''].concat(universitiesStore.getPublicUniversityOptions()),
+      optionLabels: universityOptions,
       selectedIndex: 0,
-      displayLabel: category.primaryFilters[1]
+      displayLabel: universityLabel
     }
   ]
 }
 
-function buildSecondaryFilters(categoryId, category) {
+function buildSecondaryFilters(categoryId, category, locale) {
   const priceRanges = PRICE_RANGE_CONFIGS[categoryId] || PRICE_RANGE_CONFIGS.items
+  const priceLabel = copyStore.getCategorySecondaryFilterLabel(category.secondaryFilters[0], locale)
+  const sortLabel = copyStore.getCategorySecondaryFilterLabel(category.secondaryFilters[1], locale)
 
   return [
     {
       key: 'priceRange',
-      label: category.secondaryFilters[0],
-      optionLabels: priceRanges.map((item) => item.label),
+      label: priceLabel,
+      optionLabels: priceRanges.map((item) => copyStore.getCategoryPriceRangeLabel(item.label, locale)),
       selectedIndex: 0,
-      displayLabel: category.secondaryFilters[0]
+      displayLabel: priceLabel
     },
     {
       key: 'sort',
-      label: category.secondaryFilters[1],
-      optionLabels: SORT_OPTIONS,
+      label: sortLabel,
+      optionLabels: copyStore.getCommonCopy(locale).sortOptions,
       selectedIndex: 0,
-      displayLabel: category.secondaryFilters[1]
+      displayLabel: sortLabel
     }
   ]
 }
 
-function buildQuickFilters(categoryId) {
+function buildQuickFilters(categoryId, locale) {
   const presets = QUICK_PRESETS[categoryId] || QUICK_PRESETS.items
   return presets.map((preset, index) => ({
     key: `${categoryId}-${index}`,
-    label: preset.label,
+    label: copyStore.getCategoryQuickPresetLabel(preset.label, locale),
     isActive: index === 0
   }))
 }
@@ -153,11 +168,11 @@ function getPriceRange(categoryId, selectedIndex) {
 function normalizeSelectedFilters(categoryId, primaryFilters, secondaryFilters, quickFilters) {
   const selectedSubcategory =
     primaryFilters[0] && primaryFilters[0].selectedIndex > 0
-      ? primaryFilters[0].optionLabels[primaryFilters[0].selectedIndex]
+      ? ((primaryFilters[0].optionValues && primaryFilters[0].optionValues[primaryFilters[0].selectedIndex]) || '')
       : ''
   const selectedUniversity =
     primaryFilters[1] && primaryFilters[1].selectedIndex > 0
-      ? primaryFilters[1].optionLabels[primaryFilters[1].selectedIndex]
+      ? ((primaryFilters[1].optionValues && primaryFilters[1].optionValues[primaryFilters[1].selectedIndex]) || '')
       : ''
   const selectedPriceRange = getPriceRange(categoryId, secondaryFilters[0] ? secondaryFilters[0].selectedIndex : 0)
   const activeQuickPreset = getActiveQuickPreset(categoryId, quickFilters)
@@ -196,20 +211,14 @@ function filterListings(listings, filters) {
   })
 }
 
-function buildShowResultsLabel(count) {
-  if (!count) {
-    return 'No listings found'
-  }
-
-  return count === 1 ? 'Show 1 listing' : `Show ${count} listings`
-}
-
 Page({
   data: {
+    locale: INITIAL_LOCALE,
+    copy: copyStore.getPageCopy('categoryPage', INITIAL_LOCALE),
     themeMode: INITIAL_THEME.themeMode,
     themeClass: INITIAL_THEME.themeClass,
     isDarkTheme: INITIAL_THEME.isDarkTheme,
-    navTitle: 'Categories',
+    navTitle: copyStore.getPageCopy('categoryPage', INITIAL_LOCALE).navTitle,
     categoryId: '',
     isAllCategories: false,
     category: null,
@@ -233,48 +242,68 @@ Page({
 
   onLoad(query) {
     this.refreshTheme()
-    const categoryId = query.id || 'all'
+    this.refreshLocale(() => {
+      const categoryId = query.id || 'all'
 
-    if (categoryId === 'all') {
-      wx.setNavigationBarTitle({
-        title: 'Categories'
-      })
+      if (categoryId === 'all') {
+        wx.setNavigationBarTitle({
+          title: this.data.copy.navTitle
+        })
 
-      this.setData({
-        navTitle: 'Categories',
-        categoryId,
-        isAllCategories: true,
-        categories: market.getPublishCategories()
-      })
-      return
-    }
+        this.setData({
+          navTitle: this.data.copy.navTitle,
+          categoryId,
+          isAllCategories: true,
+          categories: copyStore.mapCategories(catalogApi.getPublishCategories(), this.data.locale)
+        })
+        return
+      }
 
-    this.initializeCategory(categoryId)
+      this.initializeCategory(categoryId)
+    })
   },
 
   onShow() {
-    this.refreshTheme()
-    if (!this.data.isAllCategories && this.data.categoryId) {
-      this.setData({
-        allListings: market.getFeedListingsByCategory(this.data.categoryId),
-        subcategoryCards: market.getSubcategoryCards(this.data.categoryId)
-      }, () => {
-        this.applyFilters()
-      })
-    }
+    this.refreshLocale(() => {
+      this.refreshTheme()
+      if (this.data.isAllCategories) {
+        this.setData({
+          navTitle: this.data.copy.navTitle,
+          categories: copyStore.mapCategories(catalogApi.getPublishCategories(), this.data.locale)
+        })
+        return
+      }
+      if (!this.data.isAllCategories && this.data.categoryId) {
+        this.initializeCategory(this.data.categoryId)
+      }
+    })
   },
 
   refreshTheme() {
     this.setData(storage.getThemeData())
   },
 
-  initializeCategory(categoryId) {
-    const category = market.categoryConfigs[categoryId] || market.categoryConfigs.housing
-    const featured = market.featuredCards[categoryId] || market.featuredCards.housing
-    const allListings = market.getFeedListingsByCategory(categoryId)
-    const primaryFilters = buildPrimaryFilters(category)
-    const secondaryFilters = buildSecondaryFilters(categoryId, category)
-    const quickFilters = buildQuickFilters(categoryId)
+  refreshLocale(callback) {
+    const locale = localeStore.getLocale()
+
+    this.setData({
+      locale,
+      copy: copyStore.getPageCopy('categoryPage', locale)
+    }, callback)
+  },
+
+  async initializeCategory(categoryId) {
+    const locale = this.data.locale
+    const rawCategory = catalogApi.categoryConfigs[categoryId] || catalogApi.categoryConfigs.housing
+    const category = {
+      ...rawCategory,
+      title: copyStore.getCategoryLabel(categoryId, locale),
+      region: copyStore.getCategoryRegionLabel(rawCategory.region, locale)
+    }
+    const featured = copyStore.getLocalizedFeaturedCards(categoryId, locale)
+    const primaryFilters = buildPrimaryFilters(rawCategory, locale)
+    const secondaryFilters = buildSecondaryFilters(categoryId, rawCategory, locale)
+    const quickFilters = buildQuickFilters(categoryId, locale)
 
     wx.setNavigationBarTitle({
       title: category.title
@@ -287,11 +316,30 @@ Page({
       category,
       categoryRegionLabel: category.region,
       featured,
-      allListings,
+      allListings: listingsRuntime.enabled ? [] : listingsApi.getFeedByCategory(categoryId),
       primaryFilters,
       secondaryFilters,
       quickFilters,
-      subcategoryCards: market.getSubcategoryCards(categoryId)
+      subcategoryCards: catalogApi.getSubcategoryCards(categoryId).map((item) => ({
+        ...item,
+        rawName: item.name,
+        name: copyStore.translateSubcategory(item.name, locale)
+      }))
+    }, () => {
+      this.applyFilters()
+    })
+
+    if (!listingsRuntime.enabled) {
+      return
+    }
+
+    if (visibilityStore.enabled) {
+      await visibilityStore.syncPreferences()
+    }
+    const allListings = await listingsRuntime.getFeedByCategory(categoryId)
+
+    this.setData({
+      allListings
     }, () => {
       this.applyFilters()
     })
@@ -305,7 +353,7 @@ Page({
     this.setData({
       categoryRegionLabel: selectedFilters.university || (category ? category.region : ''),
       filteredCount: filteredListings.length,
-      showResultsLabel: buildShowResultsLabel(filteredListings.length)
+      showResultsLabel: copyStore.getCategoryShowResultsLabel(filteredListings.length, this.data.locale)
     })
   },
 
@@ -366,7 +414,7 @@ Page({
       filterSheetOpen: true,
       filterSheetGroup: group || 'primary',
       filterSheetKey: key || '',
-      filterSheetTitle: targetFilter.label || 'Select option',
+      filterSheetTitle: targetFilter.label || this.data.copy.selectOption,
       filterSheetOptions: targetFilter.optionLabels,
       filterSheetValue: Number(targetFilter.selectedIndex) || 0
     })
@@ -431,11 +479,12 @@ Page({
 
   resetFilters() {
     const { categoryId, category } = this.data
+    const rawCategory = catalogApi.categoryConfigs[categoryId] || category
 
     this.setData({
-      primaryFilters: buildPrimaryFilters(category),
-      secondaryFilters: buildSecondaryFilters(categoryId, category),
-      quickFilters: buildQuickFilters(categoryId),
+      primaryFilters: buildPrimaryFilters(rawCategory, this.data.locale),
+      secondaryFilters: buildSecondaryFilters(categoryId, rawCategory, this.data.locale),
+      quickFilters: buildQuickFilters(categoryId, this.data.locale),
       filterSheetOpen: false
     }, () => {
       this.applyFilters()

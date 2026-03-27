@@ -255,6 +255,51 @@
   color: #6e6e6e;
 }
 
+.account-action__copy--lead {
+  margin-top: 10rpx;
+}
+
+.account-action__benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  margin-top: 14rpx;
+}
+
+.account-action__benefit {
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+}
+
+.account-action__benefit-dot {
+  flex-shrink: 0;
+  margin-top: 2rpx;
+  font-size: 24rpx;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #4f8f50;
+}
+
+.account-action__benefit-copy {
+  display: block;
+  font-size: 24rpx;
+  line-height: 1.42;
+  color: #6e6e6e;
+}
+
+.account-action__offer {
+  display: inline-block;
+  margin-top: 16rpx;
+  padding: 10rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(126, 217, 87, 0.12);
+  color: #2f7a32;
+  font-size: 22rpx;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
 .account-action--dark .account-action__copy {
   color: #666666;
 }
@@ -640,10 +685,20 @@
 .theme-dark .account-note,
 .theme-dark .account-section__subtitle,
 .theme-dark .account-action__copy,
+.theme-dark .account-action__benefit-copy,
 .theme-dark .account-info-card__copy,
 .theme-dark .account-info-card__brand-note,
 .theme-dark .account-stat__label {
   color: #8e99a3;
+}
+
+.theme-dark .account-action__benefit-dot {
+  color: #93d98b;
+}
+
+.theme-dark .account-action__offer {
+  background: rgba(126, 217, 87, 0.16);
+  color: #b8efb0;
 }
 
 .theme-dark .account-preview-pill {

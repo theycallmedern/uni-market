@@ -1,12 +1,28 @@
 const STORAGE_KEY = 'savedListingIds'
 const listingStats = require('./listing-stats')
 
+function canUseStorage() {
+  return typeof wx !== 'undefined'
+    && wx
+    && typeof wx.getStorageSync === 'function'
+    && typeof wx.setStorageSync === 'function'
+}
+
 function getSavedListingIds() {
+  if (!canUseStorage()) {
+    return []
+  }
+
   return wx.getStorageSync(STORAGE_KEY) || []
 }
 
 function setSavedListingIds(ids) {
+  if (!canUseStorage()) {
+    return ids
+  }
+
   wx.setStorageSync(STORAGE_KEY, ids)
+  return ids
 }
 
 function isListingSaved(id) {
@@ -52,6 +68,10 @@ function clearSavedListings() {
   return []
 }
 
+function hydrateSavedListingIds() {
+  return getSavedListingIds()
+}
+
 module.exports = {
   getSavedListingIds,
   setSavedListingIds,
@@ -59,5 +79,6 @@ module.exports = {
   toggleSavedListing,
   decorateListingsWithSaved,
   removeSavedListings,
-  clearSavedListings
+  clearSavedListings,
+  hydrateSavedListingIds
 }

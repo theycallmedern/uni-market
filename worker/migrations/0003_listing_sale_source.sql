@@ -1,0 +1,1 @@
+ALTER TABLE listings ADD COLUMN sold_on_unimarket INTEGER NOT NULL DEFAULT 1;

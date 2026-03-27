@@ -6,6 +6,7 @@ const CORE_MODULES = [
   'miniprogram/utils/profile.js',
   'miniprogram/utils/reports.js',
   'miniprogram/data/market.js',
+  'miniprogram/utils/reviews.js',
   'miniprogram/utils/saved.js',
   'miniprogram/utils/listing-stats.js',
   'miniprogram/utils/visibility.js',
@@ -30,8 +31,49 @@ function createWxMock() {
       setNavigationBarTitle() {},
       navigateTo() {},
       redirectTo() {},
-      navigateBack() {}
+      navigateBack() {},
+      showToast() {},
+      showModal() {},
+      showActionSheet() {},
+      nextTick(callback) {
+        if (typeof callback === 'function') {
+          callback()
+        }
+      }
     }
+  }
+}
+
+async function withMockedModules(mockMap, run) {
+  const previousEntries = []
+
+  Object.entries(mockMap || {}).forEach(([relativePath, exports]) => {
+    const absolutePath = path.join(ROOT, relativePath)
+    const resolvedPath = require.resolve(absolutePath)
+    previousEntries.push({
+      resolvedPath,
+      hadEntry: Object.prototype.hasOwnProperty.call(require.cache, resolvedPath),
+      entry: require.cache[resolvedPath]
+    })
+
+    require.cache[resolvedPath] = {
+      id: resolvedPath,
+      filename: resolvedPath,
+      loaded: true,
+      exports
+    }
+  })
+
+  try {
+    return await run()
+  } finally {
+    previousEntries.reverse().forEach(({ resolvedPath, hadEntry, entry }) => {
+      if (hadEntry) {
+        require.cache[resolvedPath] = entry
+      } else {
+        delete require.cache[resolvedPath]
+      }
+    })
   }
 }
 
@@ -92,6 +134,7 @@ function loadCoreModules() {
     profileStore: require(path.join(ROOT, 'miniprogram/utils/profile.js')),
     reportsStore: require(path.join(ROOT, 'miniprogram/utils/reports.js')),
     market: require(path.join(ROOT, 'miniprogram/data/market.js')),
+    reviewsStore: require(path.join(ROOT, 'miniprogram/utils/reviews.js')),
     savedStore: require(path.join(ROOT, 'miniprogram/utils/saved.js')),
     visibilityStore: require(path.join(ROOT, 'miniprogram/utils/visibility.js')),
     validation: require(path.join(ROOT, 'miniprogram/utils/validation.js'))
@@ -125,6 +168,17 @@ function withFreshRuntime(run) {
   }
 }
 
+async function withFreshRuntimeAsync(run) {
+  const { wx } = createWxMock()
+  global.wx = wx
+
+  try {
+    return await run(loadCoreModules())
+  } finally {
+    delete global.wx
+  }
+}
+
 function runValidationSmokeTest() {
   withFreshRuntime(({ validation }) => {
     assert.equal(validation.extractPriceDigits('12abc34xyz'), '1234')
@@ -148,6 +202,7 @@ function runProfileStoreSmokeTest() {
     const defaultProfile = profileStore.getProfile()
     assert.ok(defaultProfile)
     assert.equal(defaultProfile.city, 'Hangzhou')
+    assert.ok(defaultProfile.id)
 
     const savedProfile = profileStore.saveProfile({
       name: '  Smoke  User  ',
@@ -159,6 +214,91 @@ function runProfileStoreSmokeTest() {
     assert.equal(savedProfile.name, 'smoke__id')
     assert.equal(savedProfile.wechat, 'smoke__id')
     assert.equal(savedProfile.city, 'Hangzhou')
+    assert.equal(savedProfile.id, defaultProfile.id)
+  })
+}
+
+function runIdentityAndReviewsSmokeTest() {
+  withFreshRuntime(({ profileStore, reportsStore, reviewsStore, market }) => {
+    withMockedNow(() => {
+      const originalProfile = profileStore.saveProfile({
+        name: 'Smoke User',
+        campus: 'Zhejiang University',
+        wechat: 'smoke__id',
+        bio: 'Original bio'
+      })
+
+      const listing = market.createListing({
+        title: 'Identity smoke listing',
+        price: '345',
+        location: 'Hangzhou',
+        address: 'Xihu District, Road 9',
+        university: 'Zhejiang University',
+        categoryId: 'items',
+        subcategory: 'Dorm essentials',
+        condition: 'Used',
+        description: 'Identity and review smoke test listing.',
+        images: ['/tmp/identity.png'],
+        seller: {
+          name: originalProfile.name,
+          wechat: originalProfile.wechat
+        }
+      })
+
+      assert.equal(Boolean(listing.seller && listing.seller.id), true)
+      market.recordSellerProfileView(market.getOwnSellerProfile().sellerKey)
+
+      const firstReview = reviewsStore.createReview({
+        sellerKey: market.getSellerKey(listing),
+        listingId: listing.id,
+        rating: 5,
+        comment: 'Great seller',
+        reviewerKey: 'reviewer-a',
+        reviewerName: 'Reviewer A'
+      })
+      assert.ok(firstReview)
+
+      const secondReview = reviewsStore.createReview({
+        sellerKey: market.getSellerKey(listing),
+        listingId: listing.id,
+        rating: 4,
+        comment: 'Also good',
+        reviewerKey: 'reviewer-b',
+        reviewerName: 'Reviewer B'
+      })
+      assert.ok(secondReview)
+      assert.equal(reviewsStore.hasReviewedListing(listing.id, 'reviewer-a'), true)
+      assert.equal(reviewsStore.hasReviewedListing(listing.id, 'reviewer-b'), true)
+
+      reportsStore.createProfileReport({
+        profileKey: market.getOwnSellerProfile().sellerKey,
+        profileName: originalProfile.name,
+        sourceListingId: listing.id,
+        reason: 'Spam',
+        note: ''
+      })
+
+      const updatedProfile = profileStore.saveProfile({
+        ...originalProfile,
+        wechat: 'smoke__next',
+        bio: 'Updated bio'
+      })
+      market.syncCurrentProfileIntoListings(originalProfile, updatedProfile)
+      market.preserveCurrentProfileSellerPro(originalProfile, updatedProfile)
+      market.preserveCurrentProfileIdentityData(originalProfile, updatedProfile)
+
+      const refreshedListing = market.getListingById(listing.id, {
+        includeResolved: true,
+        includeHiddenByUser: true,
+        includeSold: true
+      })
+      assert.equal(refreshedListing.seller.bio, 'Updated bio')
+
+      const ownProfile = market.getOwnSellerProfile()
+      assert.equal(Boolean(ownProfile.analytics && ownProfile.analytics.profileViews >= 1), true)
+      assert.equal(reviewsStore.getSellerReviewSummary(ownProfile.sellerKey).count, 2)
+      assert.equal(reportsStore.hasReportedProfile(ownProfile.sellerKey), true)
+    })
   })
 }
 
@@ -310,6 +450,27 @@ function runMarketplaceFlowSmokeTest() {
         }
       })
 
+      const expiringListing = market.createListing({
+        title: 'Flow listing C',
+        price: '320',
+        location: 'Hangzhou',
+        address: 'ZJU Xixi Campus, Gate 2',
+        university: 'Zhejiang University',
+        categoryId: 'items',
+        subcategory: 'Dorm essentials',
+        condition: 'Used',
+        description: 'Flow smoke listing C for archive restore behavior.',
+        images: ['/tmp/flow-c.png'],
+        seller: {
+          name: 'Flow User',
+          wechat: 'flow_user'
+        }
+      })
+
+      market.updateListing(expiringListing.id, {
+        expiresAt: '2026-03-01T00:00:00.000Z'
+      })
+
       const promoRequested = market.requestListingPromotion(secondListing.id, 'featured_3d')
       assert.ok(promoRequested)
       assert.equal(Boolean(promoRequested.isPromotionRequested), true)
@@ -334,6 +495,7 @@ function runMarketplaceFlowSmokeTest() {
       const initialFeedIds = market.getFeedListings().map((item) => String(item.id))
       assert.equal(initialFeedIds.includes(String(firstListing.id)), true)
       assert.equal(initialFeedIds.includes(String(secondListing.id)), true)
+      assert.equal(initialFeedIds.includes(String(expiringListing.id)), false)
       assert.equal(initialFeedIds[0], String(secondListing.id))
 
       market.setListingSoldState(firstListing.id, true, false)
@@ -352,10 +514,16 @@ function runMarketplaceFlowSmokeTest() {
       assert.equal(Number(ownAfterUniSale.soldCount), 1)
 
       const myListings = market.getMyListings()
-      const archivedCount = myListings.filter((item) => Boolean(item && item.isSold)).length
-      const activeCount = myListings.filter((item) => !item.isSold).length
-      assert.equal(archivedCount, 2)
+      const archivedCount = myListings.filter((item) => Boolean(item && (item.isSold || item.isArchived))).length
+      const activeCount = myListings.filter((item) => !item.isSold && !item.isArchived).length
+      assert.equal(archivedCount, 3)
       assert.equal(activeCount, 0)
+
+      const restoredListing = market.restoreListing(expiringListing.id)
+      assert.ok(restoredListing)
+      assert.equal(Boolean(restoredListing.isArchived), false)
+      const restoredFeedIds = market.getFeedListings().map((item) => String(item.id))
+      assert.equal(restoredFeedIds.includes(String(expiringListing.id)), true)
 
       const report = reportsStore.createReport({
         listingId: secondListing.id,
@@ -377,7 +545,58 @@ function runMarketplaceFlowSmokeTest() {
 }
 
 function runCategoryAndResultsPageSmokeTest() {
-  withFreshRuntime(() => {
+  withFreshRuntime(({ market }) => {
+    market.createListing({
+      title: 'Campus iPhone sale',
+      price: '2800',
+      location: 'Hangzhou',
+      address: 'ZJU Yuquan Campus, Gate 3',
+      university: 'Zhejiang University',
+      categoryId: 'electronics',
+      subcategory: 'Phones',
+      condition: 'Used',
+      description: 'Smoke electronics phone listing for category and results pages.',
+      images: ['/tmp/phone.png'],
+      seller: {
+        name: 'Smoke Seller',
+        wechat: 'smoke_phone'
+      }
+    })
+
+    market.createListing({
+      title: 'Laptop for classes',
+      price: '4200',
+      location: 'Hangzhou',
+      address: 'ZJU Yuquan Campus, Building 2',
+      university: 'Zhejiang University',
+      categoryId: 'electronics',
+      subcategory: 'Laptops',
+      condition: 'Used',
+      description: 'Smoke electronics laptop listing for category and results pages.',
+      images: ['/tmp/laptop.png'],
+      seller: {
+        name: 'Smoke Seller',
+        wechat: 'smoke_laptop'
+      }
+    })
+
+    market.createListing({
+      title: 'Audio headset bundle',
+      price: '680',
+      location: 'Hangzhou',
+      address: 'China Jiliang University, Dorm 5',
+      university: 'China Jiliang University',
+      categoryId: 'electronics',
+      subcategory: 'Audio',
+      condition: 'Used',
+      description: 'Smoke electronics audio listing for category and results pages.',
+      images: ['/tmp/audio.png'],
+      seller: {
+        name: 'Smoke Seller',
+        wechat: 'smoke_audio'
+      }
+    })
+
     const categoryPage = createPageInstance(loadPageModule('miniprogram/pages/category/category.js'))
     categoryPage.onLoad({ id: 'electronics' })
 
@@ -451,20 +670,140 @@ function runCategoryAndResultsPageSmokeTest() {
   })
 }
 
-function runSmokeTests() {
+async function runCreatePageMediaGuardSmokeTest() {
+  await withFreshRuntimeAsync(async ({ profileStore }) => {
+    profileStore.saveProfile({
+      name: 'Smoke User',
+      campus: 'Zhejiang University',
+      wechat: 'smoke__id',
+      bio: 'Smoke create media guard profile.'
+    })
+
+    let createCalls = 0
+    let updateCalls = 0
+    let uploadCalls = 0
+    const expectedMessage = 'Backend publish is enabled, but photo upload is not ready yet'
+
+    await withMockedModules({
+      'miniprogram/services/api/runtime-listings.js': {
+        writesEnabled: true,
+        enabled: true,
+        getCurrentPhotoLimit() {
+          return 10
+        },
+        getBySellerKey() {
+          return Promise.resolve([])
+        },
+        getMy() {
+          return Promise.resolve([])
+        },
+        getById() {
+          return Promise.resolve(null)
+        },
+        create() {
+          createCalls += 1
+          return Promise.resolve({ id: 'created-listing' })
+        },
+        update() {
+          updateCalls += 1
+          return Promise.resolve({ id: 'updated-listing' })
+        },
+        requestPromotion() {
+          return Promise.resolve(null)
+        },
+        queueCreateMode() {
+          return null
+        },
+        consumeCreateMode() {
+          return null
+        }
+      },
+      'miniprogram/services/api/runtime-account.js': {
+        getMe() {
+          return Promise.resolve({ photoLimit: 10 })
+        },
+        requestSellerPro() {
+          return Promise.resolve(null)
+        },
+        updateMyProfile() {
+          return Promise.resolve(null)
+        }
+      },
+      'miniprogram/services/media/index.js': {
+        uploader: {
+          isReady() {
+            return false
+          },
+          getUnavailableReason() {
+            return expectedMessage
+          },
+          prepareListingImages() {
+            uploadCalls += 1
+            return Promise.resolve([])
+          }
+        }
+      }
+    }, async () => {
+      const uiText = require(path.join(ROOT, 'miniprogram/constants/messages.js'))
+      const createPage = createPageInstance(loadPageModule('miniprogram/pages/create/create.js'))
+      let validationMessage = ''
+
+      createPage.showValidation = (title) => {
+        validationMessage = String(title || '')
+      }
+
+      createPage.onLoad()
+      createPage.setData({
+        categories: [{ id: 'items', title: 'Items' }],
+        categoryIndex: 0,
+        universityIndex: 1,
+        requiresCondition: true,
+        isCustomSubcategory: false,
+        form: {
+          ...(createPage.data.form || {}),
+          title: 'Smoke backend publish',
+          price: '680',
+          location: 'Hangzhou',
+          address: 'Xihu District, ZJU Yuquan Campus Gate 3',
+          university: 'Zhejiang University',
+          wechat: 'smoke__id',
+          description: 'Detailed enough description for create page smoke test.',
+          categoryId: 'items',
+          subcategory: 'Dorm essentials',
+          condition: 'Used',
+          images: ['/tmp/create-smoke.png']
+        }
+      })
+
+      await createPage.submitListing()
+
+      assert.equal(validationMessage, uiText.CREATE.BACKEND_MEDIA_REQUIRED)
+      assert.equal(validationMessage, expectedMessage)
+      assert.equal(createCalls, 0)
+      assert.equal(updateCalls, 0)
+      assert.equal(uploadCalls, 0)
+      assert.equal(createPage.data.submitting, false)
+    })
+  })
+}
+
+async function runSmokeTests() {
   runValidationSmokeTest()
   runProfileStoreSmokeTest()
   runReportsStoreSmokeTest()
   runMarketStoreSmokeTest()
   runMarketplaceFlowSmokeTest()
+  runIdentityAndReviewsSmokeTest()
   runCategoryAndResultsPageSmokeTest()
+  await runCreatePageMediaGuardSmokeTest()
 }
 
-try {
-  runSmokeTests()
-  console.log('Smoke tests passed.')
-} catch (error) {
-  console.error('Smoke tests failed.')
-  console.error(error && error.stack ? error.stack : error)
-  process.exit(1)
-}
+runSmokeTests()
+  .then(() => {
+    console.log('Smoke tests passed.')
+  })
+  .catch((error) => {
+    console.error('Smoke tests failed.')
+    console.error(error && error.stack ? error.stack : error)
+    process.exit(1)
+  })

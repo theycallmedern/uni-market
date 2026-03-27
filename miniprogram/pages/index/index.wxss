@@ -353,6 +353,17 @@
   min-height: 72rpx;
 }
 
+.listing-address {
+  font-size: 22rpx;
+  line-height: 1.4;
+  color: #8a949d;
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
 .listing-meta {
   font-size: 22rpx;
   color: #888888;
@@ -583,6 +594,7 @@
 
 .theme-dark .hero-subtitle,
 .theme-dark .section-subtitle,
+.theme-dark .listing-address,
 .theme-dark .listing-meta,
 .theme-dark .empty-copy,
 .theme-dark .filter-sheet__reset,
@@ -616,6 +628,7 @@
   background: #20262b;
   border-color: rgba(255, 255, 255, 0.06);
 }
+
 
 .theme-dark .search-input,
 .theme-dark .filter-icon,

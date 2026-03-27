@@ -22,71 +22,84 @@
                 <text class="user-menu-trigger__icon">•••</text>
               </view>
             </view>
-
-            <view class="user-meta-chips">
-              <view
-                wx:if="{{seller.badge}}"
-                class="user-meta-chip user-meta-chip--badge {{seller.badge === 'Seller Pro' ? 'user-meta-chip--badge-pro' : 'user-meta-chip--badge-default'}}"
-              >
-                {{seller.badge}}
-              </view>
-              <view wx:if="{{isUniversityPublic}}" class="user-meta-chip user-meta-chip--campus">{{seller.campus}}</view>
-              <view wx:if="{{reviewSummary.count}}" class="user-meta-chip user-meta-chip--rating">★ {{reviewSummary.averageLabel}}</view>
-            </view>
+            <text wx:if="{{seller.wechat}}" class="user-wechat user-wechat--hero">{{copy.wechatLabel}}: {{seller.wechat}}</text>
           </view>
         </view>
 
-        <view wx:if="{{seller.city || memberSinceChipLabel}}" class="user-meta-chips user-meta-chips--secondary">
-          <view wx:if="{{seller.city}}" class="user-meta-chip user-meta-chip--city">{{seller.city}}</view>
-          <view wx:if="{{memberSinceChipLabel}}" class="user-meta-chip user-meta-chip--since">
-            <text class="user-meta-chip__icon">✦</text>
-            <text>{{memberSinceChipLabel}}</text>
+        <view
+          wx:if="{{seller.founderBadge || seller.badge || isUniversityPublic || reviewSummary.count || seller.city || memberSinceChipLabel}}"
+          class="user-meta-stack"
+        >
+          <view class="user-meta-chips user-meta-chips--flow">
+            <view wx:if="{{seller.founderBadge}}" class="user-meta-chip user-meta-chip--founder">
+              <text class="user-meta-chip__icon">✦</text>
+              <text>{{seller.displayFounderBadge}}</text>
+            </view>
+            <view wx:if="{{seller.founderInstagram}}" class="user-social-pill user-social-pill--instagram" bindtap="copyFounderInstagram">
+              <view class="instagram-mark">
+                <view class="instagram-mark__lens"></view>
+                <view class="instagram-mark__dot"></view>
+              </view>
+                <text class="user-social-pill__label">{{seller.founderInstagramLabel}}</text>
+            </view>
+            <view
+              wx:if="{{seller.badge}}"
+              class="user-meta-chip user-meta-chip--badge {{seller.badge === 'Seller Pro' ? 'user-meta-chip--badge-pro' : 'user-meta-chip--badge-default'}}"
+            >
+              {{seller.displayBadge}}
+            </view>
+            <view wx:if="{{isUniversityPublic}}" class="user-meta-chip user-meta-chip--campus">{{seller.campus}}</view>
+            <view wx:if="{{reviewSummary.count}}" class="user-meta-chip user-meta-chip--rating">★ {{reviewSummary.averageLabel}}</view>
+            <view wx:if="{{seller.city}}" class="user-meta-chip user-meta-chip--city">{{seller.displayCity}}</view>
+            <view wx:if="{{memberSinceChipLabel}}" class="user-meta-chip user-meta-chip--since">
+              <text class="user-meta-chip__icon">✦</text>
+              <text>{{memberSinceChipLabel}}</text>
+            </view>
           </view>
         </view>
 
         <view class="user-copy user-copy--full">
           <text wx:if="{{seller.bio}}" class="user-note">{{seller.bio}}</text>
           <text wx:elif="{{seller.note}}" class="user-note">{{seller.note}}</text>
-          <text wx:if="{{seller.wechat}}" class="user-wechat">WeChat: {{seller.wechat}}</text>
         </view>
       </view>
 
       <view class="user-stats">
         <view class="user-stat">
-          <text class="user-stat__value">{{reviewSummary.count ? reviewSummary.averageLabel : 'New'}}</text>
-          <text class="user-stat__label">Rating</text>
+          <text class="user-stat__value">{{reviewSummary.count ? reviewSummary.averageLabel : copy.statsNew}}</text>
+          <text class="user-stat__label">{{copy.statsRating}}</text>
         </view>
         <view class="user-stat">
           <text class="user-stat__value">{{listings.length}}</text>
-          <text class="user-stat__label">Listings</text>
+          <text class="user-stat__label">{{copy.statsListings}}</text>
         </view>
         <view class="user-stat">
           <text class="user-stat__value">{{soldCount}}</text>
-          <text class="user-stat__label">Sold</text>
+          <text class="user-stat__label">{{copy.statsSold}}</text>
         </view>
       </view>
 
       <view wx:if="{{isOwnProfile && seller.isSellerPro && seller.analytics}}" class="user-pro-analytics">
         <view class="user-pro-analytics__head">
-          <text class="user-pro-analytics__title">Seller Pro insights</text>
-          <text class="user-pro-analytics__subtitle">See how many students open your profile and save your listings</text>
+          <text class="user-pro-analytics__title">{{copy.analyticsTitle}}</text>
+          <text class="user-pro-analytics__subtitle">{{copy.analyticsSubtitle}}</text>
         </view>
         <view class="user-pro-analytics__grid">
           <view class="user-pro-analytics__item">
             <text class="user-pro-analytics__value">{{seller.analytics.profileViews}}</text>
-            <text class="user-pro-analytics__label">Profile views</text>
-            <text class="user-pro-analytics__trend">+{{seller.analytics.recentProfileViews}} this week</text>
+            <text class="user-pro-analytics__label">{{copy.analyticsProfileViews}}</text>
+            <text class="user-pro-analytics__trend">+{{seller.analytics.recentProfileViews}} {{copy.thisWeekSuffix}}</text>
           </view>
           <view class="user-pro-analytics__item">
             <text class="user-pro-analytics__value">{{seller.analytics.listingSaves}}</text>
-            <text class="user-pro-analytics__label">Listing saves</text>
-            <text class="user-pro-analytics__trend">+{{seller.analytics.recentListingSaves}} this week</text>
+            <text class="user-pro-analytics__label">{{copy.analyticsListingSaves}}</text>
+            <text class="user-pro-analytics__trend">+{{seller.analytics.recentListingSaves}} {{copy.thisWeekSuffix}}</text>
           </view>
         </view>
       </view>
 
       <view wx:if="{{isOwnProfile}}" class="user-actions">
-        <button wx:if="{{!isEditingProfile}}" class="user-contact" bindtap="startEditProfile">Edit profile</button>
+        <button wx:if="{{!isEditingProfile}}" class="user-contact" bindtap="startEditProfile">{{copy.editProfileButton}}</button>
       </view>
 
       <view wx:elif="{{seller.wechat}}" class="user-actions">
@@ -109,18 +122,18 @@
                 </view>
               </view>
             </view>
-            <text>Write in WeChat</text>
+            <text>{{copy.contactSellerButton}}</text>
           </view>
         </button>
         <button class="user-review-btn {{!canLeaveReview || hasReviewedCurrentListing ? 'user-review-btn--disabled' : ''}}" bindtap="leaveReview">
-          {{hasReviewedCurrentListing ? 'Reviewed' : 'Leave review'}}
+          {{hasReviewedCurrentListing ? copy.reviewedButton : copy.leaveReviewButton}}
         </button>
       </view>
 
       <view wx:if="{{isOwnProfile && isEditingProfile}}" class="user-section">
         <view class="user-section__head">
-          <text class="user-section__title">Edit profile</text>
-          <text class="user-section__subtitle">Update the public info other students can see</text>
+          <text class="user-section__title">{{copy.editSectionTitle}}</text>
+          <text class="user-section__subtitle">{{copy.editSectionSubtitle}}</text>
         </view>
 
         <view class="profile-form profile-form--inline">
@@ -130,21 +143,21 @@
               <text wx:else>{{avatarInitial}}</text>
             </view>
             <view class="profile-avatar-editor__actions">
-              <button class="profile-avatar-btn profile-avatar-btn--primary" bindtap="changeProfilePhoto">Change photo</button>
-              <button wx:if="{{profileDraft.avatarUrl}}" class="profile-avatar-btn profile-avatar-btn--ghost" bindtap="removeProfilePhoto">Remove</button>
+              <button class="profile-avatar-btn profile-avatar-btn--primary" bindtap="changeProfilePhoto">{{copy.changePhotoButton}}</button>
+              <button wx:if="{{profileDraft.avatarUrl}}" class="profile-avatar-btn profile-avatar-btn--ghost" bindtap="removeProfilePhoto">{{copy.removePhotoButton}}</button>
             </view>
           </view>
 
           <view class="profile-field">
-            <text class="profile-field__label">Name</text>
+            <text class="profile-field__label">{{copy.nameLabel}}</text>
             <view class="profile-field__picker profile-field__picker--locked">
               <text>{{profileDraft.name}}</text>
             </view>
-            <text class="profile-field__hint">Synced from your WeChat ID to keep your profile and Seller Pro stable.</text>
+            <text class="profile-field__hint">{{copy.nameHint}}</text>
           </view>
 
           <view class="profile-field">
-            <text class="profile-field__label">University</text>
+            <text class="profile-field__label">{{copy.universityLabel}}</text>
             <view class="profile-field__picker" bindtap="openUniversitySheet">
               <text>{{universityOptions[universityIndex]}}</text>
               <text class="profile-picker__arrow">⌄</text>
@@ -152,25 +165,20 @@
           </view>
 
           <view class="profile-field">
-            <text class="profile-field__label">WeChat ID</text>
-            <input class="profile-field__input" value="{{profileDraft.wechat}}" maxlength="20" placeholder="wechatid (6-20 chars)" data-field="wechat" bindinput="onProfileFieldInput" />
-          </view>
-
-          <view class="profile-field">
-            <text class="profile-field__label">Bio</text>
+            <text class="profile-field__label">{{copy.bioLabel}}</text>
             <textarea class="profile-field__textarea" value="{{profileDraft.bio}}" maxlength="180" data-field="bio" bindinput="onProfileFieldInput" />
           </view>
 
           <view class="profile-actions">
-            <button class="profile-action-btn profile-action-btn--cancel" bindtap="cancelEditProfile">Cancel</button>
-            <button class="profile-action-btn profile-action-btn--save" bindtap="saveProfile">Save changes</button>
+            <button class="profile-action-btn profile-action-btn--cancel" bindtap="cancelEditProfile">{{copy.cancelButton}}</button>
+            <button class="profile-action-btn profile-action-btn--save" bindtap="saveProfile">{{copy.saveChangesButton}}</button>
           </view>
         </view>
       </view>
 
       <view class="user-section">
         <view class="user-section__head">
-          <text class="user-section__title">{{isOwnProfile ? 'Your rating' : 'Seller rating'}}</text>
+          <text class="user-section__title">{{isOwnProfile ? copy.yourRatingTitle : copy.sellerRatingTitle}}</text>
           <text class="user-section__subtitle">{{reviewSummary.countLabel}}</text>
         </view>
 
@@ -185,21 +193,21 @@
                 <text class="review-card__rating">{{item.rating}}.0 ★</text>
               </view>
               <text wx:if="{{item.comment}}" class="review-card__comment">{{item.comment}}</text>
-              <text wx:else class="review-card__comment review-card__comment--muted">No written note</text>
+              <text wx:else class="review-card__comment review-card__comment--muted">{{copy.noWrittenNote}}</text>
             </view>
           </block>
         </view>
 
         <view wx:else class="user-empty user-empty--section">
-          <text class="user-empty__title">No reviews yet</text>
-          <text class="user-empty__copy">Ask buyers to leave a review after they contact you in WeChat.</text>
+          <text class="user-empty__title">{{copy.noReviewsTitle}}</text>
+          <text class="user-empty__copy">{{copy.noReviewsCopy}}</text>
         </view>
       </view>
 
       <view class="user-section">
         <view class="user-section__head">
-          <text class="user-section__title">{{isOwnProfile ? 'Your listings' : 'Listings by ' + seller.name}}</text>
-          <text class="user-section__subtitle">{{listings.length}} active</text>
+          <text class="user-section__title">{{listingsSectionTitle}}</text>
+          <text class="user-section__subtitle">{{activeListingsSubtitle}}</text>
         </view>
 
         <view wx:if="{{listings.length}}" class="user-list">
@@ -208,12 +216,13 @@
               <view class="user-card__inner">
                 <view class="user-card__media">
                   <image class="user-card__image" src="{{item.image}}" mode="aspectFill" />
-                  <view wx:if="{{item.isPromoted}}" class="user-card__featured">✦ Promoted</view>
+                  <view wx:if="{{item.isPromoted}}" class="user-card__featured">{{item.displayPromotedBadge}}</view>
                 </view>
                 <view class="user-card__body">
                   <text class="user-card__price">{{item.price}}</text>
                   <text class="user-card__title">{{item.title}}</text>
-                  <text class="user-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
+                  <text class="user-card__meta">{{item.university ? item.displayLocation + ' · ' + item.university : item.displayLocation}}</text>
+                  <text wx:if="{{item.address}}" class="user-card__address">{{item.address}}</text>
                 </view>
               </view>
             </view>
@@ -221,8 +230,8 @@
         </view>
 
         <view wx:else class="user-empty">
-          <text class="user-empty__title">No active listings</text>
-          <text class="user-empty__copy">This seller does not have any visible listings right now.</text>
+          <text class="user-empty__title">{{copy.noActiveListingsTitle}}</text>
+          <text class="user-empty__copy">{{copy.noActiveListingsCopy}}</text>
         </view>
       </view>
 
@@ -230,8 +239,8 @@
         <view class="user-menu-sheet" catchtap="stopMenuTap">
         <view class="user-menu-sheet__handle"></view>
         <view class="user-menu-sheet__header">
-          <text class="user-menu-sheet__title">{{isOwnProfile ? 'My profile options' : 'Profile options'}}</text>
-          <text class="user-menu-sheet__subtitle">{{isOwnProfile ? 'Share your profile or jump into edit mode.' : 'Share this seller profile or send a report to moderation.'}}</text>
+          <text class="user-menu-sheet__title">{{isOwnProfile ? copy.myProfileOptionsTitle : copy.profileOptionsTitle}}</text>
+          <text class="user-menu-sheet__subtitle">{{isOwnProfile ? copy.myProfileOptionsSubtitle : copy.profileOptionsSubtitle}}</text>
         </view>
 
           <view class="user-menu-group">
@@ -240,8 +249,8 @@
             <view class="user-menu-row">
               <view class="user-menu-row__icon user-menu-row__icon--share">↗</view>
               <view class="user-menu-row__copy">
-                <text class="user-menu-row__title">Share profile</text>
-                <text class="user-menu-row__meta">{{isOwnProfile ? 'Send your profile in WeChat' : 'Send this seller profile in WeChat'}}</text>
+                <text class="user-menu-row__title">{{copy.shareProfileTitle}}</text>
+                <text class="user-menu-row__meta">{{isOwnProfile ? copy.shareOwnProfileMeta : copy.shareSellerProfileMeta}}</text>
               </view>
             </view>
           </view>
@@ -249,16 +258,16 @@
             <view class="user-menu-row" bindtap="copyProfileLink">
               <view class="user-menu-row__icon user-menu-row__icon--copy">⎘</view>
               <view class="user-menu-row__copy">
-                <text class="user-menu-row__title">Copy link</text>
-                <text class="user-menu-row__meta">Copy the profile path to clipboard</text>
+                <text class="user-menu-row__title">{{copy.copyLinkTitle}}</text>
+                <text class="user-menu-row__meta">{{copy.copyLinkMeta}}</text>
               </view>
             </view>
 
             <view wx:if="{{isOwnProfile}}" class="user-menu-row" bindtap="startEditProfile">
               <view class="user-menu-row__icon user-menu-row__icon--edit">✎</view>
               <view class="user-menu-row__copy">
-                <text class="user-menu-row__title">Edit profile</text>
-                <text class="user-menu-row__meta">Update your avatar, name, university, WeChat, and bio</text>
+                <text class="user-menu-row__title">{{copy.editProfileMenuTitle}}</text>
+                <text class="user-menu-row__meta">{{copy.editProfileMenuMeta}}</text>
               </view>
             </view>
 
@@ -283,16 +292,16 @@
                 </view>
               </view>
               <view class="user-menu-row__copy">
-                <text class="user-menu-row__title">Write in WeChat</text>
-                <text class="user-menu-row__meta">Copy the seller ID and continue in WeChat search</text>
+                <text class="user-menu-row__title">{{copy.writeInWechatTitle}}</text>
+                <text class="user-menu-row__meta">{{copy.writeInWechatMeta}}</text>
               </view>
             </view>
 
             <view wx:if="{{!isOwnProfile}}" class="user-menu-row user-menu-row--danger" bindtap="blockSeller">
               <view class="user-menu-row__icon user-menu-row__icon--block">−</view>
               <view class="user-menu-row__copy">
-                <text class="user-menu-row__title">Block user</text>
-                <text class="user-menu-row__meta">Hide all listings from this seller on this device</text>
+                <text class="user-menu-row__title">{{copy.blockUserTitle}}</text>
+                <text class="user-menu-row__meta">{{copy.blockUserMeta}}</text>
               </view>
             </view>
           </view>
@@ -301,13 +310,13 @@
             <view class="user-menu-row user-menu-row--danger" bindtap="reportProfile">
               <view class="user-menu-row__icon user-menu-row__icon--report">!</view>
               <view class="user-menu-row__copy">
-                <text class="user-menu-row__title">{{hasReported ? 'Report already sent' : 'Report profile'}}</text>
-                <text class="user-menu-row__meta">{{hasReported ? 'Moderation already has your report' : 'Fake identity, spam, scam, or harmful behavior'}}</text>
+                <text class="user-menu-row__title">{{hasReported ? copy.reportSentTitle : copy.reportProfileTitle}}</text>
+                <text class="user-menu-row__meta">{{hasReported ? copy.reportSentMeta : copy.reportProfileMeta}}</text>
               </view>
             </view>
           </view>
 
-          <view class="user-menu-cancel" bindtap="closeMenu">Cancel</view>
+          <view class="user-menu-cancel" bindtap="closeMenu">{{copy.menuCancel}}</view>
         </view>
       </view>
 
@@ -323,8 +332,8 @@
         <view class="profile-sheet" catchtap="stopUniversitySheetTap">
           <view class="profile-sheet__handle"></view>
           <view class="profile-sheet__head">
-            <text class="profile-sheet__title">University</text>
-            <text class="profile-sheet__close" bindtap="closeUniversitySheet">Close</text>
+            <text class="profile-sheet__title">{{copy.universitySheetTitle}}</text>
+            <text class="profile-sheet__close" bindtap="closeUniversitySheet">{{copy.universitySheetClose}}</text>
           </view>
           <scroll-view class="profile-sheet__scroll" scroll-y enhanced show-scrollbar="{{false}}">
             <view
@@ -344,16 +353,18 @@
 
     <view wx:elif="{{blockedSeller}}" class="user-empty-page page-scroll__content">
       <view class="user-empty-card">
-        <text class="user-empty__title">Seller hidden</text>
-        <text class="user-empty__copy">You blocked this seller on this device, so their profile and listings are no longer visible here.</text>
+        <text class="user-empty__title">{{copy.sellerHiddenTitle}}</text>
+        <text class="user-empty__copy">{{copy.sellerHiddenCopy}}</text>
       </view>
     </view>
 
     <view wx:elif="{{notFound}}" class="user-empty-page page-scroll__content">
       <view class="user-empty-card">
-        <text class="user-empty__title">Profile unavailable</text>
-        <text class="user-empty__copy">We could not find this seller profile anymore.</text>
+        <text class="user-empty__title">{{copy.profileUnavailableTitle}}</text>
+        <text class="user-empty__copy">{{copy.profileUnavailableCopy}}</text>
       </view>
     </view>
   </scroll-view>
 </view>
+<feedback-modal id="feedback-modal" themeMode="{{themeMode}}"></feedback-modal>
+<feedback-action-sheet id="feedback-action-sheet" themeMode="{{themeMode}}"></feedback-action-sheet>

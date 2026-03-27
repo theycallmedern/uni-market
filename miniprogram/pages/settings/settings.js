@@ -1,37 +1,25 @@
-const adminStore = require('../../utils/admin')
+const adminStore = require('../../services/api/admin')
 const storage = require('../../utils/storage')
+const localeStore = require('../../utils/locale')
 const feedback = require('../../utils/ui-feedback')
 const uiText = require('../../constants/messages')
+const copyStore = require('../../constants/copy')
 
-const THEME_STORAGE_KEY = 'uiThemeMode'
-const LIGHT_THEME = 'light'
-const DARK_THEME = 'dark'
+const INITIAL_THEME = storage.getThemeData()
+const INITIAL_LOCALE = localeStore.getLocale()
 
-function normalizeThemeMode(value) {
-  return value === DARK_THEME ? DARK_THEME : LIGHT_THEME
+function getCurrentLanguageOption(locale) {
+  return copyStore.getLanguageOptions(locale).find((option) => option.code === locale) || copyStore.getLanguageOptions(locale)[0] || null
 }
-
-function getThemeData() {
-  const themeMode = normalizeThemeMode(storage.safeGetStorage(THEME_STORAGE_KEY, LIGHT_THEME))
-
-  return {
-    themeMode,
-    themeClass: themeMode === DARK_THEME ? 'theme-dark' : 'theme-light',
-    isDarkTheme: themeMode === DARK_THEME
-  }
-}
-
-function saveThemeMode(value) {
-  const themeMode = normalizeThemeMode(value)
-  storage.safeSetStorage(THEME_STORAGE_KEY, themeMode)
-  return themeMode
-}
-
-const INITIAL_THEME = getThemeData()
 
 Page({
   data: {
     isAdmin: false,
+    locale: INITIAL_LOCALE,
+    copy: copyStore.getPageCopy('settings', INITIAL_LOCALE),
+    commonCopy: copyStore.getCommonCopy(INITIAL_LOCALE),
+    languageOptions: copyStore.getLanguageOptions(INITIAL_LOCALE),
+    currentLanguageOption: getCurrentLanguageOption(INITIAL_LOCALE),
     themeMode: INITIAL_THEME.themeMode,
     themeClass: INITIAL_THEME.themeClass,
     isDarkTheme: INITIAL_THEME.isDarkTheme
@@ -39,31 +27,58 @@ Page({
 
   onShow() {
     this.refreshTheme()
+    this.refreshLocale()
     this.refreshState()
   },
 
-  refreshState() {
+  async refreshState() {
     this.setData({
-      isAdmin: adminStore.isAdmin()
+      isAdmin: await adminStore.getAdminState()
     })
   },
 
   refreshTheme() {
-    this.setData(getThemeData())
+    this.setData(storage.getThemeData())
+  },
+
+  refreshLocale() {
+    const locale = localeStore.getLocale()
+    const languageOptions = copyStore.getLanguageOptions(locale)
+
+    this.setData({
+      locale,
+      copy: copyStore.getPageCopy('settings', locale),
+      commonCopy: copyStore.getCommonCopy(locale),
+      languageOptions,
+      currentLanguageOption: languageOptions.find((option) => option.code === locale) || languageOptions[0] || null
+    })
   },
 
   setLightTheme() {
-    saveThemeMode(LIGHT_THEME)
-    this.setData(getThemeData())
+    storage.saveThemeMode(storage.LIGHT_THEME)
+    this.setData(storage.getThemeData())
   },
 
   setDarkTheme() {
-    saveThemeMode(DARK_THEME)
-    this.setData(getThemeData())
+    storage.saveThemeMode(storage.DARK_THEME)
+    this.setData(storage.getThemeData())
+  },
+
+  setLocale(e) {
+    const nextLocale = e && e.currentTarget && e.currentTarget.dataset
+      ? String(e.currentTarget.dataset.locale || '')
+      : ''
+
+    if (!nextLocale) {
+      return
+    }
+
+    localeStore.setLocale(nextLocale)
+    this.refreshLocale()
   },
 
   goToModeration() {
-    if (!adminStore.isAdmin()) {
+    if (!this.data.isAdmin) {
       feedback.showNeutralToast(uiText.PROFILE.ADMIN_REQUIRED)
       return
     }
@@ -79,13 +94,24 @@ Page({
       editable: true,
       placeholderText: uiText.PROFILE.ADMIN_PLACEHOLDER,
       confirmText: uiText.PROFILE.ADMIN_CONFIRM,
-      success: (res) => {
+      success: async (res) => {
         if (!res.confirm) {
           return
         }
 
-        const success = adminStore.enableAdmin(res.content || '')
-        if (success) {
+        try {
+          const result = await adminStore.enableAdminAccess(res.content || '')
+          if (result && result.isAdmin) {
+            feedback.showSuccessToast(uiText.PROFILE.ADMIN_UNLOCKED)
+            this.refreshState()
+            return
+          }
+        } catch (error) {
+          feedback.showNeutralToast(uiText.PROFILE.ADMIN_WRONG_CODE)
+          return
+        }
+
+        if (await adminStore.getAdminState()) {
           feedback.showSuccessToast(uiText.PROFILE.ADMIN_UNLOCKED)
           this.refreshState()
           return
@@ -96,8 +122,11 @@ Page({
     })
   },
 
-  disableAdmin() {
-    adminStore.disableAdmin()
+  async disableAdmin() {
+    try {
+      await adminStore.disableAdminAccess()
+    } catch (error) {}
+
     this.refreshState()
     feedback.showNeutralToast(uiText.PROFILE.ADMIN_DISABLED)
   }

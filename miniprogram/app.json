@@ -23,7 +23,9 @@
   "usingComponents": {
     "app-header": "/components/app-header/index",
     "photo-viewer": "/components/photo-viewer/index",
-    "selector-sheet": "/components/selector-sheet/index"
+    "selector-sheet": "/components/selector-sheet/index",
+    "feedback-modal": "/components/feedback-modal/index",
+    "feedback-action-sheet": "/components/feedback-action-sheet/index"
   },
   "tabBar": {
     "color": "#a8a8a8",

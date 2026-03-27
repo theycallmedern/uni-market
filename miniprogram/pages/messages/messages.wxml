@@ -1,5 +1,5 @@
 <view class="page-shell page-shell--scroll {{themeClass}}">
-  <app-header title="My Listings" theme="{{themeMode}}"></app-header>
+  <app-header title="{{copy.headerTitle}}" theme="{{themeMode}}"></app-header>
   <scroll-view
     class="page-scroll"
     scroll-y
@@ -14,18 +14,18 @@
           <text wx:else>{{avatarInitial}}</text>
         </view>
         <view class="manager-hero__copy">
-          <text class="manager-hero__title">My Listings</text>
-          <text class="manager-hero__meta">{{activeCount}} active · {{soldCount}} sold on UniMarket · {{savedCount}} saved</text>
-          <text class="manager-hero__note">Track everything you have posted and keep your active marketplace inventory in one place.</text>
+          <text class="manager-hero__title">{{copy.heroTitle}}</text>
+          <text class="manager-hero__meta">{{heroMeta}}</text>
+          <text class="manager-hero__note">{{copy.heroNote}}</text>
         </view>
       </view>
 
       <view class="manager-head">
         <view>
-          <text class="manager-head__title">Your listings</text>
-          <text class="manager-head__subtitle">Open, mark as sold, edit, or remove any listing you created.</text>
+          <text class="manager-head__title">{{copy.sectionTitle}}</text>
+          <text class="manager-head__subtitle">{{copy.sectionSubtitle}}</text>
         </view>
-        <button class="manager-new" bindtap="goToPost">New</button>
+        <button class="manager-new" bindtap="goToPost">{{copy.newButton}}</button>
       </view>
 
       <block wx:if="{{activeListings.length}}">
@@ -41,35 +41,49 @@
                       <text class="manager-card__title">{{item.title}}</text>
                     </view>
                     <view class="manager-card__badge {{item.isSold ? 'manager-card__badge--sold' : (item.isHiddenByModeration ? 'manager-card__badge--hidden' : '')}}">
-                      {{item.isSold ? 'Sold' : (item.isHiddenByModeration ? 'Hidden' : 'Live')}}
+                      {{item.displayStatusLabel}}
                     </view>
                   </view>
 
                   <text class="manager-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
                   <text class="manager-card__sub">{{item.subcategory}}</text>
-                  <text wx:if="{{item.isPromoted}}" class="manager-card__promo-note">✦ Promoted</text>
-                  <text wx:if="{{item.isPromotionRequested}}" class="manager-card__promo-note manager-card__promo-note--pending">Promotion request pending</text>
+                  <text wx:if="{{item.isPromoted}}" class="manager-card__promo-note">{{item.displayPromotedBadge}}</text>
+                  <text wx:if="{{item.isPromotionRequested}}" class="manager-card__promo-note manager-card__promo-note--pending">{{item.displayPromotionPendingLabel}}</text>
 
                   <view class="manager-card__actions">
-                    <button class="manager-open" data-id="{{item.id}}" bindtap="openListing">Open</button>
+                    <button class="manager-open" data-id="{{item.id}}" bindtap="openListing">{{copy.openButton}}</button>
                     <button
                       class="manager-sold {{item.isSold ? 'manager-sold--active' : ''}}"
                       data-id="{{item.id}}"
                       data-sold="{{item.isSold ? 1 : 0}}"
                       bindtap="toggleSoldState"
                     >
-                      {{item.isSold ? 'List again' : 'Mark sold'}}
+                      {{item.displaySoldActionLabel}}
                     </button>
+                    <view
+                      wx:if="{{!item.isPromoted}}"
+                      class="manager-promote-shell {{item.isPromotionRequested ? 'manager-promote-shell--pending' : ''}}"
+                    >
+                      <button
+                        class="manager-promote manager-promote--request {{item.isPromotionRequested ? 'manager-promote--pending' : ''}}"
+                        data-id="{{item.id}}"
+                        bindtap="requestPromotion"
+                        disabled="{{item.isPromotionRequested}}"
+                      >
+                        {{item.displayPromoteActionLabel}}
+                      </button>
+                    </view>
                     <button
-                      class="manager-promote {{item.isPromoted ? 'manager-promote--active' : ''}} {{item.isPromotionRequested ? 'manager-promote--pending' : ''}}"
+                      wx:else
+                      class="manager-promote manager-promote--active"
                       data-id="{{item.id}}"
                       bindtap="requestPromotion"
-                      disabled="{{item.isPromoted || item.isPromotionRequested}}"
+                      disabled="{{true}}"
                     >
-                      {{item.isPromoted ? 'Featured' : (item.isPromotionRequested ? 'Requested' : 'Promote')}}
+                      {{item.displayPromoteActionLabel}}
                     </button>
-                    <button class="manager-edit" data-id="{{item.id}}" bindtap="editListing">Edit</button>
-                    <button class="manager-delete" data-id="{{item.id}}" bindtap="deleteListing">Delete</button>
+                    <button class="manager-edit" data-id="{{item.id}}" bindtap="editListing">{{copy.editButton}}</button>
+                    <button class="manager-delete" data-id="{{item.id}}" bindtap="deleteListing">{{copy.deleteButton}}</button>
                   </view>
                 </view>
               </view>
@@ -79,16 +93,16 @@
       </block>
 
       <view wx:else class="manager-empty">
-        <text class="manager-empty__title">No active listings</text>
-        <text class="manager-empty__copy">Post your first room, item, or service with the New button above.</text>
+        <text class="manager-empty__title">{{copy.noActiveTitle}}</text>
+        <text class="manager-empty__copy">{{copy.noActiveCopy}}</text>
       </view>
 
       <view wx:if="{{archivedCount}}" class="manager-archive-shell">
         <button class="manager-archive-toggle" bindtap="toggleArchive">
           <view class="manager-archive-toggle__inner">
             <view class="manager-head__copy">
-              <text class="manager-head__title">Archive</text>
-              <text class="manager-head__subtitle">{{archivedCount}} sold listing{{archivedCount === 1 ? '' : 's'}} moved out of active feed</text>
+              <text class="manager-head__title">{{copy.archiveTitle}}</text>
+              <text class="manager-head__subtitle">{{archiveSubtitle}}</text>
             </view>
             <text class="manager-archive-chevron">{{isArchiveExpanded ? '⌃' : '⌄'}}</text>
           </view>
@@ -107,27 +121,28 @@
                     <text class="manager-card__title">{{item.title}}</text>
                   </view>
                   <view class="manager-card__badge manager-card__badge--sold">
-                    Sold
+                    {{item.displayStatusLabel}}
                   </view>
                 </view>
 
                 <text class="manager-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
                 <text class="manager-card__sub">{{item.subcategory}}</text>
-                <text class="manager-card__archive-note">{{item.soldOnUniMarket ? 'Sale source: UniMarket' : 'Sale source: outside UniMarket'}}</text>
-                <text wx:if="{{item.isPromoted}}" class="manager-card__promo-note">✦ Promoted</text>
+                <text class="manager-card__archive-note">{{item.displayArchiveNote}}</text>
+                <text wx:if="{{item.isPromoted}}" class="manager-card__promo-note">{{item.displayPromotedBadge}}</text>
 
                 <view class="manager-card__actions">
-                  <button class="manager-open" data-id="{{item.id}}" bindtap="openListing">Open</button>
+                  <button class="manager-open" data-id="{{item.id}}" bindtap="openListing">{{copy.openButton}}</button>
                   <button
                     class="manager-sold manager-sold--active"
                     data-id="{{item.id}}"
                     data-sold="1"
-                    bindtap="toggleSoldState"
+                    data-archived="{{item.isArchived ? 1 : 0}}"
+                    bindtap="restoreArchivedListing"
                   >
-                    List again
+                    {{item.displayRestoreActionLabel}}
                   </button>
-                  <button class="manager-edit" data-id="{{item.id}}" bindtap="editListing">Edit</button>
-                  <button class="manager-delete" data-id="{{item.id}}" bindtap="deleteListing">Delete</button>
+                  <button class="manager-edit" data-id="{{item.id}}" bindtap="editListing">{{copy.editButton}}</button>
+                  <button class="manager-delete" data-id="{{item.id}}" bindtap="deleteListing">{{copy.deleteButton}}</button>
                 </view>
               </view>
             </view>
@@ -137,3 +152,5 @@
     </view>
   </scroll-view>
 </view>
+<feedback-modal id="feedback-modal" themeMode="{{themeMode}}"></feedback-modal>
+<feedback-action-sheet id="feedback-action-sheet" themeMode="{{themeMode}}"></feedback-action-sheet>

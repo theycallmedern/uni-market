@@ -12,7 +12,7 @@
         <text class="results-search__icon">⌕</text>
         <input
           class="results-search__input"
-          placeholder="Search within {{categoryTitle}}"
+          placeholder="{{copy.searchPlaceholderPrefix}}{{categoryTitle}}"
           value="{{search}}"
           bindinput="onSearchInput"
         />
@@ -22,42 +22,42 @@
     <text class="results-title">{{categoryTitle}}</text>
     <view class="results-meta-row">
       <text wx:if="{{activeSubcategoryLabel}}" class="results-subtitle">{{activeSubcategoryLabel}}</text>
-      <text class="results-meta">{{visibleListings.length}} listings</text>
+      <text class="results-meta">{{visibleListings.length}}{{copy.listingsSuffix}}</text>
     </view>
   </view>
 
   <view class="results-controls">
     <view class="results-chip-row">
-      <selector-sheet title="Sort" options="{{sortOptions}}" value="{{sortIndex}}" theme-mode="{{themeMode}}" bindchange="onSortChange">
+      <selector-sheet title="{{copy.sortTitle}}" options="{{sortOptions}}" value="{{sortIndex}}" theme-mode="{{themeMode}}" bindchange="onSortChange">
         <view class="results-chip results-chip--dark">
-          <text>{{sortOptions[sortIndex]}}</text>
+          <text class="results-chip__label">{{sortOptions[sortIndex]}}</text>
           <text class="results-chip__arrow">⌄</text>
         </view>
       </selector-sheet>
 
-      <selector-sheet title="Location" options="{{locationOptions}}" value="{{locationIndex}}" theme-mode="{{themeMode}}" bindchange="onLocationChange">
+      <selector-sheet title="{{copy.locationTitle}}" options="{{locationOptions}}" value="{{locationIndex}}" theme-mode="{{themeMode}}" bindchange="onLocationChange">
         <view class="results-chip">
-          <text>{{locationOptions[locationIndex]}}</text>
+          <text class="results-chip__label">{{locationOptions[locationIndex]}}</text>
           <text class="results-chip__arrow">⌄</text>
         </view>
       </selector-sheet>
     </view>
 
     <view class="results-chip-row">
-      <selector-sheet title="University" options="{{universityOptions}}" value="{{universityIndex}}" theme-mode="{{themeMode}}" bindchange="onUniversityChange">
+      <selector-sheet title="{{copy.universityTitle}}" options="{{universityOptions}}" value="{{universityIndex}}" theme-mode="{{themeMode}}" bindchange="onUniversityChange">
         <view class="results-chip results-chip--wide">
-          <text>{{universityOptions[universityIndex]}}</text>
+          <text class="results-chip__label">{{universityOptions[universityIndex]}}</text>
           <text class="results-chip__arrow">⌄</text>
         </view>
       </selector-sheet>
 
-      <view class="results-clear" bindtap="clearFilters">Reset</view>
+      <view class="results-clear" bindtap="clearFilters">{{copy.reset}}</view>
     </view>
 
     <view class="results-price-row">
       <input
         class="results-price-input"
-        placeholder="Price from"
+        placeholder="{{copy.priceFrom}}"
         type="number"
         value="{{priceMin}}"
         data-field="priceMin"
@@ -65,7 +65,7 @@
       />
       <input
         class="results-price-input"
-        placeholder="Price to"
+        placeholder="{{copy.priceTo}}"
         type="number"
         value="{{priceMax}}"
         data-field="priceMax"
@@ -77,11 +77,11 @@
   <view wx:if="{{visibleListings.length}}" class="results-list">
     <block wx:for="{{visibleListings}}" wx:key="id">
       <view class="result-card {{item.isPromoted ? 'result-card--promoted' : ''}}" data-id="{{item.id}}" bindtap="openListing">
-        <view class="result-card__inner">
+          <view class="result-card__inner">
           <view class="result-card__media">
             <image class="result-card__image" src="{{item.image}}" mode="aspectFill" />
-            <view wx:if="{{item.isPromoted}}" class="result-card__featured">✦ Promoted</view>
-            <view wx:if="{{item.isSellerPro && !item.isPromoted}}" class="result-card__pro">Seller Pro</view>
+            <view wx:if="{{item.isPromoted}}" class="result-card__featured">{{copy.promotedBadge}}</view>
+            <view wx:if="{{item.isSellerPro && !item.isPromoted}}" class="result-card__pro">{{copy.sellerProBadge}}</view>
             <view
               class="result-card__save {{item.isSaved ? 'result-card__save--saved' : ''}} {{pulseListingId === item.id ? 'result-card__save--pulse' : ''}}"
               data-id="{{item.id}}"
@@ -93,10 +93,11 @@
           <view class="result-card__body">
             <view class="result-card__headline">
               <text class="result-card__price">{{item.price}}</text>
-              <text class="result-card__tag">{{item.subcategory}}</text>
+              <text class="result-card__tag">{{item.displaySubcategory}}</text>
             </view>
             <text class="result-card__title">{{item.title}}</text>
-            <text class="result-card__meta">{{item.university ? item.location + ' · ' + item.university : item.location}}</text>
+            <text class="result-card__meta">{{item.university ? item.displayLocation + ' · ' + item.university : item.displayLocation}}</text>
+            <text wx:if="{{item.address}}" class="result-card__address">{{item.address}}</text>
           </view>
         </view>
       </view>
@@ -104,8 +105,8 @@
   </view>
 
   <view wx:else class="results-empty">
-    <text class="results-empty__title">No matching listings</text>
-    <text class="results-empty__copy">Try a wider price range, another campus, or clear the filters.</text>
+    <text class="results-empty__title">{{copy.emptyTitle}}</text>
+    <text class="results-empty__copy">{{copy.emptyCopy}}</text>
   </view>
 
       <view wx:if="{{feedbackVisible}}" class="save-feedback">

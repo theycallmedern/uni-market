@@ -13,3 +13,4 @@ project.private.config.json
 miniprogram_npm/
 tmp/
 *.log
+.wrangler/

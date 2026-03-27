@@ -1,27 +1,40 @@
-const market = require('../../data/market')
-const savedStore = require('../../utils/saved')
+const api = require('../../services/api')
+const listingsRuntime = require('../../services/api/runtime-listings')
+const savedStore = require('../../services/api/saved')
 const storage = require('../../utils/storage')
+const localeStore = require('../../utils/locale')
 const tabbarStore = require('../../utils/tabbar')
 const listingsUtils = require('../../utils/listings')
+const visibilityStore = require('../../services/api/visibility')
 const feedback = require('../../utils/ui-feedback')
 const uiText = require('../../constants/messages')
+const copyStore = require('../../constants/copy')
 
-const SORT_OPTIONS = ['Newest', 'Price low to high', 'Price high to low']
 const INITIAL_THEME = storage.getThemeData()
+const INITIAL_LOCALE = localeStore.getLocale()
+const catalogApi = api.catalog
+const listingsApi = api.listings
 
 Page({
   data: {
+    locale: INITIAL_LOCALE,
+    copy: copyStore.getPageCopy('favorites', INITIAL_LOCALE),
+    commonCopy: copyStore.getCommonCopy(INITIAL_LOCALE),
     themeMode: INITIAL_THEME.themeMode,
     themeClass: INITIAL_THEME.themeClass,
     isDarkTheme: INITIAL_THEME.isDarkTheme,
     allListings: [],
     listings: [],
-    categoryOptions: ['All categories'],
+    categoryOptions: [copyStore.getCommonCopy(INITIAL_LOCALE).allCategories],
+    categoryOptionValues: ['all'],
     categoryIndex: 0,
-    sortOptions: SORT_OPTIONS,
+    sortOptions: copyStore.getCommonCopy(INITIAL_LOCALE).sortOptions,
     sortIndex: 0,
     savedCount: 0,
     unavailableCount: 0,
+    emptyTitle: copyStore.getPageCopy('favorites', INITIAL_LOCALE).emptyTitle,
+    emptyCopy: copyStore.getPageCopy('favorites', INITIAL_LOCALE).emptyCopy,
+    unavailableMeta: copyStore.getUnavailableMeta(0, INITIAL_LOCALE),
     feedbackVisible: false,
     feedbackText: '',
     feedbackIcon: '',
@@ -29,59 +42,108 @@ Page({
   },
 
   onShow() {
-    this.refreshTheme(() => {
-      tabbarStore.syncTabBar(this, 1, {
-        themeMode: this.data.themeMode
+    this.refreshLocale(() => {
+      this.refreshTheme(() => {
+        tabbarStore.syncTabBar(this, 1, {
+          themeMode: this.data.themeMode,
+          locale: this.data.locale
+        })
       })
+      this.refreshListings()
     })
-    this.refreshListings()
   },
 
   refreshTheme(callback) {
     this.setData(storage.getThemeData(), callback)
   },
 
-  refreshListings() {
-    const savedIds = savedStore.getSavedListingIds()
-    const visibleListings = market.getFeedListings().filter((listing) => savedIds.includes(String(listing.id)))
-    const allKnownIds = market.getAllListings({
-      includeResolved: true,
-      includeHiddenByUser: true
-    }).map((listing) => String(listing.id))
-    const unavailableCount = savedIds.filter((id) => !allKnownIds.includes(String(id))).length
-    const categoryOptions = ['All categories'].concat(
-      market.categories
-        .filter((category) => category.id !== 'all' && visibleListings.some((listing) => listing.categoryId === category.id))
-        .map((category) => category.name)
-    )
+  refreshLocale(callback) {
+    const locale = localeStore.getLocale()
+    const commonCopy = copyStore.getCommonCopy(locale)
 
     this.setData({
-      allListings: visibleListings,
-      savedCount: savedIds.length,
-      unavailableCount,
-      categoryOptions,
-      categoryIndex: Math.min(this.data.categoryIndex, categoryOptions.length - 1)
-    }, () => {
-      this.applyFilters()
+      locale,
+      copy: copyStore.getPageCopy('favorites', locale),
+      commonCopy,
+      sortOptions: commonCopy.sortOptions
+    }, callback)
+  },
+
+  async refreshListings() {
+    const { locale } = this.data
+    const commonCopy = copyStore.getCommonCopy(locale)
+    if (visibilityStore.enabled) {
+      await visibilityStore.syncPreferences()
+    }
+    if (savedStore.enabled) {
+      await savedStore.hydrateSavedListingIds()
+    }
+    const savedIds = savedStore.getSavedListingIds()
+    const applyListings = (feedListings, knownListings) => {
+      const visibleListings = feedListings.filter((listing) => savedIds.includes(String(listing.id)))
+      const allKnownIds = knownListings.map((listing) => String(listing.id))
+      const unavailableCount = savedIds.filter((id) => !allKnownIds.includes(String(id))).length
+      const categoryOptionValues = ['all'].concat(
+        catalogApi.categories
+          .filter((category) => category.id !== 'all' && visibleListings.some((listing) => listing.categoryId === category.id))
+          .map((category) => category.id)
+      )
+      const categoryOptions = [commonCopy.allCategories].concat(
+        categoryOptionValues
+          .filter((value) => value !== 'all')
+          .map((categoryId) => copyStore.getCategoryLabel(categoryId, locale))
+      )
+
+      const emptyState = copyStore.getFavoritesEmptyState(savedIds.length > 0, locale)
+
+      this.setData({
+        allListings: visibleListings,
+        savedCount: savedIds.length,
+        unavailableCount,
+        unavailableMeta: copyStore.getUnavailableMeta(unavailableCount, locale),
+        categoryOptions,
+        categoryOptionValues,
+        emptyTitle: emptyState.title,
+        emptyCopy: emptyState.copy,
+        categoryIndex: Math.min(this.data.categoryIndex, categoryOptions.length - 1)
+      }, () => {
+        this.applyFilters()
+      })
+    }
+
+    if (!listingsRuntime.enabled) {
+      const initialFeedListings = listingsApi.getFeed()
+      const initialKnownListings = listingsApi.getAll({
+        includeResolved: true,
+        includeHiddenByUser: true
+      })
+      applyListings(initialFeedListings, initialKnownListings)
+      return
+    }
+
+    const feedListings = await listingsRuntime.getFeed()
+    const knownListings = await listingsRuntime.getAll({
+      includeResolved: true,
+      includeHiddenByUser: true
     })
+    applyListings(feedListings, knownListings)
   },
 
   applyFilters() {
     const {
       allListings,
-      categoryOptions,
+      categoryOptionValues,
       categoryIndex,
       sortIndex
     } = this.data
-    const selectedCategory = categoryOptions[categoryIndex] || 'All categories'
+    const selectedCategoryValue = categoryOptionValues[categoryIndex] || 'all'
 
     let filtered = (allListings || []).filter((listing) => {
-      if (selectedCategory === 'All categories') {
+      if (selectedCategoryValue === 'all') {
         return true
       }
 
-      const category = market.categories.find((item) => item.id === listing.categoryId)
-      return category && category.name === selectedCategory
+      return listing.categoryId === selectedCategoryValue
     })
 
     filtered = filtered.sort((a, b) => {
@@ -93,7 +155,14 @@ Page({
         return listingsUtils.parsePriceValue(b.price) - listingsUtils.parsePriceValue(a.price)
       }
 
-      return Number(b.id) - Number(a.id)
+      const bTime = new Date(b.updatedAt || b.createdAt || 0).getTime()
+      const aTime = new Date(a.updatedAt || a.createdAt || 0).getTime()
+
+      if (bTime !== aTime) {
+        return bTime - aTime
+      }
+
+      return String(b.id || '').localeCompare(String(a.id || ''))
     })
 
     this.setData({
@@ -139,7 +208,7 @@ Page({
     feedback.showModal({
       title: uiText.FAVORITES.CLEAR_TITLE,
       content: uiText.FAVORITES.CLEAR_CONTENT,
-      confirmText: 'Clear',
+      confirmText: this.data.commonCopy.clear,
       confirmColor: '#111111',
       success: (res) => {
         if (!res.confirm) return
@@ -152,9 +221,13 @@ Page({
     })
   },
 
-  removeUnavailable() {
+  async removeUnavailable() {
     const savedIds = savedStore.getSavedListingIds()
-    const visibleIds = market.getFeedListings().map((listing) => String(listing.id))
+    const visibleIds = (
+      listingsRuntime.enabled
+        ? await listingsRuntime.getFeed()
+        : listingsApi.getFeed()
+    ).map((listing) => String(listing.id))
     const unavailableIds = savedIds.filter((id) => !visibleIds.includes(String(id)))
 
     if (!unavailableIds.length) {
@@ -165,7 +238,7 @@ Page({
     feedback.showModal({
       title: uiText.FAVORITES.REMOVE_UNAVAILABLE_TITLE,
       content: uiText.FAVORITES.removeUnavailableContent(unavailableIds.length),
-      confirmText: 'Remove',
+      confirmText: this.data.commonCopy.remove,
       confirmColor: '#111111',
       success: (res) => {
         if (!res.confirm) return
@@ -181,9 +254,9 @@ Page({
   playSaveFeedback(id) {
     this.setData({
       feedbackVisible: true,
-      feedbackText: 'Removed',
+      feedbackText: this.data.commonCopy.removed,
       feedbackIcon: '✕',
-      pulseListingId: Number(id)
+      pulseListingId: String(id)
     })
 
     setTimeout(() => {
@@ -194,7 +267,7 @@ Page({
 
     setTimeout(() => {
       this.setData({
-        pulseListingId: 0
+        pulseListingId: ''
       })
     }, 420)
   }

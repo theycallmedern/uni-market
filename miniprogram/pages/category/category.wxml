@@ -13,7 +13,7 @@
           <view class="all-category-item" data-id="{{item.id}}" bindtap="openCategory">
             <view class="all-category-item__copy">
               <text class="all-category-item__name">{{item.name}}</text>
-              <text class="all-category-item__hint">Open detailed filters</text>
+              <text class="all-category-item__hint">{{copy.openDetailedFilters}}</text>
             </view>
             <text class="all-category-item__arrow">›</text>
           </view>
@@ -60,7 +60,7 @@
           data-key="{{item.key}}"
           bindtap="openFilterSheet"
         >
-          <text>{{item.displayLabel}}</text>
+          <text class="filter-pill__label">{{item.displayLabel}}</text>
           <text class="filter-arrow">⌄</text>
         </view>
       </view>
@@ -69,7 +69,7 @@
     <view class="filter-row filter-row--chips">
       <block wx:for="{{quickFilters}}" wx:key="key">
         <view class="quick-pill {{item.isActive ? 'quick-pill--active' : ''}}" data-index="{{index}}" bindtap="onQuickFilterTap">
-          <text>{{item.label}}</text>
+          <text class="quick-pill__label">{{item.label}}</text>
         </view>
       </block>
     </view>
@@ -86,7 +86,7 @@
           data-key="{{item.key}}"
           bindtap="openFilterSheet"
         >
-          <text>{{item.displayLabel}}</text>
+          <text class="filter-pill__label">{{item.displayLabel}}</text>
           <text class="filter-arrow">⌄</text>
         </view>
       </view>
@@ -102,13 +102,13 @@
 
   <view class="subcategory-panel">
     <view class="panel-head">
-      <text class="panel-title">Explore {{category.title}}</text>
-      <text class="panel-link" bindtap="openResults">See all →</text>
+      <text class="panel-title">{{copy.panelExplorePrefix}} {{category.title}}</text>
+      <text class="panel-link" bindtap="openResults">{{copy.panelSeeAll}}</text>
     </view>
 
     <view class="subcategory-grid">
       <block wx:for="{{subcategoryCards}}" wx:key="id">
-        <view class="subcategory-tile" data-name="{{item.name}}" bindtap="openSubcategory">
+        <view class="subcategory-tile" data-name="{{item.rawName}}" bindtap="openSubcategory">
           <image class="subcategory-tile__image" src="{{item.image}}" mode="aspectFill" />
           <view class="subcategory-tile__scrim"></view>
           <text class="subcategory-text">{{item.name}}</text>
@@ -118,7 +118,7 @@
   </view>
 
       <view class="featured-panel">
-        <text class="featured-title">Recommended</text>
+        <text class="featured-title">{{copy.featuredTitle}}</text>
 
         <block wx:for="{{featured}}" wx:key="title">
           <view class="featured-card">
@@ -126,7 +126,7 @@
               <text class="featured-card__title">{{item.title}}</text>
               <text class="featured-card__caption">{{item.caption}}</text>
             </view>
-            <view class="featured-card__badge">New</view>
+            <view class="featured-card__badge">{{copy.featuredBadge}}</view>
           </view>
         </block>
       </view>
@@ -136,7 +136,7 @@
           <view class="category-sheet__handle"></view>
           <view class="category-sheet__head">
             <text class="category-sheet__title">{{filterSheetTitle}}</text>
-            <text class="category-sheet__close" bindtap="closeFilterSheet">Cancel</text>
+            <text class="category-sheet__close" bindtap="closeFilterSheet">{{copy.sheetCancel}}</text>
           </view>
           <scroll-view class="category-sheet__scroll" scroll-y enhanced show-scrollbar="{{false}}">
             <view

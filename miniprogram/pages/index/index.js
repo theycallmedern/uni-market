@@ -1,30 +1,40 @@
-const market = require('../../data/market')
-const savedStore = require('../../utils/saved')
+const api = require('../../services/api')
+const listingsRuntime = require('../../services/api/runtime-listings')
+const savedStore = require('../../services/api/saved')
 const storage = require('../../utils/storage')
+const localeStore = require('../../utils/locale')
 const universitiesStore = require('../../utils/universities')
 const tabbarStore = require('../../utils/tabbar')
 const listingsUtils = require('../../utils/listings')
+const visibilityStore = require('../../services/api/visibility')
+const copyStore = require('../../constants/copy')
 
-const UNIVERSITY_FILTER_OPTIONS = ['All universities', ...universitiesStore.getPublicUniversityOptions()]
 const INITIAL_THEME = storage.getThemeData()
+const INITIAL_LOCALE = localeStore.getLocale()
+const catalogApi = api.catalog
+const listingsApi = api.listings
 
 Page({
   data: {
+    locale: INITIAL_LOCALE,
+    copy: copyStore.getPageCopy('home', INITIAL_LOCALE),
+    commonCopy: copyStore.getCommonCopy(INITIAL_LOCALE),
     themeMode: INITIAL_THEME.themeMode,
     themeClass: INITIAL_THEME.themeClass,
     isDarkTheme: INITIAL_THEME.isDarkTheme,
     search: '',
-    categories: market.categories,
+    categories: copyStore.mapCategories(catalogApi.categories, INITIAL_LOCALE),
     activeCategoryId: 'all',
     filterPanelOpen: false,
-    locationOptions: ['All locations'],
-    universityOptions: UNIVERSITY_FILTER_OPTIONS,
+    locationOptions: [copyStore.getCommonCopy(INITIAL_LOCALE).allLocations],
+    universityOptions: copyStore.getUniversityFilterOptions(INITIAL_LOCALE),
     locationIndex: 0,
     universityIndex: 0,
-    sortOptions: ['Newest', 'Price low to high', 'Price high to low'],
+    sortOptions: copyStore.getCommonCopy(INITIAL_LOCALE).sortOptions,
     sortIndex: 0,
     allListings: [],
     visibleListings: [],
+    applyFilterLabel: copyStore.getHomeApplyLabel(0, INITIAL_LOCALE),
     feedbackVisible: false,
     feedbackText: '',
     feedbackIcon: '',
@@ -32,22 +42,61 @@ Page({
   },
 
   onShow() {
-    this.refreshTheme(() => {
-      tabbarStore.syncTabBar(this, 0, {
-        themeMode: this.data.themeMode
+    this.refreshLocale(() => {
+      this.refreshTheme(() => {
+        tabbarStore.syncTabBar(this, 0, {
+          themeMode: this.data.themeMode,
+          locale: this.data.locale
+        })
       })
+      this.refreshListings()
     })
-    this.refreshListings()
   },
 
   refreshTheme(callback) {
     this.setData(storage.getThemeData(), callback)
   },
 
-  refreshListings() {
-    const allListings = market.getFeedListings()
-    const locationOptions = ['All locations', ...listingsUtils.uniqueOptions(allListings, 'location')]
-    const universityOptions = UNIVERSITY_FILTER_OPTIONS
+  refreshLocale(callback) {
+    const locale = localeStore.getLocale()
+    const commonCopy = copyStore.getCommonCopy(locale)
+
+    this.setData({
+      locale,
+      copy: copyStore.getPageCopy('home', locale),
+      commonCopy,
+      categories: copyStore.mapCategories(catalogApi.categories, locale),
+      universityOptions: copyStore.getUniversityFilterOptions(locale),
+      sortOptions: commonCopy.sortOptions
+    }, callback)
+  },
+
+  async refreshListings() {
+    const { locale } = this.data
+    const commonCopy = copyStore.getCommonCopy(locale)
+    const universityOptions = copyStore.getUniversityFilterOptions(locale)
+    if (visibilityStore.enabled) {
+      await visibilityStore.syncPreferences()
+    }
+
+    if (!listingsRuntime.enabled) {
+      const initialListings = listingsApi.getFeed()
+      const initialLocationOptions = [commonCopy.allLocations, ...listingsUtils.uniqueOptions(initialListings, 'location')]
+
+      this.setData({
+        allListings: initialListings,
+        locationOptions: initialLocationOptions,
+        universityOptions,
+        locationIndex: Math.min(this.data.locationIndex, initialLocationOptions.length - 1),
+        universityIndex: Math.min(this.data.universityIndex, universityOptions.length - 1)
+      }, () => {
+        this.applyFilters()
+      })
+      return
+    }
+
+    const allListings = await listingsRuntime.getFeed()
+    const locationOptions = [commonCopy.allLocations, ...listingsUtils.uniqueOptions(allListings, 'location')]
 
     this.setData({
       allListings,
@@ -139,9 +188,9 @@ Page({
   playSaveFeedback(id, isSaved) {
     this.setData({
       feedbackVisible: true,
-      feedbackText: isSaved ? 'Saved' : 'Removed',
+      feedbackText: isSaved ? this.data.commonCopy.saved : this.data.commonCopy.removed,
       feedbackIcon: isSaved ? '✓' : '✕',
-      pulseListingId: Number(id)
+      pulseListingId: String(id)
     })
 
     setTimeout(() => {
@@ -152,7 +201,7 @@ Page({
 
     setTimeout(() => {
       this.setData({
-        pulseListingId: 0
+        pulseListingId: ''
       })
     }, 420)
   },
@@ -168,16 +217,17 @@ Page({
       universityIndex,
       sortIndex
     } = this.data
+    const commonCopy = copyStore.getCommonCopy(this.data.locale)
     const keyword = search.trim().toLowerCase()
-    const selectedLocation = locationOptions[locationIndex] || 'All locations'
-    const selectedUniversity = universityOptions[universityIndex] || 'All universities'
+    const selectedLocation = locationOptions[locationIndex] || commonCopy.allLocations
+    const selectedUniversity = universityOptions[universityIndex] || commonCopy.allUniversities
 
     let filtered = allListings.filter((listing) => {
       const matchesCategory = activeCategoryId === 'all' || listing.categoryId === activeCategoryId
       const haystack = `${listing.title} ${listing.location} ${listing.address || ''} ${listing.university} ${listing.subcategory}`.toLowerCase()
       const matchesSearch = !keyword || haystack.includes(keyword)
-      const matchesLocation = selectedLocation === 'All locations' || listing.location === selectedLocation
-      const matchesUniversity = selectedUniversity === 'All universities' || listing.university === selectedUniversity
+      const matchesLocation = selectedLocation === commonCopy.allLocations || listing.location === selectedLocation
+      const matchesUniversity = selectedUniversity === commonCopy.allUniversities || listing.university === selectedUniversity
       return matchesCategory && matchesSearch && matchesLocation && matchesUniversity
     })
 
@@ -190,11 +240,21 @@ Page({
         return listingsUtils.parsePriceValue(b.price) - listingsUtils.parsePriceValue(a.price)
       }
 
-      return Number(b.id) - Number(a.id)
+      const bTime = new Date(b.updatedAt || b.createdAt || 0).getTime()
+      const aTime = new Date(a.updatedAt || a.createdAt || 0).getTime()
+
+      if (bTime !== aTime) {
+        return bTime - aTime
+      }
+
+      return String(b.id || '').localeCompare(String(a.id || ''))
     })
 
-    const visibleListings = savedStore.decorateListingsWithSaved(market.sortByPromotionPriority(filtered))
+    const visibleListings = savedStore.decorateListingsWithSaved(filtered)
 
-    this.setData({ visibleListings })
+    this.setData({
+      visibleListings,
+      applyFilterLabel: copyStore.getHomeApplyLabel(visibleListings.length, this.data.locale)
+    })
   }
 })

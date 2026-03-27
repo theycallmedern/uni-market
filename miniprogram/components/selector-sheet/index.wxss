@@ -1,9 +1,13 @@
 .selector-sheet-host {
   display: block;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .selector-trigger {
   display: block;
+  width: 100%;
+  min-width: 0;
 }
 
 .selector-trigger--disabled {
@@ -13,16 +17,18 @@
 .selector-sheet-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1400;
+  z-index: 2200;
   display: flex;
   align-items: flex-end;
+  padding: 24rpx 20rpx calc(env(safe-area-inset-bottom) + 180rpx);
+  box-sizing: border-box;
   background: rgba(17, 17, 17, 0.28);
 }
 
 .selector-sheet {
   width: 100%;
-  max-height: calc(100vh - 120rpx);
-  padding: 18rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+  max-height: calc(100vh - 240rpx);
+  padding: 18rpx 24rpx 24rpx;
   box-sizing: border-box;
   border-radius: 34rpx 34rpx 0 0;
   background: #ffffff;
@@ -57,7 +63,7 @@
 }
 
 .selector-sheet__scroll {
-  max-height: calc(100vh - 260rpx - env(safe-area-inset-bottom));
+  max-height: calc(100vh - 360rpx - env(safe-area-inset-bottom));
 }
 
 .selector-sheet__option {

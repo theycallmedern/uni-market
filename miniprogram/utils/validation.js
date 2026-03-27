@@ -37,6 +37,10 @@ const ADDRESS_DETAIL_KEYWORDS = [
 ]
 const ADDRESS_ANCHOR_CJK_REGEX = /(区|路|街|道|校园|校区|大学|公寓|小区|苑|村|地铁|站)/
 const ADDRESS_DETAIL_CJK_REGEX = /(号|楼|栋|单元|室|门|层|幢|座)/
+const HAN_CHARACTER_REGEX = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/
+const FULLWIDTH_LATIN_OR_DIGIT_REGEX = /[\uFF10-\uFF19\uFF21-\uFF3A\uFF41-\uFF5A]/
+const ASCII_PUNCTUATION_REGEX = /[!-/:-@[-`{-~]/
+const CJK_PUNCTUATION_REGEX = /[\u3000-\u303F\uFF01-\uFF0F\uFF1A-\uFF20\uFF3B-\uFF40\uFF5B-\uFF65]/
 
 function normalizeWhitespace(value) {
   return String(value || '').replace(/\s+/g, ' ').trim()
@@ -55,6 +59,18 @@ function sanitizeMultiline(value, maxLength) {
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
+
+  if (typeof maxLength !== 'number') {
+    return normalized
+  }
+
+  return normalized.slice(0, maxLength)
+}
+
+function sanitizeAddressDraft(value, maxLength = DEFAULT_ADDRESS_MAX_LENGTH) {
+  const normalized = String(value || '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s{2,}/g, ' ')
 
   if (typeof maxLength !== 'number') {
     return normalized
@@ -107,7 +123,7 @@ function isValidWeChatId(wechat, options = {}) {
 }
 
 function hasMeaningfulText(text) {
-  return /[A-Za-z\u0400-\u04FF\u4E00-\u9FFF0-9]/.test(String(text || ''))
+  return /[A-Za-z\u4E00-\u9FFF0-9]/.test(String(text || ''))
 }
 
 function hasKeyword(text, keywords) {
@@ -133,7 +149,7 @@ function hasMeaningfulAddress(text) {
     return false
   }
 
-  const tokenCount = (normalized.match(/[A-Za-z\u0400-\u04FF\u4E00-\u9FFF0-9]+/g) || []).length
+  const tokenCount = (normalized.match(/[A-Za-z\u4E00-\u9FFF0-9]+/g) || []).length
   const hasDigit = /\d/.test(normalized)
   const hasAnchor =
     hasKeyword(lower, ADDRESS_ANCHOR_KEYWORDS) || ADDRESS_ANCHOR_CJK_REGEX.test(normalized)
@@ -151,6 +167,52 @@ function hasMeaningfulAddress(text) {
   }
 
   return false
+}
+
+function isSupportedListingCharacter(character) {
+  const value = String(character || '')
+
+  if (!value) {
+    return true
+  }
+
+  if (value === '\n' || value === '\r' || value === '\t') {
+    return true
+  }
+
+  if (/\s/.test(value)) {
+    return true
+  }
+
+  if (/[A-Za-z0-9]/.test(value)) {
+    return true
+  }
+
+  if (HAN_CHARACTER_REGEX.test(value) || FULLWIDTH_LATIN_OR_DIGIT_REGEX.test(value)) {
+    return true
+  }
+
+  if (ASCII_PUNCTUATION_REGEX.test(value) || CJK_PUNCTUATION_REGEX.test(value)) {
+    return true
+  }
+
+  return false
+}
+
+function isSupportedListingText(value) {
+  const normalized = String(value || '')
+
+  if (!normalized.trim()) {
+    return true
+  }
+
+  for (const character of normalized) {
+    if (!isSupportedListingCharacter(character)) {
+      return false
+    }
+  }
+
+  return true
 }
 
 function extractPriceDigits(value, maxDigits = PRICE_MAX_DIGITS) {
@@ -207,11 +269,13 @@ module.exports = {
   DEFAULT_ADDRESS_MAX_LENGTH,
   sanitizeSingleLine,
   sanitizeMultiline,
+  sanitizeAddressDraft,
   sanitizeAddress,
   sanitizeWeChatId,
   isValidWeChatId,
   hasMeaningfulText,
   hasMeaningfulAddress,
+  isSupportedListingText,
   extractPriceDigits,
   isValidPriceDigits,
   isPriceInRange,

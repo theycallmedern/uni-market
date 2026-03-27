@@ -1,64 +1,204 @@
-const market = require('../../data/market')
+const api = require('../../services/api')
+const listingsRuntime = require('../../services/api/runtime-listings')
+const sellersRuntime = require('../../services/api/runtime-sellers')
 const profileStore = require('../../utils/profile')
-const savedStore = require('../../utils/saved')
+const savedStore = require('../../services/api/saved')
 const storage = require('../../utils/storage')
-const reportsStore = require('../../utils/reports')
-const adminStore = require('../../utils/admin')
-const visibilityStore = require('../../utils/visibility')
-const reviewsStore = require('../../utils/reviews')
+const localeStore = require('../../utils/locale')
+const reportsStore = require('../../services/api/reports')
+const adminStore = require('../../services/api/admin')
+const visibilityStore = require('../../services/api/visibility')
+const reviewsStore = require('../../services/api/reviews')
 const feedback = require('../../utils/ui-feedback')
 const uiText = require('../../constants/messages')
-
-const REPORT_REASONS = [
-  'Scam or fraud',
-  'Prohibited item',
-  'Wrong category',
-  'Inappropriate content',
-  'Other'
-]
+const copyStore = require('../../constants/copy')
 const INITIAL_THEME = storage.getThemeData()
+const INITIAL_LOCALE = localeStore.getLocale()
+const listingsApi = api.listings
+const sellersApi = api.sellers
+const FOUNDER_PROFILE_KEYS = new Set([
+  'seller-mn45iqst-8ug7z6',
+  'miskathaa'
+])
 
-function formatListingPublishedAt(value) {
-  const date = new Date(value)
+function isFounderSeller(seller = {}) {
+  const sellerId = String(seller.id || '').trim().toLowerCase()
+  const sellerWechat = String(seller.wechat || '').trim().toLowerCase()
 
-  if (Number.isNaN(date.getTime())) {
+  return FOUNDER_PROFILE_KEYS.has(sellerId)
+    || FOUNDER_PROFILE_KEYS.has(sellerWechat)
+}
+
+function getReportReasons(locale) {
+  if (locale === 'zh') {
+    return ['诈骗或欺诈', '违禁物品', '分类错误', '不当内容', '其他']
+  }
+
+  if (locale === 'ru') {
+    return ['Мошенничество', 'Запрещённый товар', 'Неверная категория', 'Неприемлемый контент', 'Другое']
+  }
+
+  return ['Scam or fraud', 'Prohibited item', 'Wrong category', 'Inappropriate content', 'Other']
+}
+
+function getOtherReasonLabel(locale) {
+  if (locale === 'zh') {
+    return '其他'
+  }
+
+  if (locale === 'ru') {
+    return 'Другое'
+  }
+
+  return 'Other'
+}
+
+function getHideConfirmText(locale) {
+  if (locale === 'zh') {
+    return '隐藏'
+  }
+
+  if (locale === 'ru') {
+    return 'Скрыть'
+  }
+
+  return 'Hide'
+}
+
+function getBlockConfirmText(locale) {
+  if (locale === 'zh') {
+    return '屏蔽'
+  }
+
+  if (locale === 'ru') {
+    return 'Заблокировать'
+  }
+
+  return 'Block'
+}
+
+function getSendConfirmText(locale) {
+  if (locale === 'zh') {
+    return '发送'
+  }
+
+  if (locale === 'ru') {
+    return 'Отправить'
+  }
+
+  return 'Send'
+}
+
+function getSaveFeedbackText(isSaved, locale) {
+  if (locale === 'zh') {
+    return isSaved ? '已收藏' : '已移除'
+  }
+
+  if (locale === 'ru') {
+    return isSaved ? 'Сохранено' : 'Убрано'
+  }
+
+  return isSaved ? 'Saved' : 'Removed'
+}
+
+function getHiddenNotice(listing, locale) {
+  if (!listing || !listing.isHiddenByModeration) {
     return ''
   }
 
-  try {
-    const formatted = new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    }).format(date)
+  if (locale === 'zh') {
+    return listing.isCustom
+      ? '该发布已被审核隐藏。只有你和管理员可以查看。'
+      : '该发布已被审核隐藏。'
+  }
 
-    return `Published on ${formatted}`
-  } catch (error) {
-    return `Published on ${String(value).slice(0, 10)}`
+  if (locale === 'ru') {
+    return listing.isCustom
+      ? 'Объявление скрыто модерацией. Его можете открыть только вы и администраторы.'
+      : 'Объявление скрыто модерацией.'
+  }
+
+  return listing.isCustom
+    ? 'Hidden by moderation. Only you and admins can open this listing.'
+    : 'Hidden by moderation.'
+}
+
+function getSoldNotice(listing, locale) {
+  if (!listing || !listing.isSold) {
+    return ''
+  }
+
+  if (locale === 'zh') {
+    return listing.soldOnUniMarket
+      ? '这件物品已在 UniMarket 售出。'
+      : '这件物品已在站外售出。'
+  }
+
+  if (locale === 'ru') {
+    return listing.soldOnUniMarket
+      ? 'Этот товар был продан на UniMarket.'
+      : 'Этот товар был продан вне UniMarket.'
+  }
+
+  return listing.soldOnUniMarket
+    ? 'This item was sold on UniMarket.'
+    : 'This item was sold outside UniMarket.'
+}
+
+function getArchivedNotice(listing, locale) {
+  if (!listing || !listing.isArchived) {
+    return ''
+  }
+
+  if (locale === 'zh') {
+    return '这条发布满 30 天后已自动归档。你仍可以在归档中恢复它。'
+  }
+
+  if (locale === 'ru') {
+    return 'Это объявление автоматически ушло в архив через 30 дней. Его можно восстановить из архива.'
+  }
+
+  return 'This listing was auto-archived after 30 days. You can restore it from the archive.'
+}
+
+function getShareFallbackTitle(locale) {
+  if (locale === 'zh') {
+    return 'UniMarket 发布'
+  }
+
+  if (locale === 'ru') {
+    return 'Объявление UniMarket'
+  }
+
+  return 'UniMarket listing'
+}
+
+function createReviewSummary(locale) {
+  return {
+    average: 0,
+    averageLabel: copyStore.getReviewAverageLabel(0, 0, locale),
+    count: 0,
+    countLabel: copyStore.getReviewCountLabel(0, locale)
   }
 }
 
-function formatSellerTrustLabel(soldCount, listingsCount) {
-  const safeSoldCount = Number(soldCount || 0)
-  const safeListingsCount = Number(listingsCount || 0)
-
-  if (safeSoldCount > 0) {
-    return `Sold ${safeSoldCount} item${safeSoldCount === 1 ? '' : 's'} on UniMarket`
+function localizeReviewSummary(summary, locale) {
+  const safeSummary = summary || createReviewSummary(locale)
+  return {
+    ...safeSummary,
+    averageLabel: copyStore.getReviewAverageLabel(safeSummary.average, safeSummary.count, locale),
+    countLabel: copyStore.getReviewCountLabel(safeSummary.count, locale)
   }
-
-  if (safeListingsCount >= 3) {
-    return 'Active seller on UniMarket'
-  }
-
-  return 'New to UniMarket'
 }
 
 Page({
   data: {
+    locale: INITIAL_LOCALE,
+    copy: copyStore.getPageCopy('listing', INITIAL_LOCALE),
     themeMode: INITIAL_THEME.themeMode,
     themeClass: INITIAL_THEME.themeClass,
     isDarkTheme: INITIAL_THEME.isDarkTheme,
-    navTitle: 'Listing',
+    navTitle: copyStore.getPageCopy('listing', INITIAL_LOCALE).navListing,
     id: '',
     listing: null,
     isSaved: false,
@@ -78,6 +218,7 @@ Page({
     notFound: false,
     hiddenNotice: '',
     soldNotice: '',
+    archivedNotice: '',
     sellerMemberLabel: '',
     listingPublishedLabel: '',
     sellerTrustLabel: '',
@@ -87,12 +228,7 @@ Page({
     hiddenByUser: false,
     blockedSeller: false,
     viewTrackedId: '',
-    reviewSummary: {
-      average: 0,
-      averageLabel: 'New',
-      count: 0,
-      countLabel: '0 reviews'
-    }
+    reviewSummary: createReviewSummary(INITIAL_LOCALE)
   },
 
   onLoad(query) {
@@ -107,30 +243,49 @@ Page({
   },
 
   onShow() {
-    this.refreshTheme()
-    this.refreshListing()
+    this.refreshLocale(() => {
+      this.refreshTheme()
+      this.refreshListing()
+    })
   },
 
   refreshTheme() {
     this.setData(storage.getThemeData())
   },
 
-  refreshListing() {
+  refreshLocale(callback) {
+    const locale = localeStore.getLocale()
+
+    this.setData({
+      locale,
+      copy: copyStore.getPageCopy('listing', locale)
+    }, callback)
+  },
+
+  async refreshListing() {
+    const locale = this.data.locale
     const id = this.data.id
-    const listing = market.getListingById(id)
-    const rawListing = market.getListingById(id, { includeHiddenByUser: true })
+    if (visibilityStore.enabled) {
+      await visibilityStore.syncPreferences()
+    }
+    const listing = listingsRuntime.enabled
+      ? await listingsRuntime.getById(id, { includeArchived: true })
+      : listingsApi.getById(id, { includeArchived: true })
+    const rawListing = listingsRuntime.enabled
+      ? await listingsRuntime.getById(id, { includeHiddenByUser: true, includeArchived: true })
+      : listingsApi.getById(id, { includeHiddenByUser: true, includeArchived: true })
 
     if (!listing && rawListing) {
-      const sellerKey = market.getSellerKey(rawListing)
+      const sellerKey = sellersRuntime.getSellerKey(rawListing)
       const hiddenByUser = visibilityStore.isListingHidden(id)
       const blockedSeller = visibilityStore.isSellerBlocked(sellerKey)
 
       wx.setNavigationBarTitle({
-        title: blockedSeller ? 'Seller hidden' : 'Listing hidden'
+        title: blockedSeller ? this.data.copy.navSellerHidden : this.data.copy.navListingHidden
       })
 
       this.setData({
-        navTitle: blockedSeller ? 'Seller hidden' : 'Listing hidden',
+        navTitle: blockedSeller ? this.data.copy.navSellerHidden : this.data.copy.navListingHidden,
         listing: null,
         isOwnListing: false,
         showOwnerAnalytics: false,
@@ -139,20 +294,16 @@ Page({
         notFound: false,
         hiddenNotice: '',
         soldNotice: '',
+        archivedNotice: '',
         sellerMemberLabel: '',
         listingPublishedLabel: '',
         sellerTrustLabel: '',
-        sellerStatusLabel: 'New seller',
+        sellerStatusLabel: copyStore.getSellerStatusLabel('new', locale),
         sellerStatusClass: 'seller-rating__value--new',
         conditionChipClass: '',
         hiddenByUser,
         blockedSeller,
-        reviewSummary: {
-          average: 0,
-          averageLabel: 'New',
-          count: 0,
-          countLabel: '0 reviews'
-        },
+        reviewSummary: createReviewSummary(locale),
         viewTrackedId: ''
       })
       return
@@ -160,11 +311,11 @@ Page({
 
     if (!listing) {
       wx.setNavigationBarTitle({
-        title: 'Listing unavailable'
+        title: this.data.copy.navListingUnavailable
       })
 
       this.setData({
-        navTitle: 'Listing unavailable',
+        navTitle: this.data.copy.navListingUnavailable,
         listing: null,
         isOwnListing: false,
         showOwnerAnalytics: false,
@@ -173,35 +324,34 @@ Page({
         notFound: true,
         hiddenNotice: '',
         soldNotice: '',
+        archivedNotice: '',
         sellerMemberLabel: '',
         listingPublishedLabel: '',
         sellerTrustLabel: '',
-        sellerStatusLabel: 'New seller',
+        sellerStatusLabel: copyStore.getSellerStatusLabel('new', locale),
         sellerStatusClass: 'seller-rating__value--new',
         conditionChipClass: '',
         hiddenByUser: false,
         blockedSeller: false,
-        reviewSummary: {
-          average: 0,
-          averageLabel: 'New',
-          count: 0,
-          countLabel: '0 reviews'
-        },
+        reviewSummary: createReviewSummary(locale),
         viewTrackedId: ''
       })
       return
     }
 
-    const isAdmin = adminStore.isAdmin()
-    const canViewHiddenListing = isAdmin || Boolean(listing.isCustom)
+    const sellerKey = sellersRuntime.getSellerKey(listing)
+    const ownSellerProfile = sellersRuntime.getOwnProfile()
+    const isOwnListing = Boolean(ownSellerProfile.sellerKey && ownSellerProfile.sellerKey === sellerKey)
+    const isAdmin = await adminStore.getAdminState()
+    const canViewHiddenListing = isAdmin || isOwnListing
 
     if (listing.isHiddenByModeration && !canViewHiddenListing) {
       wx.setNavigationBarTitle({
-        title: 'Listing unavailable'
+        title: this.data.copy.navListingUnavailable
       })
 
       this.setData({
-        navTitle: 'Listing unavailable',
+        navTitle: this.data.copy.navListingUnavailable,
         listing: null,
         isOwnListing: false,
         showOwnerAnalytics: false,
@@ -210,64 +360,88 @@ Page({
         notFound: false,
         hiddenNotice: '',
         soldNotice: '',
+        archivedNotice: '',
         sellerMemberLabel: '',
         listingPublishedLabel: '',
         sellerTrustLabel: '',
-        sellerStatusLabel: 'New seller',
+        sellerStatusLabel: copyStore.getSellerStatusLabel('new', locale),
         sellerStatusClass: 'seller-rating__value--new',
         conditionChipClass: '',
         hiddenByUser: false,
         blockedSeller: false,
-        reviewSummary: {
-          average: 0,
-          averageLabel: 'New',
-          count: 0,
-          countLabel: '0 reviews'
-        },
+        reviewSummary: createReviewSummary(locale),
         viewTrackedId: ''
       })
       return
     }
 
     wx.setNavigationBarTitle({
-      title: listing.title || 'Listing'
+      title: listing.title || this.data.copy.navListing
     })
 
-    const sellerKey = market.getSellerKey(listing)
-    const ownSellerProfile = market.getOwnSellerProfile()
-    const isOwnListing = Boolean(ownSellerProfile.sellerKey && ownSellerProfile.sellerKey === sellerKey)
-    const sellerListingsCount = market.getListingsBySellerKey(sellerKey, {
-      includeResolved: true,
-      includeHiddenByUser: true,
-      includeSold: true
-    }).length
-    const sellerStatusLabel = listing.isSellerPro
-      ? 'Pro seller'
-      : sellerListingsCount >= 3
-        ? 'Seller'
-        : 'New seller'
-    const sellerStatusClass = listing.isSellerPro
-      ? 'seller-rating__value--pro'
-      : sellerListingsCount >= 3
-        ? 'seller-rating__value--seller'
-        : 'seller-rating__value--new'
-    const sellerSoldCount = market.getListingsBySellerKey(sellerKey, {
-      includeResolved: true,
-      includeHiddenByUser: true,
-      includeSold: true
-    }).filter((item) => Boolean(item && item.isSold && item.soldOnUniMarket)).length
-    const sellerMemberLabel = profileStore.formatMemberSince(
-      listing && listing.seller ? listing.seller.joinedAt || '' : ''
+    const sellerListings = listingsRuntime.enabled
+      ? await listingsRuntime.getBySellerKey(sellerKey, {
+        includeResolved: true,
+        includeHiddenByUser: true,
+        includeSold: true,
+        includeArchived: true
+      })
+      : listingsApi.getBySellerKey(sellerKey, {
+        includeResolved: true,
+        includeHiddenByUser: true,
+        includeSold: true,
+        includeArchived: true
+      })
+    const sellerListingsCount = sellerListings.length
+    const founderSeller = isFounderSeller(listing && listing.seller ? listing.seller : {})
+    const sellerStatusLabel = founderSeller
+      ? copyStore.translateBadge('Founder, UniMarket', locale)
+      : listing.isSellerPro
+        ? copyStore.getSellerStatusLabel('pro', locale)
+        : sellerListingsCount >= 3
+          ? copyStore.getSellerStatusLabel('seller', locale)
+          : copyStore.getSellerStatusLabel('new', locale)
+    const sellerStatusClass = founderSeller
+      ? 'seller-rating__value--founder'
+      : listing.isSellerPro
+        ? 'seller-rating__value--pro'
+        : sellerListingsCount >= 3
+          ? 'seller-rating__value--seller'
+          : 'seller-rating__value--new'
+    const sellerSoldCount = sellerListings.filter((item) => Boolean(item && item.isSold && item.soldOnUniMarket)).length
+    const sellerMemberLabel = copyStore.getMemberSinceChipLabel(listing && listing.seller ? listing.seller.joinedAt || '' : '', locale)
+    const listingPublishedLabel = copyStore.getListingPublishedLabel(listing.createdAt, locale)
+    const sellerTrustLabel = copyStore.getSellerTrustLabel(
+      sellerSoldCount,
+      sellerListingsCount,
+      listing && listing.seller ? listing.seller.joinedAt || '' : '',
+      locale
     )
-    const listingPublishedLabel = formatListingPublishedAt(listing.createdAt)
-    const sellerTrustLabel = formatSellerTrustLabel(sellerSoldCount, sellerListingsCount)
     const ownerListingAnalytics = isOwnListing && listing.isSellerPro
-      ? market.getListingAnalytics(listing.id)
+      ? await listingsRuntime.getAnalytics(listing.id)
       : null
+    const localizedListing = {
+      ...listing,
+      displayPromotedBadge: this.data.copy.promotedBadge,
+      displayCondition: copyStore.translateCondition(listing.condition, locale),
+      displaySubcategory: copyStore.translateSubcategory(listing.subcategory, locale),
+      displayLocation: copyStore.translateCity(listing.location, locale)
+    }
+    const profile = profileStore.getProfile()
+    let reviewSummary = localizeReviewSummary(
+      await reviewsStore.getSummary({
+        sellerUserId: listing && listing.seller ? listing.seller.id : '',
+        sellerKey,
+        listingId: listing.id,
+        reviewerUserId: profile && profile.id ? profile.id : '',
+        reviewerKey: profileStore.getProfileIdentityKey(profile)
+      }),
+      locale
+    )
 
     this.setData({
-      navTitle: listing.title || 'Listing',
-      listing,
+      navTitle: listing.title || this.data.copy.navListing,
+      listing: localizedListing,
       isSaved: savedStore.isListingSaved(id),
       isOwnListing,
       showOwnerAnalytics: Boolean(ownerListingAnalytics),
@@ -279,23 +453,16 @@ Page({
       notFound: false,
       hiddenByUser: false,
       blockedSeller: false,
-      reviewSummary: reviewsStore.getSellerReviewSummary(market.getSellerKey(listing)),
+      reviewSummary,
       sellerMemberLabel,
       listingPublishedLabel,
       sellerTrustLabel,
       sellerStatusLabel,
       sellerStatusClass,
       conditionChipClass: this.getConditionChipClass(listing.condition),
-      hiddenNotice: listing.isHiddenByModeration
-        ? listing.isCustom
-          ? 'Hidden by moderation. Only you and admins can open this listing.'
-          : 'Hidden by moderation.'
-        : '',
-      soldNotice: listing.isSold
-        ? listing.soldOnUniMarket
-          ? 'This item was sold on UniMarket.'
-          : 'This item was sold outside UniMarket.'
-        : ''
+      hiddenNotice: getHiddenNotice(listing, locale),
+      soldNotice: getSoldNotice(listing, locale),
+      archivedNotice: getArchivedNotice(listing, locale)
     })
 
     const trackedId = String(this.data.viewTrackedId || '')
@@ -306,7 +473,11 @@ Page({
       })
 
       if (!isOwnListing) {
-        market.recordListingView(listingId)
+        if (listingsRuntime.writesEnabled) {
+          listingsRuntime.recordView(listingId)
+        } else {
+          listingsApi.recordView(listingId)
+        }
       }
     }
   },
@@ -372,7 +543,7 @@ Page({
     })
   },
 
-  toggleSave() {
+  async toggleSave() {
     if (!this.data.listing) return
 
     const result = savedStore.toggleSavedListing(this.data.id)
@@ -381,7 +552,9 @@ Page({
     }
 
     if (this.data.showOwnerAnalytics) {
-      nextState.ownerListingAnalytics = market.getListingAnalytics(this.data.id)
+      nextState.ownerListingAnalytics = listingsRuntime.enabled
+        ? await listingsRuntime.getAnalytics(this.data.id)
+        : listingsApi.getAnalytics(this.data.id)
     }
 
     this.setData(nextState)
@@ -391,7 +564,7 @@ Page({
   playSaveFeedback(isSaved) {
     this.setData({
       feedbackVisible: true,
-      feedbackText: isSaved ? 'Saved' : 'Removed',
+      feedbackText: getSaveFeedbackText(isSaved, this.data.locale),
       feedbackIcon: isSaved ? '✓' : '✕'
     })
 
@@ -418,7 +591,7 @@ Page({
       success: () => {
         reviewsStore.unlockReviewForListing(this.data.id)
         this.setData({
-          reviewSummary: reviewsStore.getSellerReviewSummary(market.getSellerKey(listing))
+          reviewSummary: localizeReviewSummary(reviewsStore.getSellerReviewSummary(sellersApi.getSellerKey(listing)), this.data.locale)
         })
 
         feedback.showInfoModal({
@@ -478,7 +651,7 @@ Page({
     feedback.showModal({
       title: uiText.LISTING.HIDE_TITLE,
       content: uiText.LISTING.HIDE_CONTENT,
-      confirmText: 'Hide',
+      confirmText: getHideConfirmText(this.data.locale),
       confirmColor: '#111111',
       success: (res) => {
         if (!res.confirm) return
@@ -495,7 +668,7 @@ Page({
 
   blockSeller() {
     const listing = this.data.listing || {}
-    const sellerKey = market.getSellerKey(listing)
+    const sellerKey = sellersApi.getSellerKey(listing)
     const sellerName = listing.seller && listing.seller.name ? listing.seller.name : 'this seller'
 
     if (!sellerKey) {
@@ -507,7 +680,7 @@ Page({
     feedback.showModal({
       title: uiText.LISTING.BLOCK_TITLE,
       content: uiText.LISTING.blockContent(sellerName),
-      confirmText: 'Block',
+      confirmText: getBlockConfirmText(this.data.locale),
       confirmColor: '#ba2d2d',
       success: (res) => {
         if (!res.confirm) return
@@ -561,18 +734,18 @@ Page({
       return
     }
 
-    wx.showActionSheet({
-      itemList: REPORT_REASONS,
+    feedback.showActionSheet({
+      itemList: getReportReasons(this.data.locale),
       success: (res) => {
-        const reason = REPORT_REASONS[res.tapIndex]
+        const reason = getReportReasons(this.data.locale)[res.tapIndex]
         if (!reason) return
 
-        if (reason === 'Other') {
+        if (reason === getOtherReasonLabel(this.data.locale)) {
           feedback.showModal({
             title: uiText.LISTING.REPORT_DETAILS_TITLE,
             editable: true,
             placeholderText: uiText.LISTING.REPORT_DETAILS_PLACEHOLDER,
-            confirmText: 'Send',
+            confirmText: getSendConfirmText(this.data.locale),
             success: (modalRes) => {
               if (modalRes.confirm) {
                 this.submitReport(reason, modalRes.content || '')
@@ -589,24 +762,32 @@ Page({
 
   submitReport(reason, note) {
     const listing = this.data.listing || {}
-
-    reportsStore.createReport({
+    const payload = {
+      targetType: 'listing',
       listingId: this.data.id,
       listingTitle: listing.title || '',
       reason,
       note
+    }
+
+    reportsStore.submitReport(payload).then((result) => {
+      if (!result) {
+        feedback.showNeutralToast(uiText.LISTING.LISTING_UNAVAILABLE)
+        return
+      }
+
+      this.setData({ hasReported: true })
+      feedback.showSuccessToast(uiText.LISTING.REPORT_SENT)
+    }).catch(() => {
+      feedback.showNeutralToast(uiText.LISTING.LISTING_UNAVAILABLE)
     })
-
-    this.setData({ hasReported: true })
-
-    feedback.showSuccessToast(uiText.LISTING.REPORT_SENT)
   },
 
   onShareAppMessage() {
     const listing = this.data.listing || {}
 
     return {
-      title: listing.title || 'UniMarket listing',
+      title: listing.title || getShareFallbackTitle(this.data.locale),
       path: `/pages/listing/listing?id=${this.data.id}`,
       imageUrl: listing.image || ''
     }

@@ -22,6 +22,12 @@ function saveReports(reports) {
   storage.safeSetStorage(STORAGE_KEY, reports)
 }
 
+function replaceReports(reports = []) {
+  const normalizedReports = (Array.isArray(reports) ? reports : []).map((report) => normalizeStoredReport(report))
+  saveReports(normalizedReports)
+  return normalizedReports
+}
+
 function hasReportedListing(listingId) {
   const normalizedId = String(listingId)
   return getReports().some((report) => report.targetType === 'listing' && String(report.listingId) === normalizedId)
@@ -80,6 +86,45 @@ function updateReportStatus(reportId, status) {
 
   saveReports(nextReports)
   return nextReports.find((report) => Number(report.id) === targetId) || null
+}
+
+function remapProfileKey(previousKeys = [], nextKey = '') {
+  const normalizedNextKey = String(nextKey || '').trim().toLowerCase()
+  const aliases = Array.from(new Set((Array.isArray(previousKeys) ? previousKeys : [])
+    .map((value) => String(value || '').trim().toLowerCase())
+    .filter(Boolean)))
+
+  if (!normalizedNextKey || !aliases.length) {
+    return 0
+  }
+
+  const reports = getReports()
+  let changed = 0
+  const nextReports = reports.map((report) => {
+    if (report.targetType !== 'profile') {
+      return report
+    }
+
+    const profileKey = String(report.profileKey || '').trim().toLowerCase()
+    if (!aliases.includes(profileKey)) {
+      return report
+    }
+
+    if (profileKey !== normalizedNextKey) {
+      changed += 1
+    }
+
+    return {
+      ...report,
+      profileKey: normalizedNextKey
+    }
+  })
+
+  if (changed > 0) {
+    saveReports(nextReports)
+  }
+
+  return changed
 }
 
 function getListingModerationMap() {
@@ -142,10 +187,12 @@ function decorateListingsWithModeration(listings) {
 
 module.exports = {
   getReports,
+  replaceReports,
   hasReportedListing,
   hasReportedProfile,
   createReport,
   createProfileReport,
   updateReportStatus,
-  decorateListingsWithModeration
+  decorateListingsWithModeration,
+  remapProfileKey
 }

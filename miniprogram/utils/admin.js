@@ -1,18 +1,13 @@
 const STORAGE_KEY = 'adminAccess'
-const ADMIN_PASSCODE = 'unimarket-admin'
 const storage = require('./storage')
 
 function isAdmin() {
   return storage.safeGetStorage(STORAGE_KEY, false) === true
 }
 
-function enableAdmin(code) {
-  if (code !== ADMIN_PASSCODE) {
-    return false
-  }
-
-  storage.safeSetStorage(STORAGE_KEY, true)
-  return true
+function setAdminAccess(isEnabled) {
+  storage.safeSetStorage(STORAGE_KEY, Boolean(isEnabled))
+  return Boolean(isEnabled)
 }
 
 function disableAdmin() {
@@ -21,6 +16,6 @@ function disableAdmin() {
 
 module.exports = {
   isAdmin,
-  enableAdmin,
+  setAdminAccess,
   disableAdmin
 }

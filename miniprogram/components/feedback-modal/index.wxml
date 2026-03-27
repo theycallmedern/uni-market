@@ -1,0 +1,40 @@
+<view wx:if="{{visible}}" class="feedback-modal-overlay">
+  <view class="feedback-modal feedback-modal--{{themeMode}}" catchtap="noop">
+    <view wx:if="{{title}}" class="feedback-modal__head">
+      <text class="feedback-modal__title">{{title}}</text>
+    </view>
+
+    <view class="feedback-modal__body">
+      <textarea
+        wx:if="{{editable}}"
+        class="feedback-modal__textarea"
+        value="{{inputValue}}"
+        placeholder="{{placeholderText}}"
+        placeholder-class="feedback-modal__placeholder"
+        maxlength="300"
+        cursor-spacing="24"
+        auto-height
+        focus
+        bindinput="onInput"
+      />
+      <text wx:else class="feedback-modal__content">{{content}}</text>
+    </view>
+
+    <view class="feedback-modal__actions">
+      <button
+        wx:if="{{showCancel}}"
+        class="feedback-modal__action feedback-modal__action--cancel"
+        bindtap="onCancel"
+      >
+        {{cancelText}}
+      </button>
+      <button
+        class="feedback-modal__action feedback-modal__action--confirm {{!showCancel ? 'feedback-modal__action--single' : ''}}"
+        style="color: {{confirmColor}};"
+        bindtap="onConfirm"
+      >
+        {{confirmText}}
+      </button>
+    </view>
+  </view>
+</view>

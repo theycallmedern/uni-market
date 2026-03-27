@@ -32,6 +32,7 @@ function normalizeReview(rawReview = {}) {
     listingId: String(rawReview.listingId),
     rating,
     comment: cleanText(rawReview.comment || rawReview.note || '', 200),
+    reviewerKey: toLookupKey(rawReview.reviewerKey || rawReview.reviewerName || ''),
     reviewerName: cleanText(rawReview.reviewerName || 'UniMarket user', 32) || 'UniMarket user',
     createdAt: cleanText(rawReview.createdAt || new Date().toISOString(), 40)
   }
@@ -75,8 +76,21 @@ function canReviewListing(listingId) {
   return getReviewUnlocks().includes(String(listingId || ''))
 }
 
-function hasReviewedListing(listingId) {
-  return getStoredReviews().some((review) => review.listingId === String(listingId || ''))
+function hasReviewedListing(listingId, reviewerKey = '') {
+  const normalizedListingId = String(listingId || '')
+  const normalizedReviewerKey = toLookupKey(reviewerKey)
+
+  return getStoredReviews().some((review) => {
+    if (review.listingId !== normalizedListingId) {
+      return false
+    }
+
+    if (!normalizedReviewerKey) {
+      return true
+    }
+
+    return review.reviewerKey === normalizedReviewerKey
+  })
 }
 
 function createReview(payload = {}) {
@@ -86,13 +100,47 @@ function createReview(payload = {}) {
     createdAt: new Date().toISOString()
   })
 
-  if (!review || hasReviewedListing(review.listingId)) {
+  if (!review || hasReviewedListing(review.listingId, review.reviewerKey)) {
     return null
   }
 
   const nextReviews = [review, ...getStoredReviews()]
   saveReviews(nextReviews)
   return review
+}
+
+function remapSellerKey(previousKeys = [], nextKey = '') {
+  const normalizedNextKey = toLookupKey(nextKey)
+  const aliases = Array.from(new Set((Array.isArray(previousKeys) ? previousKeys : [])
+    .map((value) => toLookupKey(value))
+    .filter(Boolean)))
+
+  if (!normalizedNextKey || !aliases.length) {
+    return 0
+  }
+
+  const reviews = getStoredReviews()
+  let changed = 0
+  const nextReviews = reviews.map((review) => {
+    if (!aliases.includes(review.sellerKey)) {
+      return review
+    }
+
+    if (review.sellerKey !== normalizedNextKey) {
+      changed += 1
+    }
+
+    return {
+      ...review,
+      sellerKey: normalizedNextKey
+    }
+  })
+
+  if (changed > 0) {
+    saveReviews(nextReviews)
+  }
+
+  return changed
 }
 
 function getSellerReviews(sellerKey, limit = 0) {
@@ -147,5 +195,6 @@ module.exports = {
   hasReviewedListing,
   createReview,
   getSellerReviews,
-  getSellerReviewSummary
+  getSellerReviewSummary,
+  remapSellerKey
 }

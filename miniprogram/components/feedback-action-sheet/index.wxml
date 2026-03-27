@@ -1,0 +1,17 @@
+<view wx:if="{{visible}}" class="feedback-action-sheet-overlay" bindtap="onCancel">
+  <view class="feedback-action-sheet-stack" catchtap="noop">
+    <view class="feedback-action-sheet feedback-action-sheet--{{themeMode}}">
+      <block wx:for="{{itemList}}" wx:key="index">
+        <view class="feedback-action-sheet__item" data-index="{{index}}" bindtap="onItemTap">
+          <text class="feedback-action-sheet__item-label" style="color: {{itemColor}};">{{item}}</text>
+        </view>
+      </block>
+    </view>
+
+    <view class="feedback-action-sheet feedback-action-sheet--{{themeMode}}">
+      <view class="feedback-action-sheet__item feedback-action-sheet__item--cancel" bindtap="onCancel">
+        <text class="feedback-action-sheet__cancel-label">{{cancelText}}</text>
+      </view>
+    </view>
+  </view>
+</view>

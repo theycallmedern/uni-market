@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>Local-first WeChat Mini Program marketplace for international students in Hangzhou.</strong>
+  <strong>Backend-enabled WeChat Mini Program marketplace for international students in Hangzhou.</strong>
 </p>
 
 <p align="center">
@@ -15,16 +15,17 @@
 <p align="center">
   <a href="https://github.com/theycallmedern/uni-market/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/theycallmedern/uni-market/ci.yml?branch=main&style=flat-square&label=build"></a>
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-111827?style=flat-square"></a>
-  <img alt="Version" src="https://img.shields.io/badge/version-0.1.0--mvp-111827?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/version-0.4.0-111827?style=flat-square">
   <img alt="Platform" src="https://img.shields.io/badge/platform-WeChat%20Mini%20Program-07C160?style=flat-square">
-  <img alt="Status" src="https://img.shields.io/badge/status-local--first%20prototype-1F2937?style=flat-square">
+  <img alt="Status" src="https://img.shields.io/badge/status-production%20api%20live-1F2937?style=flat-square">
 </p>
 
 <p align="center">
   <code>WeChat Mini Program</code>
   <code>JavaScript</code>
   <code>WXML + WXSS</code>
-  <code>Local storage MVP</code>
+  <code>Cloudflare Workers + D1</code>
+  <code>Cloudinary uploads</code>
   <code>Dark mode</code>
   <code>Moderation tooling</code>
 </p>
@@ -38,10 +39,10 @@ Instead of forcing a backend-first marketplace too early, the project focuses on
 - faster discovery across housing, items, electronics, study resources, services, and transport
 - cleaner posting and seller inventory management
 - richer seller trust context through profiles, reviews, saves, and seller insights
-- moderation flows that can be tested before server-side infrastructure exists
+- moderation flows that work behind a real backend boundary
 
 > [!IMPORTANT]
-> This repository is intentionally local-first. Listings, saved items, profile state, admin access, and moderation state are stored on-device via `wx` storage APIs. It is an MVP shell, not a production backend.
+> The Mini Program now runs against a deployed Cloudflare Worker backend for `trial` and `release` builds. `develop` still uses a dev backend, and a few UX-only preferences remain device-local by design (theme, locale, draft/navigation state).
 
 ## 🎥 Demo
 
@@ -53,11 +54,14 @@ Interactive walkthrough assets are intentionally omitted from the repository for
 - **Fast marketplace browsing** with search, category pages, results filters, subcategory exploration, and promoted listings
 - **Create + edit listing flow** with photo uploads, draft recovery, custom subcategories, price normalization, and condition selection
 - **Seller inventory management** with open, edit, relist, mark-sold, delete, and archive flows
+- **30-day listing lifecycle** with automatic archive after 30 days and one-tap restore from archive
 - **Seller profiles and reviews** with trust states, listing history, review summaries, and public/private profile views
 - **Seller Pro surfaces** with insights, saved/view counts, listing performance, and premium-style profile presentation
-- **Local moderation tooling** for listing reports, profile reports, hidden content states, and admin review actions
+- **Backend moderation tooling** for listing reports, profile reports, hidden content states, and admin review actions
 - **Dark theme support** across core screens including profile, settings, listing flows, search, categories, and results
-- **Local-first saved flow** with cleanup mechanics for unavailable listings and blocked sellers
+- **Production API routing** with `develop -> dev workers.dev` and `trial/release -> api.clauseon.tech`
+- **Backend-signed image uploads** through Cloudinary without exposing secrets inside the Mini Program
+- **Saved flow and visibility preferences** with cleanup mechanics for unavailable listings and blocked sellers
 - **Shared UX infrastructure** for validation, storage, tab bar sync, feedback modals/toasts, and smoke-test coverage
 
 ## 🧱 Tech Stack
@@ -67,11 +71,15 @@ Interactive walkthrough assets are intentionally omitted from the repository for
 | App shell | WeChat Mini Program |
 | UI | WXML + WXSS |
 | Runtime | JavaScript |
-| Persistence | `wx` local storage |
+| Backend | Cloudflare Workers |
+| Database | Cloudflare D1 |
+| Cache / prefs sync | Cloudflare KV |
+| Media uploads | Cloudinary |
+| Persistence | Backend + selective `wx` local storage |
 | Tooling | Node.js, shell scripts, WeChat DevTools |
 | Quality gate | `scripts/check.sh`, smoke tests, syntax checks |
 | CI | GitHub Actions |
-| Planned backend direction | Cloudflare Workers + D1 + R2 |
+| Production API | `https://api.clauseon.tech` |
 
 ## 📦 Installation
 
@@ -138,7 +146,7 @@ npm run check
 
 ## 🧩 API / CLI
 
-UniMarket does not expose a public API or end-user CLI in this MVP.
+UniMarket does not expose a public third-party API or end-user CLI.
 
 The developer-facing commands are intentionally small:
 
@@ -147,8 +155,13 @@ The developer-facing commands are intentionally small:
 | `npm run check` | Run syntax checks + smoke tests |
 | `bash scripts/check.sh` | Direct quality-gate script |
 | `node scripts/smoke-test.js` | Run smoke scenarios explicitly |
+| `node scripts/worker-smoke-test.js` | Run Worker/API smoke scenarios |
+| `npm run cf:d1:migrate:dev` | Apply dev D1 migrations |
+| `npm run cf:d1:migrate:prod` | Apply production D1 migrations |
+| `npm run cf:deploy:dev` | Deploy dev Worker |
+| `npm run cf:deploy:prod` | Deploy production Worker |
 
-### Example local listing shape
+### Example listing shape
 
 ```js
 {
@@ -161,7 +174,8 @@ The developer-facing commands are intentionally small:
   subcategory: "Other items",
   condition: "New",
   isSold: false,
-  isCustom: true,
+  isArchived: false,
+  expiresAt: "2026-04-26T12:00:00.000Z",
   seller: {
     name: "demo_anna",
     wechat: "demo_anna",
@@ -181,7 +195,7 @@ uni-market/
 │   ├── assets/                 # brand, tab bar, and subcategory media
 │   ├── components/             # shared UI components
 │   ├── custom-tab-bar/         # custom navigation shell
-│   ├── data/                   # local market dataset and config
+│   ├── data/                   # local fallback store + marketplace helpers
 │   ├── pages/
 │   │   ├── index/              # home feed
 │   │   ├── category/           # category browsing
@@ -194,38 +208,42 @@ uni-market/
 │   │   ├── profile/            # account overview
 │   │   ├── settings/           # theme + admin settings
 │   │   └── moderation/         # moderation inbox
+│   ├── services/api/           # runtime API adapters and backend clients
 │   ├── utils/                  # storage, validation, stats, saved state
 │   └── constants/              # centralized UI copy
 ├── scripts/
 │   ├── check.sh                # local quality gate
-│   └── smoke-test.js           # smoke scenarios
+│   ├── smoke-test.js           # Mini Program smoke scenarios
+│   └── worker-smoke-test.js    # Worker/API smoke scenarios
+├── worker/                     # Cloudflare Worker and D1 migrations
 ├── README.md
 └── package.json
 ```
 
 ## ⚙️ Configuration
 
-This MVP currently requires **no runtime `.env` file**.
+The repository uses checked-in config plus Cloudflare secrets/vars.
 
 ### Current local configuration model
 
 | Key | Where it lives | Purpose |
 | --- | --- | --- |
 | WeChat App ID | `project.config.json` / DevTools | Mini Program project binding |
+| Dev backend vars | `.dev.vars.example` | Local reference for Worker secrets/vars |
+| Cloudflare envs | `wrangler.toml` | Worker, D1, KV bindings |
 | Local theme mode | `wx` storage | Light / dark theme persistence |
-| User profile | `wx` storage | Public profile + seller defaults |
-| Admin unlock state | `wx` storage | Local moderation access |
+| Locale | `wx` storage | App language |
 | Draft listing data | `wx` storage | Restore unfinished listing flow |
 
-### Future environment variables
-
-These are not active yet, but likely candidates once a backend exists:
+### Active backend secrets / vars
 
 ```bash
-CLOUDFLARE_ACCOUNT_ID=
-CLOUDFLARE_D1_DATABASE_ID=
-CLOUDFLARE_R2_BUCKET=
-OPENAI_API_KEY=
+JWT_SECRET=
+WECHAT_APP_ID=
+WECHAT_APP_SECRET=
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
 ```
 
 ## 🧪 Testing
@@ -251,12 +269,26 @@ What is covered today:
 - create/edit listing logic
 - favorites flow
 - listing and profile-related state transitions
+- Worker API auth/listing/media-ready flows
 
 ## 🚢 Deployment
 
-Current deployment target is WeChat DevTools preview / upload flow.
+Current deployment target is WeChat Mini Program `trial/release` backed by Cloudflare Workers.
 
-### Local preview
+### Deploy backend
+
+```bash
+npm run cf:d1:migrate:prod
+npm run cf:deploy:prod
+```
+
+### WeChat release
+
+1. Run `npm run check`
+2. Upload the Mini Program bundle in WeChat DevTools
+3. Issue a `体验版`
+4. Verify create/edit/delete, save, archive/restore, and image upload on phone
+5. Submit for review
 
 ```bash
 # open project in WeChat DevTools

@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.4.0 - 2026-03-27
+
+- shipped the production backend rollout:
+  - deployed Cloudflare Worker production API on `https://api.clauseon.tech`
+  - added production D1 + KV bindings and production deploy/migration commands
+  - configured backend-signed Cloudinary uploads for listing photos
+  - finalized WeChat legal-domain setup for API and image upload/download
+- completed the backend-first listing architecture:
+  - removed old CloudBase selector/client dead code
+  - switched service access through the runtime API layer and backend client
+  - kept `develop` on the dev backend and `trial/release` on the production API
+- added listing lifecycle improvements:
+  - new 30-day auto-archive lifecycle for listings
+  - archive restore flow for expired listings
+  - backend + local fallback support for `expiresAt` / archived visibility rules
+- improved marketplace and inventory UX:
+  - address display on preview cards
+  - promoted listings pinned only in category flows, not on the home latest feed
+  - improved empty-state CTA on unavailable listing screens
+  - tightened listing language validation to English or Chinese only
+- cleaned the repository for release:
+  - removed old demo seed listings and cleared dev/production listing data
+  - deleted generated presentation/pdf/html export leftovers from the repo
+  - refreshed README and release documentation for the production state
+
 ## 0.3.0 - 2026-03-18
 
 - expanded marketplace and inventory workflows:
