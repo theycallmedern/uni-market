@@ -56,6 +56,11 @@ Current MVP screens from the local demo flow:
       <sub>Home feed</sub>
     </td>
     <td align="center">
+      <img src="./docs/screenshots/items-category.png" alt="UniMarket category browsing" width="220" />
+      <br />
+      <sub>Category browsing</sub>
+    </td>
+    <td align="center">
       <img src="./docs/screenshots/listing-detail.png" alt="UniMarket listing detail" width="220" />
       <br />
       <sub>Listing detail</sub>
@@ -68,13 +73,11 @@ Current MVP screens from the local demo flow:
       <sub>Seller profile</sub>
     </td>
     <td align="center">
-      <img src="./docs/screenshots/my-profile.png" alt="UniMarket own profile" width="220" />
+      <img src="./docs/screenshots/profile-hub.png" alt="UniMarket profile hub" width="220" />
       <br />
-      <sub>My profile</sub>
+      <sub>Profile hub</sub>
     </td>
-  </tr>
-  <tr>
-    <td colspan="2" align="center">
+    <td align="center">
       <img src="./docs/screenshots/create-listing.png" alt="UniMarket create listing flow" width="220" />
       <br />
       <sub>Create listing flow</sub>
