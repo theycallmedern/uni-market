@@ -73,13 +73,14 @@ Current MVP screens from the local demo flow:
       <sub>My profile</sub>
     </td>
   </tr>
+  <tr>
+    <td colspan="2" align="center">
+      <img src="./docs/screenshots/create-listing.png" alt="UniMarket create listing flow" width="220" />
+      <br />
+      <sub>Create listing flow</sub>
+    </td>
+  </tr>
 </table>
-
-<p align="center">
-  <img src="./docs/screenshots/create-listing.png" alt="UniMarket create listing flow" width="240" />
-  <br />
-  <sub>Create listing flow</sub>
-</p>
 
 ## 🚀 Features
 
