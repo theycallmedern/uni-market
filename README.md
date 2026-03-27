@@ -46,7 +46,40 @@ Instead of forcing a backend-first marketplace too early, the project focuses on
 
 ## 🎥 Demo
 
-Interactive walkthrough assets are intentionally omitted from the repository for now. Use WeChat DevTools to explore the current MVP flow locally.
+Current MVP screens from the local demo flow:
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="./docs/screenshots/home-feed.png" alt="UniMarket home feed" width="220" />
+      <br />
+      <sub>Home feed</sub>
+    </td>
+    <td align="center">
+      <img src="./docs/screenshots/listing-detail.png" alt="UniMarket listing detail" width="220" />
+      <br />
+      <sub>Listing detail</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./docs/screenshots/seller-profile.png" alt="UniMarket seller profile" width="220" />
+      <br />
+      <sub>Seller profile</sub>
+    </td>
+    <td align="center">
+      <img src="./docs/screenshots/my-profile.png" alt="UniMarket own profile" width="220" />
+      <br />
+      <sub>My profile</sub>
+    </td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="./docs/screenshots/create-listing.png" alt="UniMarket create listing flow" width="240" />
+  <br />
+  <sub>Create listing flow</sub>
+</p>
 
 ## 🚀 Features
 
